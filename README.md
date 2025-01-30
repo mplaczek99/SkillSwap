@@ -125,15 +125,5 @@ npm install
 npm run serve
 ```
 
-### Contributing
-Contributions are welcome! Please follow the [contribution guidelines](CONTRIBUTING.md).
-
-### License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-### Contact
-For any inquiries, please reach out via email or open an issue on GitHub.
-
 ---
-
 **⚠️ Note:** This README is a work in progress and subject to change.
