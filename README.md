@@ -136,4 +136,4 @@ For any inquiries, please reach out via email or open an issue on GitHub.
 
 ---
 
-Enjoy SkillSwapping! 🚀
+**⚠️ Note:** This README is a work in progress and subject to change.
