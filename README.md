@@ -116,9 +116,14 @@ SkillSwap is expected to deliver a **fully functional platform** that facilitate
 git clone https://github.com/your-repo/skillswap.git
 cd skillswap
 
-# Backend setup
+# Install dependencies
 go mod tidy
-go run main.go
+
+# Run the application
+go run cmd/main.go
+
+# To build and run with Docker
+docker-compose up --build
 
 # Frontend setup (if using Vue)
 npm install
