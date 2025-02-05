@@ -1,20 +1,23 @@
 package repositories
 
 import (
-	"github.com/mplaczek99/SkillSwap/config"
-	"github.com/mplaczek99/SkillSwap/models"
+    "github.com/mplaczek99/SkillSwap/models"
 )
 
-// InsertSkill saves a new skill record to the database.
+// InsertSkill assigns a dummy ID to the skill.
 func InsertSkill(skill *models.Skill) (*models.Skill, error) {
-	result := config.DB.Create(skill)
-	return skill, result.Error
+    skill.ID = 1
+    return skill, nil
 }
 
-// GetAllSkills retrieves all skill records from the database.
+// GetAllSkills returns a slice of dummy skills.
 func GetAllSkills() ([]models.Skill, error) {
-	var skills []models.Skill
-	result := config.DB.Find(&skills)
-	return skills, result.Error
+    dummySkill := models.Skill{
+        ID:          1,
+        Name:        "Dummy Skill",
+        Description: "This is a dummy skill",
+        UserID:      1,
+    }
+    return []models.Skill{dummySkill}, nil
 }
 

@@ -1,28 +1,36 @@
 package repositories
 
 import (
-	"github.com/mplaczek99/SkillSwap/config"
-	"github.com/mplaczek99/SkillSwap/models"
+    "errors"
+    "github.com/mplaczek99/SkillSwap/models"
 )
 
-// InsertUser saves a new user record to the database.
+// InsertUser returns the user with a dummy ID.
 func InsertUser(user *models.User) (*models.User, error) {
-	result := config.DB.Create(user)
-	return user, result.Error
+    user.ID = 1
+    return user, nil
 }
 
-// GetUserByEmail finds a user by their email.
+// GetUserByEmail returns a dummy user for a specific email.
 func GetUserByEmail(email string) (*models.User, error) {
-	var user models.User
-	result := config.DB.Where("email = ?", email).First(&user)
-	return &user, result.Error
+    // Return a dummy user if the email matches; otherwise, return an error.
+    if email == "test@example.com" {
+        return &models.User{
+            ID:       1,
+            Email:    email,
+            Password: "$2a$10$dummyhashedpassword", // Dummy hashed password
+            Name:     "Dummy User",
+        }, nil
+    }
+    return nil, errors.New("user not found")
 }
 
-// GetUserByID retrieves a user by ID.
-// Note: In a production system, you might want to use a numeric ID type.
+// GetUserByID returns a dummy user.
 func GetUserByID(id string) (*models.User, error) {
-	var user models.User
-	result := config.DB.Where("id = ?", id).First(&user)
-	return &user, result.Error
+    return &models.User{
+        ID:    1,
+        Email: "test@example.com",
+        Name:  "Dummy User",
+    }, nil
 }
 

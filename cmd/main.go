@@ -13,7 +13,7 @@ func main() {
 	config.LoadConfig()
 
 	// Initialize database connection (using GORM)
-	config.InitDB()
+	// config.InitDB()
 
 	// Create a new Gin router with Logger and Recovery middleware
 	router := gin.New()

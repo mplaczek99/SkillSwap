@@ -1,20 +1,23 @@
 package repositories
 
 import (
-	"github.com/mplaczek99/SkillSwap/config"
-	"github.com/mplaczek99/SkillSwap/models"
+    "github.com/mplaczek99/SkillSwap/models"
 )
 
-// InsertTransaction creates a new transaction record.
+// InsertTransaction returns the transaction with a dummy ID.
 func InsertTransaction(tx *models.Transaction) (*models.Transaction, error) {
-	result := config.DB.Create(tx)
-	return tx, result.Error
+    tx.ID = 1
+    return tx, nil
 }
 
-// GetTransactionByID retrieves a transaction by its ID.
+// GetTransactionByID returns a dummy transaction.
 func GetTransactionByID(id string) (*models.Transaction, error) {
-	var transaction models.Transaction
-	result := config.DB.Where("id = ?", id).First(&transaction)
-	return &transaction, result.Error
+    dummyTx := models.Transaction{
+        ID:         1,
+        SenderID:   1,
+        ReceiverID: 2,
+        Amount:     10,
+    }
+    return &dummyTx, nil
 }
 
