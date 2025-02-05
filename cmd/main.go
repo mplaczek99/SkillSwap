@@ -2,30 +2,34 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/your-username/skillswap/config"
-	"github.com/your-username/skillswap/routes"
+	"github.com/mplaczek99/SkillSwap/config"
+	"github.com/mplaczek99/SkillSwap/routes"
 )
 
 func main() {
-	// Load environment configuration
+	// Load configuration from environment variables (and .env file if available)
 	config.LoadConfig()
 
-	// Initialize database connection (with pooling) in config/initDB.go (not shown here)
-	// e.g., db := config.InitDB()
+	// Initialize database connection (using GORM)
+	config.InitDB()
 
-	// Create a Gin router with production settings
+	// Create a new Gin router with Logger and Recovery middleware
 	router := gin.New()
-	router.Use(gin.Recovery(), gin.Logger())
-	// Attach security middlewares (e.g., CORS, JWT validation)
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
-	// Set up routes
+	// Setup API routes
 	routes.SetupRoutes(router)
 
 	// Start the server on the configured port
-	if err := router.Run(":" + config.AppConfig.ServerPort); err != nil {
+	port := config.AppConfig.ServerPort
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Starting server on port %s", port)
+	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
