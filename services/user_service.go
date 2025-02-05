@@ -5,22 +5,27 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
-	"github.com/your-username/skillswap/models"
-	"github.com/your-username/skillswap/repositories"
+	"github.com/mplaczek99/SkillSwap/models"
+	"github.com/mplaczek99/SkillSwap/repositories"
 )
 
+// CreateUser processes new user registration by hashing the password and saving the user.
 func CreateUser(user *models.User) (*models.User, error) {
-	// Validate input data (e.g., required fields)
-
-	// Hash the password securely
+	if user.Email == "" || user.Password == "" {
+		return nil, errors.New("email and password are required")
+	}
+	// Hash the user's password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, errors.New("failed to hash password")
+		return nil, err
 	}
 	user.Password = string(hashedPassword)
 	user.CreatedAt = time.Now()
-
-	// Save user using repository layer
 	return repositories.InsertUser(user)
+}
+
+// GetUserByID retrieves a user by their ID.
+func GetUserByID(id string) (*models.User, error) {
+	return repositories.GetUserByID(id)
 }
 
