@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"golang.org/x/crypto/bcrypt"
-	"github.com/mplaczek99/SkillSwap/models"
 	"github.com/mplaczek99/SkillSwap/repositories"
 	"github.com/mplaczek99/SkillSwap/utils"
 )
