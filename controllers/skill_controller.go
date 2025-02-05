@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/your-username/skillswap/models"
-	"github.com/your-username/skillswap/services"
+	"github.com/mplaczek99/SkillSwap/models"
+	"github.com/mplaczek99/SkillSwap/services"
 )
 
 // AddSkill handles adding a new skill
