@@ -71,4 +71,3 @@ func InitDB() {
 	// Optionally, auto-migrate your models:
 	// DB.AutoMigrate(&models.User{}, &models.Skill{}, &models.Transaction{})
 }
-
