@@ -16,4 +16,3 @@ func Error(message string) {
 func Warn(message string) {
 	log.Println("[WARN]", message)
 }
-

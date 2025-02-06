@@ -42,4 +42,3 @@ func ValidateJWT(tokenStr string) (*JWTClaims, error) {
 	}
 	return nil, errors.New("invalid token")
 }
-
