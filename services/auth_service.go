@@ -3,9 +3,9 @@ package services
 import (
 	"errors"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/mplaczek99/SkillSwap/repositories"
 	"github.com/mplaczek99/SkillSwap/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // AuthenticateUser verifies user credentials and returns a JWT token upon success.
@@ -26,4 +26,3 @@ func AuthenticateUser(email, password string) (string, error) {
 	}
 	return token, nil
 }
-

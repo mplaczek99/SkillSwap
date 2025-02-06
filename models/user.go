@@ -11,4 +11,3 @@ type User struct {
 	Bio       string    `json:"bio"`
 	CreatedAt time.Time `json:"created_at"`
 }
-

@@ -32,4 +32,3 @@ func GetSkills(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, skills)
 }
-

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/mplaczek99/SkillSwap/models"
 	"github.com/mplaczek99/SkillSwap/repositories"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // CreateUser processes new user registration by hashing the password and saving the user.
@@ -28,4 +28,3 @@ func CreateUser(user *models.User) (*models.User, error) {
 func GetUserByID(id string) (*models.User, error) {
 	return repositories.GetUserByID(id)
 }
-

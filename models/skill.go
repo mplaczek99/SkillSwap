@@ -10,4 +10,3 @@ type Skill struct {
 	UserID      uint      `json:"user_id"` // ID of the user offering the skill
 	CreatedAt   time.Time `json:"created_at"`
 }
-

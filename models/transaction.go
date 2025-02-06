@@ -10,4 +10,3 @@ type Transaction struct {
 	Amount     int       `json:"amount"`
 	CreatedAt  time.Time `json:"created_at"`
 }
-

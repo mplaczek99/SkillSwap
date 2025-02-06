@@ -21,4 +21,3 @@ func CreateSkill(skill *models.Skill) (*models.Skill, error) {
 func GetAllSkills() ([]models.Skill, error) {
 	return repositories.GetAllSkills()
 }
-

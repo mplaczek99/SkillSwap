@@ -25,4 +25,3 @@ func SetupRoutes(router *gin.Engine) {
 		// Add additional protected routes as needed
 	}
 }
-
