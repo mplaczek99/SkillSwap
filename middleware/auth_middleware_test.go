@@ -1,7 +1,6 @@
 package middleware_test
 
 import (
-    "fmt"
     "net/http"
     "net/http/httptest"
     "testing"

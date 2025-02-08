@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+  "strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mplaczek99/SkillSwap/models"
@@ -17,9 +18,16 @@ func RegisterUser(c *gin.Context) {
 	}
 	createdUser, err := services.CreateUser(&user)
 	if err != nil {
+		// If the error message contains "required", assume it's a validation error.
+		if strings.Contains(err.Error(), "required") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// Clear the password before returning (so it’s not leaked)
+	createdUser.Password = ""
 	c.JSON(http.StatusCreated, createdUser)
 }
 

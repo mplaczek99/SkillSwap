@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+  "strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mplaczek99/SkillSwap/models"
@@ -17,6 +18,10 @@ func AddSkill(c *gin.Context) {
 	}
 	newSkill, err := services.CreateSkill(&skill)
 	if err != nil {
+		if strings.Contains(err.Error(), "required") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

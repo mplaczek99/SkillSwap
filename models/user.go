@@ -7,7 +7,7 @@ type User struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `gorm:"unique" json:"email"`
-	Password  string    `json:"-"` // Omit password from JSON responses
+	Password  string    `json:"password"`
 	Bio       string    `json:"bio"`
 	CreatedAt time.Time `json:"created_at"`
 }

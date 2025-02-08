@@ -51,7 +51,6 @@ func getEnv(key, defaultValue string) string {
 // InitDB initializes the database connection using GORM
 func InitDB() {
 	var err error
-	// Using MySQL in this example; adjust as needed for PostgreSQL or others.
 	DB, err = gorm.Open(mysql.Open(AppConfig.DBSource), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -59,7 +58,6 @@ func InitDB() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Set connection pool settings
 	sqlDB, err := DB.DB()
 	if err != nil {
 		log.Fatalf("Failed to get generic database object: %v", err)
@@ -67,7 +65,11 @@ func InitDB() {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
-
-	// Optionally, auto-migrate your models:
-	// DB.AutoMigrate(&models.User{}, &models.Skill{}, &models.Transaction{})
+	// Optionally auto-migrate your models here
 }
+
+// Automatically load the configuration when the package is imported.
+func init() {
+	LoadConfig()
+}
+
