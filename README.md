@@ -91,31 +91,6 @@ Each user will have a personalized profile that includes:
 * bcrypt hashing for securely storing sensitive information (e.g., passwords).  
 * Role-based access controls for admin features.
 
-## Development Plan
-
-### Phase 1: Planning and Setup
-
-* Define requirements and establish system architecture.  
-* Design the database schema to support core features.  
-* Initial backend setup for authentication and basic user management.
-
-### Phase 2: Core Functionality
-
-* Implement user profiles.  
-* Develop the SkillPoints transaction system.  
-* Implement scheduling features.
-
-### Phase 3: Advanced Features
-
-* Implement real-time chat and the admin dashboard.  
-* Enhance the search and match system with advanced filters and recommendations.
-
-### Phase 4: Testing and Deployment
-
-* Conduct rigorous testing for functionality, security, and usability.  
-* Deploy the platform to a cloud environment.  
-* Collect user feedback for future iterations and improvements.
-
 ## Expected Outcomes
 
 Upon completion, SkillSwap will offer a fully functional platform for peer-to-peer skill sharing. The project will provide:
@@ -156,4 +131,3 @@ npm run serve
 ```
 ---
 **⚠️ Note:** This README is a work in progress and is subject to change.
-```
