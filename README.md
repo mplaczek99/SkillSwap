@@ -1,21 +1,5 @@
 # SkillSwap Frontend
 
-## Project structure
-This is up for debate...
-
-Typical Vue.js structure:
-
-SkillSwap-Frontend/
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   ├── views/
-│   ├── router/
-│   ├── store/
-│   └── App.vue
-└── package.json
-
 ## Getting Started
 
 ### Prerequisites
