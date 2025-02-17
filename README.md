@@ -84,6 +84,7 @@ go mod tidy
 # Run the application
 go run cmd/main.go
 ```
-**Note:**
-- This README focuses on the backend. The frontend is maintained separately.
-- This documentation may evolve as the project matures.
+> **Note:**
+> 
+> - **Backend Focus:** This README is dedicated to the backend. The frontend is maintained in a separate repository.
+> - **Evolving Documentation:** As the project matures, this documentation may be updated to reflect new developments.
