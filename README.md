@@ -32,7 +32,6 @@
 - **Containerization (Optional):** A Dockerfile can be used to containerize the Vue application.
 - **Hosting:** Deploy on any static site hosting (Netlify)
 
----
 > ⚠️ **Note:**
 > - This README focuses on the frontend. The backend is maintained separately.
 > - This documentation may evolve as the project matures.
