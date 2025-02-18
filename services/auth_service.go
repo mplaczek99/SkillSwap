@@ -3,24 +3,49 @@ package services
 import (
 	"errors"
 
+	"github.com/mplaczek99/SkillSwap/models"
 	"github.com/mplaczek99/SkillSwap/repositories"
 	"github.com/mplaczek99/SkillSwap/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthenticateUser verifies user credentials and returns a JWT token upon success.
-func AuthenticateUser(email, password string) (string, error) {
-	user, err := repositories.GetUserByEmail(email)
+type AuthService struct {
+	UserRepo *repositories.UserRepository
+}
+
+func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
+	return &AuthService{UserRepo: userRepo}
+}
+
+// Register creates a new user and returns a token.
+func (s *AuthService) Register(user *models.User) (string, error) {
+	existingUser, _ := s.UserRepo.GetUserByEmail(user.Email)
+	if existingUser != nil {
+		return "", errors.New("email already in use")
+	}
+
+	if err := s.UserRepo.CreateUser(user); err != nil {
+		return "", err
+	}
+
+	token, err := utils.GenerateToken(user.ID, user.Role)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+// Login authenticates a user and returns a token.
+func (s *AuthService) Login(email, password string) (string, error) {
+	user, err := s.UserRepo.GetUserByEmail(email)
 	if err != nil {
 		return "", errors.New("invalid email or password")
 	}
-	// Compare the hashed password with the provided one
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
+
+	if !user.ComparePassword(password) {
 		return "", errors.New("invalid email or password")
 	}
-	// Generate JWT token
-	token, err := utils.GenerateJWT(user.ID, user.Email)
+
+	token, err := utils.GenerateToken(user.ID, user.Role)
 	if err != nil {
 		return "", err
 	}

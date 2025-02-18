@@ -1,35 +1,42 @@
 package main
 
 import (
-	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mplaczek99/SkillSwap/config"
+	"github.com/mplaczek99/SkillSwap/controllers"
+	"github.com/mplaczek99/SkillSwap/repositories"
 	"github.com/mplaczek99/SkillSwap/routes"
+	"github.com/mplaczek99/SkillSwap/services"
 )
 
 func main() {
-	// Load configuration from environment variables (and .env file if available)
-	config.LoadConfig()
+	// Connect to the database
+	db := config.ConnectDB()
 
-	// Initialize database connection (using GORM)
-	// config.InitDB()
+	// Run auto-migration for your models
+	config.Migrate(db)
 
-	// Create a new Gin router with Logger and Recovery middleware
-	router := gin.New()
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	// Initialize repositories, services, and controllers
+	userRepo := repositories.NewUserRepository(db)
+	authService := services.NewAuthService(userRepo)
+	authController := controllers.NewAuthController(authService)
 
-	// Setup API routes
-	routes.SetupRoutes(router)
+	// Initialize the Gin router
+	router := gin.Default()
 
-	// Start the server on the configured port
-	port := config.AppConfig.ServerPort
+	// Setup routes (this will include public, authenticated, and admin endpoints)
+	routes.SetupRoutes(router, authController)
+
+	// Retrieve port from environment variable, defaulting to 8080 if not set
+	port := os.Getenv("SERVER_PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Starting server on port %s", port)
+
+	// Start the Gin server on the specified port
 	if err := router.Run(":" + port); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		panic(err)
 	}
 }

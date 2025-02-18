@@ -4,26 +4,50 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mplaczek99/SkillSwap/models"
 	"github.com/mplaczek99/SkillSwap/services"
 )
 
-// LoginRequest represents the JSON payload for login
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+type AuthController struct {
+	AuthService *services.AuthService
 }
 
-// Login handles user login and JWT token generation
-func Login(c *gin.Context) {
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func NewAuthController(authService *services.AuthService) *AuthController {
+	return &AuthController{AuthService: authService}
+}
+
+// Register endpoint creates a new user.
+func (c *AuthController) Register(ctx *gin.Context) {
+	var user models.User
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token, err := services.AuthenticateUser(req.Email, req.Password)
+
+	token, err := c.AuthService.Register(&user)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	ctx.JSON(http.StatusCreated, gin.H{"token": token})
+}
+
+// Login endpoint authenticates a user.
+func (c *AuthController) Login(ctx *gin.Context) {
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := c.AuthService.Login(req.Email, req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }

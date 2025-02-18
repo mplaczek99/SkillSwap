@@ -6,22 +6,22 @@ import (
 	"github.com/mplaczek99/SkillSwap/middleware"
 )
 
-// SetupRoutes registers all API endpoints and their middleware.
-func SetupRoutes(router *gin.Engine) {
-	// Public routes (no authentication required)
-	public := router.Group("/api")
-	{
-		public.POST("/login", controllers.Login)
-		public.POST("/register", controllers.RegisterUser)
-	}
+func SetupRoutes(router *gin.Engine, authController *controllers.AuthController) {
+	// Public endpoints
+	router.POST("/register", authController.Register)
+	router.POST("/login", authController.Login)
 
-	// Protected routes (authentication required)
-	protected := router.Group("/api")
-	protected.Use(middleware.JWTAuthMiddleware())
-	{
-		protected.GET("/user/:id", controllers.GetUser)
-		protected.POST("/skills", controllers.AddSkill)
-		protected.GET("/skills", controllers.GetSkills)
-		// Add additional protected routes as needed
-	}
+	// Protected endpoints for any authenticated user
+	auth := router.Group("/")
+	auth.Use(middleware.AuthMiddleware())
+	auth.GET("/protected", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{"message": "You are authenticated"})
+	})
+
+	// Admin-only endpoints
+	admin := router.Group("/admin")
+	admin.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
+	admin.GET("/dashboard", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{"message": "Welcome Admin"})
+	})
 }
