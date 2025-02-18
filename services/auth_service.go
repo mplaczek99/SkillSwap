@@ -27,7 +27,7 @@ func (s *AuthService) Register(user *models.User) (string, error) {
 		return "", err
 	}
 
-	token, err := utils.GenerateToken(user.ID, user.Role)
+	token, err := utils.GenerateToken(user.ID, user.Role, user.Email)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +45,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 		return "", errors.New("invalid email or password")
 	}
 
-	token, err := utils.GenerateToken(user.ID, user.Role)
+	token, err := utils.GenerateToken(user.ID, user.Role, user.Email)
 	if err != nil {
 		return "", err
 	}

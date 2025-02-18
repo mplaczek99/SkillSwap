@@ -12,16 +12,18 @@ var secretKey = []byte(os.Getenv("JWT_SECRET"))
 type Claims struct {
 	UserID uint   `json:"user_id"`
 	Role   string `json:"role"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
-// GenerateToken creates a new JWT token that includes the user's role.
-func GenerateToken(userID uint, role string) (string, error) {
+// GenerateToken creates a new JWT token that includes the user's ID, role, and email.
+func GenerateToken(userID uint, role, email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		UserID: userID,
 		Role:   role,
+		Email:  email, // Set the user's email in claims
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // expires in 24 hours
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Token expires in 24 hours
 		},
 	})
 	return token.SignedString(secretKey)

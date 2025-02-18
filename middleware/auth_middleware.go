@@ -7,6 +7,7 @@ import (
 	"github.com/mplaczek99/SkillSwap/utils"
 )
 
+// AuthMiddleware validates JWT and extracts user information
 func AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		tokenString := ctx.GetHeader("Authorization")
@@ -23,8 +24,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Set user details in context
 		ctx.Set("user_id", claims.UserID)
 		ctx.Set("role", claims.Role)
+		ctx.Set("email", claims.Email) // Add email to context
+
+		// Add email to response headers (Optional)
+		ctx.Header("X-User-Email", claims.Email)
+
 		ctx.Next()
 	}
 }
