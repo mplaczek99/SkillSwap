@@ -85,4 +85,3 @@ package middleware_test
 //             return (haystack[:len(needle)] == needle) || (len(haystack) > len(needle) && containsString(haystack[1:], needle))
 //         })()
 // }
-

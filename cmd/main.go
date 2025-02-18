@@ -17,6 +17,7 @@ import (
 
 	_ "github.com/mplaczek99/SkillSwap/docs"
 )
+
 // @title SkillSwap API
 // @version 1.0
 // @description This is a SkillSwap API server.
@@ -42,8 +43,8 @@ func main() {
 	// Initialize the Gin router
 	router := gin.Default()
 
-    // Swagger route
-    router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Swagger route
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Setup routes
 	routes.SetupRoutes(router, authController)

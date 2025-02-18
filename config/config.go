@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/mplaczek99/SkillSwap/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"github.com/mplaczek99/SkillSwap/models"
 )
 
 // ConnectDB opens a connection to your PostgreSQL database using the DSN from environment variables.

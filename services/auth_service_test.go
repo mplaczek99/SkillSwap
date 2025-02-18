@@ -22,4 +22,3 @@ package services_test
 //         t.Errorf("expected error for unknown user, got nil")
 //     }
 // }
-

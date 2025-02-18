@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"net/http"
-  "strings"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mplaczek99/SkillSwap/models"
