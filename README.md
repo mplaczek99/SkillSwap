@@ -81,7 +81,12 @@ cd SkillSwap
 # Tidy up dependencies
 go mod tidy
 
-# Run the application
+# Set up the PostgreSQL database and grant necessary schema permissions.
+# This step installs the DB (if needed), initializes the data directory,
+# starts PostgreSQL, creates the app database and user, and fixes schema permissions.
+go run cmd/main.go --setup-db
+
+# If it is set already, simply run the application
 go run cmd/main.go
 ```
 > **Note:**
