@@ -8,11 +8,17 @@ import (
 	"github.com/mplaczek99/SkillSwap/utils"
 )
 
+// AuthServiceInterface defines the contract for authentication services.
+type AuthServiceInterface interface {
+	Register(user *models.User) (string, error)
+	Login(email, password string) (string, error)
+}
+
 type AuthService struct {
 	UserRepo *repositories.UserRepository
 }
 
-func NewAuthService(userRepo *repositories.UserRepository) *AuthService {
+func NewAuthService(userRepo *repositories.UserRepository) AuthServiceInterface {
 	return &AuthService{UserRepo: userRepo}
 }
 
@@ -51,3 +57,4 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	}
 	return token, nil
 }
+
