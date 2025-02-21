@@ -1,14 +1,17 @@
-version: '3.8'
 services:
   db:
-    image: mysql:8
+    image: postgres:15
+    container_name: skillswap_db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: skillswap_db
+      # Use these if you want them to come from .env
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASS}
+      POSTGRES_DB: ${APP_DB_NAME}
+
     ports:
-      - "3306:3306"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "pg_isready", "-U", "${APP_DB_USER}", "-d", "${APP_DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -17,13 +20,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: skillswap_backend
     ports:
       - "8080:8080"
     environment:
-      - DB_DRIVER=${DB_DRIVER}
-      - DB_SOURCE=${DB_SOURCE}
-      - SERVER_PORT=8080
-      - JWT_SECRET=${JWT_SECRET}
+      # The following will be read from your .env file
+      DB_DRIVER: ${DB_DRIVER}
+      DB_SOURCE: ${DB_SOURCE}
+      SERVER_PORT: ${SERVER_PORT}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       db:
         condition: service_healthy
+
