@@ -76,9 +76,8 @@ The backend will:
 
 ### Prerequisites
 
-1. **Go** (v1.18+ recommended)  
-2. **PostgreSQL** (auto-installed if you use the `--setup-db` flag on macOS or Linux)  
-3. (Optional) **Docker** for containerized deployments  
+1. **Go** (v1.18+ recommended)
+2. **Docker** & **Docker Compose** (Recommended approach)
 
 ### Installation & Running
 
@@ -93,26 +92,29 @@ The backend will:
     go mod tidy
     ```
 
-3. **(Optional) Configure .env**
-    -   Create a .env file to set environment variables like POSTGRES_SUPERUSER, POSTGRES_SUPERPASS, APP_DB_USER, APP_DB_PASS, etc.
-    - If you skip this step, defaults will be used.
+3. **Running with Docker** (Recommended)
+    - **Ensure local Postgres isn't conflicting**: If you have a local PostgreSQL service running on port 5432, stop it or change its port.
 
-4. **Database Setup**
-    You can automatically install and configure PostgreSQL on macOS, Arch Linux, Debian, or Ubuntu with:
+    - **Start the containers**
     ```bash
-    go run cmd/main.go --setup-db
+    docker-compose up --build
     ```
-    
-    This will:
-    - Install PostgreSQL if not present  
-    - Initialize the data directory (`initdb`)  
-    - Start the PostgreSQL service  
-    - Create your app’s database and user, then grant permissions
+    This will sping up two containers:
+    - **db**: A PostgreSQL container
+    - **backend**: Your Go application container (listening on port 8080)
 
-    Once your database is set up, start the application by simply running:
-    ```bash
-    go run cmd/main.go
-    ```
+    **Access**
+        - The API is available at "http://localhost:8080"
+        - The database is running inside Docket at "db:5432"
 
-    By default, the server listens on port 8080. You can override this using the SERVER_PORT environment variable.
+### 📝 Notes
 
+✅ The `--setup-db` flag and automated PostgreSQL installation have been **removed**.
+
+✅ **Port Binding:**  
+   - **Database:** Docker binds PostgreSQL to **host port 5432**.  
+   - **Backend:** The Go application runs on **host port 8080**.  
+
+⚠️ **Troubleshooting:**  
+   - If you encounter **"port already in use"** errors, check that no other service is running on ports **5432** (PostgreSQL) or **8080** (backend).  
+   - Use `docker ps` to verify running containers.  
