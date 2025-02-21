@@ -104,4 +104,3 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, LoginResponse{Token: token})
 }
-

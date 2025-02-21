@@ -36,6 +36,15 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Check code formatting
+        run: |
+          diff=$(gofmt -l .)
+          if [ -n "$diff" ]; then
+            echo "The following files are not formatted:"
+            echo "$diff"
+            exit 1
+          fi
+
       - name: Run tests
         run: go test -v ./...
 

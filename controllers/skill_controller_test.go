@@ -66,4 +66,3 @@ func TestGetSkills(t *testing.T) {
 		t.Errorf("response does not contain dummy skill. Body: %s", w.Body.String())
 	}
 }
-
