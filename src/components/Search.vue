@@ -11,11 +11,7 @@
       <button type="submit">Search</button>
     </form>
     <div class="results" v-if="results.length">
-      <div
-        v-for="(item, index) in results"
-        :key="index"
-        class="result-item"
-      >
+      <div v-for="(item, index) in results" :key="index" class="result-item">
         <h3>{{ item.name }}</h3>
         <p>{{ item.skill }}</p>
       </div>
@@ -28,10 +24,10 @@
 
 <script>
 export default {
-  name: 'Search',
+  name: "Search",
   data() {
     return {
-      query: '',
+      query: "",
       results: [],
       searched: false,
       searchTimeout: null,
@@ -43,13 +39,14 @@ export default {
       // If running under Jest (JEST_WORKER_ID is defined), resolve immediately.
       if (process.env.JEST_WORKER_ID) {
         const dummyData = [
-          { name: 'Alice', skill: 'Guitar' },
-          { name: 'Bob', skill: 'Spanish' },
-          { name: 'Charlie', skill: 'Cooking' },
+          { name: "Alice", skill: "Guitar" },
+          { name: "Bob", skill: "Spanish" },
+          { name: "Charlie", skill: "Cooking" },
         ];
-        this.results = dummyData.filter((item) =>
-          item.name.toLowerCase().includes(this.query.toLowerCase()) ||
-          item.skill.toLowerCase().includes(this.query.toLowerCase())
+        this.results = dummyData.filter(
+          (item) =>
+            item.name.toLowerCase().includes(this.query.toLowerCase()) ||
+            item.skill.toLowerCase().includes(this.query.toLowerCase()),
         );
         this.searched = true;
         return;
@@ -58,13 +55,14 @@ export default {
       await new Promise((resolve) => {
         this.searchTimeout = setTimeout(() => {
           const dummyData = [
-            { name: 'Alice', skill: 'Guitar' },
-            { name: 'Bob', skill: 'Spanish' },
-            { name: 'Charlie', skill: 'Cooking' },
+            { name: "Alice", skill: "Guitar" },
+            { name: "Bob", skill: "Spanish" },
+            { name: "Charlie", skill: "Cooking" },
           ];
-          this.results = dummyData.filter((item) =>
-            item.name.toLowerCase().includes(this.query.toLowerCase()) ||
-            item.skill.toLowerCase().includes(this.query.toLowerCase())
+          this.results = dummyData.filter(
+            (item) =>
+              item.name.toLowerCase().includes(this.query.toLowerCase()) ||
+              item.skill.toLowerCase().includes(this.query.toLowerCase()),
           );
           this.searched = true;
           resolve();
@@ -103,4 +101,3 @@ form button {
   border-radius: 4px;
 }
 </style>
-

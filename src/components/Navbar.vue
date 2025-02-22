@@ -13,18 +13,18 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from "vuex";
 
 export default {
-  name: 'Navbar',
+  name: "Navbar",
   computed: {
-    ...mapGetters(['isAuthenticated']),
+    ...mapGetters(["isAuthenticated"]),
   },
   methods: {
-    ...mapMutations(['logout']),
+    ...mapMutations(["logout"]),
     handleLogout() {
       this.logout();
-      this.$router.push('/login');
+      this.$router.push("/login");
     },
   },
 };
@@ -42,4 +42,3 @@ export default {
   margin-left: 1rem;
 }
 </style>
-

@@ -5,7 +5,10 @@
       <div
         v-for="(message, index) in messages"
         :key="index"
-        :class="{'my-message': message.sender === currentUser, 'other-message': message.sender !== currentUser}"
+        :class="{
+          'my-message': message.sender === currentUser,
+          'other-message': message.sender !== currentUser,
+        }"
       >
         <strong>{{ message.sender }}:</strong> {{ message.text }}
       </div>
@@ -24,29 +27,29 @@
 
 <script>
 export default {
-  name: 'Chat',
+  name: "Chat",
   data() {
     return {
-      currentUser: 'Me',
-      newMessage: '',
+      currentUser: "Me",
+      newMessage: "",
       messages: [
-        { sender: 'Alice', text: 'Hello!' },
-        { sender: 'Me', text: 'Hi, how are you?' },
+        { sender: "Alice", text: "Hello!" },
+        { sender: "Me", text: "Hi, how are you?" },
       ],
     };
   },
   updated() {
-    const container = this.$el.querySelector('.messages');
+    const container = this.$el.querySelector(".messages");
     if (container) container.scrollTop = container.scrollHeight;
   },
   methods: {
     sendMessage() {
-      if (this.newMessage.trim() !== '') {
+      if (this.newMessage.trim() !== "") {
         this.messages.push({
           sender: this.currentUser,
           text: this.newMessage.trim(),
         });
-        this.newMessage = '';
+        this.newMessage = "";
       }
     },
   },
@@ -92,4 +95,3 @@ export default {
   font-size: 1rem;
 }
 </style>
-

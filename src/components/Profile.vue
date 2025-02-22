@@ -15,7 +15,7 @@
 
     <!-- Toggle Edit Mode -->
     <button @click="toggleEdit" class="edit-button">
-      {{ editing ? 'Cancel Edit' : 'Edit Profile' }}
+      {{ editing ? "Cancel Edit" : "Edit Profile" }}
     </button>
 
     <!-- Edit Form -->
@@ -27,7 +27,12 @@
         </div>
         <div>
           <label for="email">Email:</label>
-          <input id="email" v-model="editedProfile.email" type="email" required />
+          <input
+            id="email"
+            v-model="editedProfile.email"
+            type="email"
+            required
+          />
         </div>
         <div>
           <label for="bio">Bio:</label>
@@ -57,11 +62,11 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import ProfileCard from './ProfileCard.vue';
+import { mapGetters } from "vuex";
+import ProfileCard from "./ProfileCard.vue";
 
 export default {
-  name: 'Profile',
+  name: "Profile",
   components: {
     ProfileCard,
   },
@@ -69,20 +74,20 @@ export default {
     return {
       editing: false,
       editedProfile: {
-        name: '',
-        email: '',
-        bio: '',
+        name: "",
+        email: "",
+        bio: "",
       },
       userSkills: [],
-      defaultSkillImage: 'https://via.placeholder.com/80',
+      defaultSkillImage: "https://via.placeholder.com/80",
     };
   },
   computed: {
-    ...mapGetters(['user']),
+    ...mapGetters(["user"]),
     // For demo purposes, we assume the user may have an avatar URL.
     // You can later extend your user model to include an avatar.
     profileImage() {
-      return this.user.avatar || 'https://via.placeholder.com/80';
+      return this.user.avatar || "https://via.placeholder.com/80";
     },
   },
   created() {
@@ -91,7 +96,7 @@ export default {
       this.editedProfile = {
         name: this.user.name,
         email: this.user.email,
-        bio: this.user.bio || '',
+        bio: this.user.bio || "",
       };
     }
     this.fetchUserSkills();
@@ -104,30 +109,41 @@ export default {
         this.editedProfile = {
           name: this.user.name,
           email: this.user.email,
-          bio: this.user.bio || '',
+          bio: this.user.bio || "",
         };
       }
     },
     submitProfile() {
-      this.$store.dispatch('updateProfile', this.editedProfile);
+      this.$store.dispatch("updateProfile", this.editedProfile);
       this.editing = false;
     },
     fetchUserSkills() {
       // For now, we simulate user skills with dummy data.
       // In a production app, you would fetch skills from an API endpoint.
       const dummySkills = [
-        { name: 'Go Programming', description: 'Learn the basics of Go', image: '' },
-        { name: 'Vue.js', description: 'Frontend development with Vue', image: '' },
+        {
+          name: "Go Programming",
+          description: "Learn the basics of Go",
+          image: "",
+        },
+        {
+          name: "Vue.js",
+          description: "Frontend development with Vue",
+          image: "",
+        },
       ];
       this.userSkills = dummySkills;
     },
     addSkill() {
       // Navigate to a page or open a modal to add a new skill.
-      this.$router.push('/add-skill');
+      this.$router.push("/add-skill");
     },
     viewSkill(skill) {
       // Navigate to a detailed view of the selected skill.
-      this.$router.push({ name: 'SkillDetails', params: { skillName: skill.name } });
+      this.$router.push({
+        name: "SkillDetails",
+        params: { skillName: skill.name },
+      });
     },
   },
   watch: {
@@ -136,7 +152,7 @@ export default {
         this.editedProfile = {
           name: newVal.name,
           email: newVal.email,
-          bio: newVal.bio || '',
+          bio: newVal.bio || "",
         };
       }
     },
@@ -195,4 +211,3 @@ export default {
   cursor: pointer;
 }
 </style>
-

@@ -4,7 +4,12 @@
     <form @submit.prevent="submitRegister">
       <input type="text" v-model="name" placeholder="Name" required />
       <input type="email" v-model="email" placeholder="Email" required />
-      <input type="password" v-model="password" placeholder="Password" required />
+      <input
+        type="password"
+        v-model="password"
+        placeholder="Password"
+        required
+      />
       <button type="submit">Register</button>
       <p v-if="error" class="error">{{ error }}</p>
     </form>
@@ -13,26 +18,26 @@
 
 <script>
 export default {
-  name: 'RegisterForm',
+  name: "RegisterForm",
   data() {
     return {
-      name: '',
-      email: '',
-      password: '',
+      name: "",
+      email: "",
+      password: "",
       error: null,
     };
   },
   methods: {
     async submitRegister() {
       try {
-        await this.$store.dispatch('register', {
+        await this.$store.dispatch("register", {
           name: this.name,
           email: this.email,
           password: this.password,
         });
-        this.$router.push('/');
+        this.$router.push("/");
       } catch (err) {
-        this.error = err.response?.data?.error || 'Registration failed';
+        this.error = err.response?.data?.error || "Registration failed";
       }
     },
   },
@@ -49,4 +54,3 @@ export default {
   margin-top: 1rem;
 }
 </style>
-

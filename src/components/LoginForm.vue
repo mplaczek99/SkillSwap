@@ -3,7 +3,12 @@
     <h2>Login</h2>
     <form @submit.prevent="submitLogin">
       <input type="email" v-model="email" placeholder="Email" required />
-      <input type="password" v-model="password" placeholder="Password" required />
+      <input
+        type="password"
+        v-model="password"
+        placeholder="Password"
+        required
+      />
       <button type="submit">Login</button>
       <p v-if="error" class="error">{{ error }}</p>
     </form>
@@ -12,24 +17,24 @@
 
 <script>
 export default {
-  name: 'LoginForm',
+  name: "LoginForm",
   data() {
     return {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
       error: null,
     };
   },
   methods: {
     async submitLogin() {
       try {
-        await this.$store.dispatch('login', {
+        await this.$store.dispatch("login", {
           email: this.email,
           password: this.password,
         });
-        this.$router.push('/');
+        this.$router.push("/");
       } catch (err) {
-        this.error = err.response?.data?.error || 'Login failed';
+        this.error = err.response?.data?.error || "Login failed";
       }
     },
   },
@@ -46,4 +51,3 @@ export default {
   margin-top: 1rem;
 }
 </style>
-

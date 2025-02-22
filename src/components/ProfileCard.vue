@@ -4,24 +4,26 @@
     <div class="profile-card__info">
       <h2 class="profile-card__title">{{ title }}</h2>
       <p class="profile-card__description">{{ description }}</p>
-      <button class="profile-card__button" @click="viewProfile">Learn More</button>
+      <button class="profile-card__button" @click="viewProfile">
+        Learn More
+      </button>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'ProfileCard',
+  name: "ProfileCard",
   props: {
     title: { type: String, required: true },
     description: { type: String, required: true },
-    imageSrc: { type: String, required: true }
+    imageSrc: { type: String, required: true },
   },
   methods: {
     viewProfile() {
-      this.$emit('open-profile');
-    }
-  }
+      this.$emit("open-profile");
+    },
+  },
 };
 </script>
 
@@ -34,12 +36,14 @@ export default {
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 .profile-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 .profile-card__avatar {
   width: 64px;
@@ -68,14 +72,14 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
-  background-color: var(--primary-color, #4CAF50);
+  background-color: var(--primary-color, #4caf50);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 .profile-card__button:hover {
-  background-color: var(--primary-color-dark, #388E3C);
+  background-color: var(--primary-color-dark, #388e3c);
 }
 @media (max-width: 600px) {
   .profile-card {
@@ -87,4 +91,3 @@ export default {
   }
 }
 </style>
-

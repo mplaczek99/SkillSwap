@@ -7,7 +7,7 @@
 
 <script>
 export default {
-  name: 'Dashboard',
+  name: "Dashboard",
   computed: {
     user() {
       return this.$store.state.user || {};
@@ -21,4 +21,3 @@ export default {
   padding: 2rem;
 }
 </style>
-
