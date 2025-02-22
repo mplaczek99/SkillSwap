@@ -32,7 +32,8 @@ export default {
         });
         this.$router.push('/');
       } catch (err) {
-        this.error = err.response?.data?.message || 'Registration failed';
+        // Backend returns errors under the key "error"
+        this.error = err.response?.data?.error || 'Registration failed';
       }
     },
   },

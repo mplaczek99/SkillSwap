@@ -29,7 +29,8 @@ export default {
         });
         this.$router.push('/');
       } catch (err) {
-        this.error = err.response?.data?.message || 'Login failed';
+        // Backend returns errors under the key "error"
+        this.error = err.response?.data?.error || 'Login failed';
       }
     },
   },
