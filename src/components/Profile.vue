@@ -5,17 +5,19 @@
     <div class="profile-card">
       <img :src="profileImage" alt="Profile Picture" class="profile-avatar" />
       <div class="profile-info">
-        <h3>{{ user ? user.name : 'Guest' }}</h3>
-        <p>{{ user ? user.email : '' }}</p>
+        <h3>{{ user ? user.name : "Guest" }}</h3>
+        <p>{{ user ? user.email : "" }}</p>
         <p v-if="user && user.bio">{{ user.bio }}</p>
         <p v-else>No bio provided.</p>
-        <p><strong>SkillPoints:</strong> {{ user ? (user.skillPoints || 0) : 0 }}</p>
+        <p>
+          <strong>SkillPoints:</strong> {{ user ? user.skillPoints || 0 : 0 }}
+        </p>
       </div>
     </div>
 
     <!-- Toggle Edit Mode -->
     <button @click="toggleEdit" class="edit-button">
-      {{ editing ? 'Cancel Edit' : 'Edit Profile' }}
+      {{ editing ? "Cancel Edit" : "Edit Profile" }}
     </button>
 
     <!-- Edit Form -->
@@ -27,7 +29,12 @@
         </div>
         <div>
           <label for="email">Email:</label>
-          <input id="email" v-model="editedProfile.email" type="email" required />
+          <input
+            id="email"
+            v-model="editedProfile.email"
+            type="email"
+            required
+          />
         </div>
         <div>
           <label for="bio">Bio:</label>
@@ -57,11 +64,11 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import ProfileCard from './ProfileCard.vue';
+import { mapGetters } from "vuex";
+import ProfileCard from "./ProfileCard.vue";
 
 export default {
-  name: 'Profile',
+  name: "Profile",
   components: {
     ProfileCard,
   },
@@ -69,20 +76,20 @@ export default {
     return {
       editing: false,
       editedProfile: {
-        name: '',
-        email: '',
-        bio: '',
+        name: "",
+        email: "",
+        bio: "",
       },
       userSkills: [],
-      defaultSkillImage: 'https://via.placeholder.com/80',
+      defaultSkillImage: "https://via.placeholder.com/80",
     };
   },
   computed: {
-    ...mapGetters(['user']),
+    ...mapGetters(["user"]),
     profileImage() {
-      return this.user && this.user.avatar 
-        ? this.user.avatar 
-        : 'https://via.placeholder.com/80';
+      return this.user && this.user.avatar
+        ? this.user.avatar
+        : "https://via.placeholder.com/80";
     },
   },
   created() {
@@ -91,7 +98,7 @@ export default {
       this.editedProfile = {
         name: this.user.name,
         email: this.user.email,
-        bio: this.user.bio || '',
+        bio: this.user.bio || "",
       };
     }
     this.fetchUserSkills();
@@ -104,27 +111,38 @@ export default {
         this.editedProfile = {
           name: this.user.name,
           email: this.user.email,
-          bio: this.user.bio || '',
+          bio: this.user.bio || "",
         };
       }
     },
     submitProfile() {
-      this.$store.dispatch('updateProfile', this.editedProfile);
+      this.$store.dispatch("updateProfile", this.editedProfile);
       this.editing = false;
     },
     fetchUserSkills() {
       // For now, simulate user skills with dummy data.
       const dummySkills = [
-        { name: 'Go Programming', description: 'Learn the basics of Go', image: '' },
-        { name: 'Vue.js', description: 'Frontend development with Vue', image: '' },
+        {
+          name: "Go Programming",
+          description: "Learn the basics of Go",
+          image: "",
+        },
+        {
+          name: "Vue.js",
+          description: "Frontend development with Vue",
+          image: "",
+        },
       ];
       this.userSkills = dummySkills;
     },
     addSkill() {
-      this.$router.push('/add-skill');
+      this.$router.push("/add-skill");
     },
     viewSkill(skill) {
-      this.$router.push({ name: 'SkillDetails', params: { skillName: skill.name } });
+      this.$router.push({
+        name: "SkillDetails",
+        params: { skillName: skill.name },
+      });
     },
   },
   watch: {
@@ -133,7 +151,7 @@ export default {
         this.editedProfile = {
           name: newVal.name,
           email: newVal.email,
-          bio: newVal.bio || '',
+          bio: newVal.bio || "",
         };
       }
     },
@@ -192,4 +210,3 @@ export default {
   cursor: pointer;
 }
 </style>
-
