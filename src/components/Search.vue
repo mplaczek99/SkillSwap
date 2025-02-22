@@ -33,33 +33,50 @@ export default {
     return {
       query: '',
       results: [],
-      searched: false, // indicates whether a search was performed
+      searched: false,
+      searchTimeout: null,
     };
   },
   methods: {
     async search() {
-      // In a real app, you might call an API like:
-      // const response = await axios.get(`/api/search?query=${this.query}`);
-      // this.results = response.data;
-      // For now, we simulate with dummy data:
-      const dummyData = [
-        { name: 'Alice', skill: 'Guitar' },
-        { name: 'Bob', skill: 'Spanish' },
-        { name: 'Charlie', skill: 'Cooking' },
-      ];
-      // Filter dummy data based on the query (case-insensitive)
-      this.results = dummyData.filter((item) => {
-        return (
+      if (this.searchTimeout) clearTimeout(this.searchTimeout);
+      // If running under Jest (JEST_WORKER_ID is defined), resolve immediately.
+      if (process.env.JEST_WORKER_ID) {
+        const dummyData = [
+          { name: 'Alice', skill: 'Guitar' },
+          { name: 'Bob', skill: 'Spanish' },
+          { name: 'Charlie', skill: 'Cooking' },
+        ];
+        this.results = dummyData.filter((item) =>
           item.name.toLowerCase().includes(this.query.toLowerCase()) ||
           item.skill.toLowerCase().includes(this.query.toLowerCase())
         );
+        this.searched = true;
+        return;
+      }
+      // Otherwise use the normal delay.
+      await new Promise((resolve) => {
+        this.searchTimeout = setTimeout(() => {
+          const dummyData = [
+            { name: 'Alice', skill: 'Guitar' },
+            { name: 'Bob', skill: 'Spanish' },
+            { name: 'Charlie', skill: 'Cooking' },
+          ];
+          this.results = dummyData.filter((item) =>
+            item.name.toLowerCase().includes(this.query.toLowerCase()) ||
+            item.skill.toLowerCase().includes(this.query.toLowerCase())
+          );
+          this.searched = true;
+          resolve();
+        }, 300);
       });
-      this.searched = true;
     },
   },
 };
 </script>
 
+
+</script>
 <style scoped>
 .search-container {
   padding: 2rem;

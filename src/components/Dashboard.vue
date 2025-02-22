@@ -2,7 +2,6 @@
   <div class="dashboard">
     <h2>Welcome to SkillSwap!</h2>
     <p>Your SkillPoints: {{ user.skillPoints || 0 }}</p>
-    <!-- Additional dashboard content can go here -->
   </div>
 </template>
 

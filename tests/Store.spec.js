@@ -1,3 +1,11 @@
+jest.mock('jwt-decode', () =>
+  jest.fn(() => ({
+    user_id: 1,
+    email: 'test@example.com',
+    role: 'User',
+  }))
+);
+
 import store from '@/store'
 import axios from 'axios'
 
@@ -22,19 +30,15 @@ describe('Vuex Store', () => {
 
   it('login action commits token on successful login', async () => {
     jest.spyOn(axios, 'post').mockResolvedValue({ data: { token: 'test-token' } })
-
     await store.dispatch('login', { email: 'test@example.com', password: '123' })
     expect(store.state.token).toBe('test-token')
-
     axios.post.mockRestore()
   })
 
   it('register action commits token on successful register', async () => {
     jest.spyOn(axios, 'post').mockResolvedValue({ data: { token: 'register-token' } })
-
     await store.dispatch('register', { name: 'Test', email: 'test@example.com', password: '123' })
     expect(store.state.token).toBe('register-token')
-
     axios.post.mockRestore()
   })
 })

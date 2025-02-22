@@ -20,7 +20,7 @@ const router = createRouter({
   routes,
 });
 
-// Example navigation guard for protected routes
+// Navigation guard for protected routes
 router.beforeEach((to, from, next) => {
   const publicPages = ['/login', '/register'];
   const authRequired = !publicPages.includes(to.path);

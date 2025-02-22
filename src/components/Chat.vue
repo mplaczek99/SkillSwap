@@ -27,7 +27,6 @@ export default {
   name: 'Chat',
   data() {
     return {
-      // In a real application, currentUser would come from your Vuex store.
       currentUser: 'Me',
       newMessage: '',
       messages: [
@@ -36,17 +35,18 @@ export default {
       ],
     };
   },
+  updated() {
+    const container = this.$el.querySelector('.messages');
+    if (container) container.scrollTop = container.scrollHeight;
+  },
   methods: {
     sendMessage() {
       if (this.newMessage.trim() !== '') {
-        // Append the new message to the messages array.
         this.messages.push({
           sender: this.currentUser,
           text: this.newMessage.trim(),
         });
-        // Clear the input field.
         this.newMessage = '';
-        // In a real app, you would also send this message to your server here.
       }
     },
   },

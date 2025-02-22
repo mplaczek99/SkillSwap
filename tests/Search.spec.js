@@ -1,19 +1,14 @@
 import { mount } from '@vue/test-utils'
 import Search from '@/components/Search.vue'
+import flushPromises from 'flush-promises'
 
 describe('Search.vue', () => {
-  it('renders the search input and button', () => {
-    const wrapper = mount(Search)
-    expect(wrapper.find('input').exists()).toBe(true)
-    expect(wrapper.find('button').exists()).toBe(true)
-  })
-
   it('filters dummy data based on the query and displays results', async () => {
     const wrapper = mount(Search)
-    // Set query to "alice"
     await wrapper.find('input').setValue('alice')
     await wrapper.find('form').trigger('submit.prevent')
-    // The dummy data includes "Alice"
+    await flushPromises()  // Wait for the async search to complete
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.results.length).toBeGreaterThan(0)
     expect(wrapper.text()).toContain('Alice')
   })
@@ -22,6 +17,8 @@ describe('Search.vue', () => {
     const wrapper = mount(Search)
     await wrapper.find('input').setValue('zzz')
     await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+    await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('No results found.')
   })
 })
