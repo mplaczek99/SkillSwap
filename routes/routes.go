@@ -1,3 +1,4 @@
+// File: ./routes/routes.go
 package routes
 
 import (
@@ -7,21 +8,32 @@ import (
 )
 
 func SetupRoutes(router *gin.Engine, authController *controllers.AuthController) {
-	// Public endpoints
-	router.POST("/register", authController.Register)
-	router.POST("/login", authController.Login)
+	// Create an API group for all API routes
+	api := router.Group("/api")
+	{
+		// Auth routes group
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", authController.Register)
+			auth.POST("/login", authController.Login)
+		}
 
-	// Protected endpoints for any authenticated user
-	auth := router.Group("/")
-	auth.Use(middleware.AuthMiddleware())
-	auth.GET("/protected", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{"message": "You are authenticated"})
-	})
+		// Protected endpoints for any authenticated user
+		protected := api.Group("/")
+		protected.Use(middleware.AuthMiddleware())
+		{
+			protected.GET("/protected", func(ctx *gin.Context) {
+				ctx.JSON(200, gin.H{"message": "You are authenticated"})
+			})
+		}
 
-	// Admin-only endpoints
-	admin := router.Group("/admin")
-	admin.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
-	admin.GET("/dashboard", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{"message": "Welcome Admin"})
-	})
+		// Admin-only endpoints
+		admin := api.Group("/admin")
+		admin.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
+		{
+			admin.GET("/dashboard", func(ctx *gin.Context) {
+				ctx.JSON(200, gin.H{"message": "Welcome Admin"})
+			})
+		}
+	}
 }
