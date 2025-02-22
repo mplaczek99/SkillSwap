@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/mplaczek99/SkillSwap/config"
@@ -14,7 +15,6 @@ import (
 	"github.com/mplaczek99/SkillSwap/repositories"
 	"github.com/mplaczek99/SkillSwap/routes"
 	"github.com/mplaczek99/SkillSwap/services"
-	"github.com/gin-contrib/cors"
 
 	_ "github.com/mplaczek99/SkillSwap/docs"
 	swaggerFiles "github.com/swaggo/files"
