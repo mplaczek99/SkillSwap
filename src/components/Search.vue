@@ -75,8 +75,6 @@ export default {
 };
 </script>
 
-
-</script>
 <style scoped>
 .search-container {
   padding: 2rem;
