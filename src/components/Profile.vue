@@ -1,17 +1,25 @@
 <template>
   <div class="profile">
     <h2>Your Profile</h2>
-    <div v-if="!editing">
-      <p><strong>Name:</strong> {{ user.name }}</p>
-      <p><strong>Email:</strong> {{ user.email }}</p>
-      <p>
-        <strong>Bio:</strong>
-        <span v-if="user.bio && user.bio.length">{{ user.bio }}</span>
-        <span v-else>No bio provided.</span>
-      </p>
-      <button @click="startEdit">Edit Profile</button>
+    <!-- Profile Overview Card -->
+    <div class="profile-card">
+      <img :src="profileImage" alt="Profile Picture" class="profile-avatar" />
+      <div class="profile-info">
+        <h3>{{ user.name }}</h3>
+        <p>{{ user.email }}</p>
+        <p v-if="user.bio">{{ user.bio }}</p>
+        <p v-else>No bio provided.</p>
+        <p><strong>SkillPoints:</strong> {{ user.skillPoints || 0 }}</p>
+      </div>
     </div>
-    <div v-else>
+
+    <!-- Toggle Edit Mode -->
+    <button @click="toggleEdit" class="edit-button">
+      {{ editing ? 'Cancel Edit' : 'Edit Profile' }}
+    </button>
+
+    <!-- Edit Form -->
+    <div v-if="editing" class="edit-profile-form">
       <form @submit.prevent="submitProfile">
         <div>
           <label for="name">Name:</label>
@@ -25,16 +33,38 @@
           <label for="bio">Bio:</label>
           <textarea id="bio" v-model="editedProfile.bio"></textarea>
         </div>
-        <button type="submit">Save</button>
-        <button type="button" @click="cancelEdit">Cancel</button>
+        <button type="submit">Save Changes</button>
       </form>
+    </div>
+
+    <!-- My Skills Section -->
+    <div class="my-skills">
+      <h3>My Skills</h3>
+      <div v-if="userSkills.length">
+        <ProfileCard
+          v-for="(skill, index) in userSkills"
+          :key="index"
+          :title="skill.name"
+          :description="skill.description"
+          :imageSrc="skill.image || defaultSkillImage"
+          @open-profile="viewSkill(skill)"
+        />
+      </div>
+      <p v-else>You haven't added any skills yet.</p>
+      <button @click="addSkill">Add New Skill</button>
     </div>
   </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+import ProfileCard from './ProfileCard.vue';
+
 export default {
   name: 'Profile',
+  components: {
+    ProfileCard,
+  },
   data() {
     return {
       editing: false,
@@ -43,42 +73,72 @@ export default {
         email: '',
         bio: '',
       },
+      userSkills: [],
+      defaultSkillImage: 'https://via.placeholder.com/80',
     };
   },
   computed: {
-    user() {
-      return this.$store.getters.user || {};
+    ...mapGetters(['user']),
+    // For demo purposes, we assume the user may have an avatar URL.
+    // You can later extend your user model to include an avatar.
+    profileImage() {
+      return this.user.avatar || 'https://via.placeholder.com/80';
     },
   },
-  methods: {
-    startEdit() {
-      this.editing = true;
+  created() {
+    // Initialize editedProfile with current user data.
+    if (this.user) {
       this.editedProfile = {
         name: this.user.name,
         email: this.user.email,
         bio: this.user.bio || '',
       };
+    }
+    this.fetchUserSkills();
+  },
+  methods: {
+    toggleEdit() {
+      this.editing = !this.editing;
+      if (!this.editing) {
+        // Reset changes if canceled
+        this.editedProfile = {
+          name: this.user.name,
+          email: this.user.email,
+          bio: this.user.bio || '',
+        };
+      }
     },
     submitProfile() {
       this.$store.dispatch('updateProfile', this.editedProfile);
       this.editing = false;
     },
-    cancelEdit() {
-      this.editing = false;
+    fetchUserSkills() {
+      // For now, we simulate user skills with dummy data.
+      // In a production app, you would fetch skills from an API endpoint.
+      const dummySkills = [
+        { name: 'Go Programming', description: 'Learn the basics of Go', image: '' },
+        { name: 'Vue.js', description: 'Frontend development with Vue', image: '' },
+      ];
+      this.userSkills = dummySkills;
+    },
+    addSkill() {
+      // Navigate to a page or open a modal to add a new skill.
+      this.$router.push('/add-skill');
+    },
+    viewSkill(skill) {
+      // Navigate to a detailed view of the selected skill.
+      this.$router.push({ name: 'SkillDetails', params: { skillName: skill.name } });
     },
   },
   watch: {
-    user: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) {
-          this.editedProfile = {
-            name: newVal.name,
-            email: newVal.email,
-            bio: newVal.bio || '',
-          };
-        }
-      },
+    user(newVal) {
+      if (newVal) {
+        this.editedProfile = {
+          name: newVal.name,
+          email: newVal.email,
+          bio: newVal.bio || '',
+        };
+      }
     },
   },
 };
@@ -88,26 +148,51 @@ export default {
 .profile {
   padding: 2rem;
 }
-.profile form {
+.profile-card {
   display: flex;
-  flex-direction: column;
-  max-width: 400px;
+  align-items: center;
+  margin-bottom: 1rem;
+  background-color: #f7f7f7;
+  padding: 1rem;
+  border-radius: 8px;
 }
-.profile form div {
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-right: 1rem;
+  object-fit: cover;
+}
+.profile-info h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.edit-button {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.edit-profile-form {
+  margin-bottom: 2rem;
+  border: 1px solid #ccc;
+  padding: 1rem;
+  border-radius: 4px;
+}
+.edit-profile-form form > div {
   margin-bottom: 1rem;
 }
-.profile form label {
-  display: block;
-  margin-bottom: 0.5rem;
+.my-skills {
+  margin-top: 2rem;
 }
-.profile form input,
-.profile form textarea {
-  padding: 0.5rem;
+.my-skills h3 {
+  margin-bottom: 1rem;
+}
+.my-skills button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
   font-size: 1rem;
-  width: 100%;
-}
-.profile form button {
-  margin-right: 0.5rem;
+  cursor: pointer;
 }
 </style>
 
