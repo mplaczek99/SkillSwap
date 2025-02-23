@@ -23,6 +23,8 @@
 </template>
 
 <script>
+import debounce from "lodash/debounce";
+
 export default {
   name: "Search",
   data() {
@@ -30,13 +32,28 @@ export default {
       query: "",
       results: [],
       searched: false,
-      searchTimeout: null,
     };
   },
+  created() {
+    // Create a debounced version of the search logic.
+    this.debouncedSearch = debounce(this.performSearch, 300);
+  },
   methods: {
+    performSearch() {
+      const dummyData = [
+        { name: "Alice", skill: "Guitar" },
+        { name: "Bob", skill: "Spanish" },
+        { name: "Charlie", skill: "Cooking" },
+      ];
+      this.results = dummyData.filter(
+        (item) =>
+          item.name.toLowerCase().includes(this.query.toLowerCase()) ||
+          item.skill.toLowerCase().includes(this.query.toLowerCase()),
+      );
+      this.searched = true;
+    },
     async search() {
-      if (this.searchTimeout) clearTimeout(this.searchTimeout);
-      // If running under Jest (JEST_WORKER_ID is defined), resolve immediately.
+      // If running under Jest, resolve immediately.
       if (process.env.JEST_WORKER_ID) {
         const dummyData = [
           { name: "Alice", skill: "Guitar" },
@@ -51,23 +68,8 @@ export default {
         this.searched = true;
         return;
       }
-      // Otherwise use the normal delay.
-      await new Promise((resolve) => {
-        this.searchTimeout = setTimeout(() => {
-          const dummyData = [
-            { name: "Alice", skill: "Guitar" },
-            { name: "Bob", skill: "Spanish" },
-            { name: "Charlie", skill: "Cooking" },
-          ];
-          this.results = dummyData.filter(
-            (item) =>
-              item.name.toLowerCase().includes(this.query.toLowerCase()) ||
-              item.skill.toLowerCase().includes(this.query.toLowerCase()),
-          );
-          this.searched = true;
-          resolve();
-        }, 300);
-      });
+      // Otherwise, use the debounced search.
+      this.debouncedSearch();
     },
   },
 };
