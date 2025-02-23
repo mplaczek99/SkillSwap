@@ -3,7 +3,21 @@
     <h2>Your Profile</h2>
     <!-- Profile Overview Card -->
     <div class="profile-card">
-      <img :src="profileImage" alt="Profile Picture" class="profile-avatar" />
+      <div class="profile-avatar-container">
+        <template v-if="user && user.avatar">
+          <img
+            :src="user.avatar"
+            alt="Profile Picture"
+            class="profile-avatar"
+          />
+        </template>
+        <template v-else>
+          <font-awesome-icon
+            icon="user"
+            class="profile-avatar default-avatar"
+          />
+        </template>
+      </div>
       <div class="profile-info">
         <h3>{{ user ? user.name : "Guest" }}</h3>
         <p>{{ user ? user.email : "" }}</p>
@@ -86,14 +100,8 @@ export default {
   },
   computed: {
     ...mapGetters(["user"]),
-    profileImage() {
-      return this.user && this.user.avatar
-        ? this.user.avatar
-        : "/default-avatar.svg";
-    },
   },
   created() {
-    // Initialize editedProfile with current user data if available.
     if (this.user) {
       this.editedProfile = {
         name: this.user.name,
@@ -120,7 +128,7 @@ export default {
       this.editing = false;
     },
     fetchUserSkills() {
-      // For now, simulate user skills with dummy data.
+      // Simulate user skills with dummy data
       const dummySkills = [
         {
           name: "Go Programming",
@@ -171,11 +179,18 @@ export default {
   padding: 1rem;
   border-radius: 8px;
 }
+.profile-avatar-container {
+  width: 80px;
+  height: 80px;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  margin-right: 1rem;
   object-fit: cover;
 }
 .profile-info h3 {
@@ -208,5 +223,10 @@ export default {
   padding: 0.5rem 1rem;
   font-size: 1rem;
   cursor: pointer;
+}
+/* Default Font Awesome icon styling for avatar */
+.default-avatar {
+  font-size: 3rem;
+  color: #ccc;
 }
 </style>
