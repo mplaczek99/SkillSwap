@@ -46,7 +46,7 @@ export default {
         this.results = dummyData.filter(
           (item) =>
             item.name.toLowerCase().includes(this.query.toLowerCase()) ||
-            item.skill.toLowerCase().includes(this.query.toLowerCase()),
+            item.skill.toLowerCase().includes(this.query.toLowerCase())
         );
         this.searched = true;
         return;
@@ -62,7 +62,7 @@ export default {
           this.results = dummyData.filter(
             (item) =>
               item.name.toLowerCase().includes(this.query.toLowerCase()) ||
-              item.skill.toLowerCase().includes(this.query.toLowerCase()),
+              item.skill.toLowerCase().includes(this.query.toLowerCase())
           );
           this.searched = true;
           resolve();
