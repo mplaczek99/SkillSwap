@@ -89,7 +89,7 @@ export default {
     profileImage() {
       return this.user && this.user.avatar
         ? this.user.avatar
-        : "https://via.placeholder.com/80";
+        : "/default-avatar.svg";
     },
   },
   created() {
