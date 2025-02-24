@@ -1,4 +1,3 @@
-// File: ./routes/routes.go
 package routes
 
 import (
@@ -17,6 +16,9 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 			auth.POST("/register", authController.Register)
 			auth.POST("/login", authController.Login)
 		}
+
+		// Add the new search endpoint (public access)
+		api.GET("/search", controllers.Search)
 
 		// Protected endpoints for any authenticated user
 		protected := api.Group("/")
