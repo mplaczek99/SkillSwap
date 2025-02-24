@@ -88,4 +88,3 @@ func TestSearchEndpoint_MatchUser(t *testing.T) {
 		t.Errorf("Expected to find a user with email 'test@example.com' in response")
 	}
 }
-

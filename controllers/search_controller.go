@@ -49,4 +49,3 @@ func Search(c *gin.Context) {
 
 	c.JSON(http.StatusOK, results)
 }
-

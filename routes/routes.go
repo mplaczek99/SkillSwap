@@ -39,4 +39,3 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 		}
 	}
 }
-
