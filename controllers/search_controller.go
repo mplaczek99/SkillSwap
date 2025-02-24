@@ -20,14 +20,14 @@ func Search(c *gin.Context) {
 
 	var results []interface{}
 
-	// Search in skills (using our dummy repository)
+	// Search dummy skills from the repository.
 	skills, err := repositories.GetAllSkills()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch skills"})
 		return
 	}
 
-	// Filter skills where the name or description contains the query
+	// Filter skills by name or description.
 	for _, skill := range skills {
 		if strings.Contains(strings.ToLower(skill.Name), strings.ToLower(q)) ||
 			strings.Contains(strings.ToLower(skill.Description), strings.ToLower(q)) {
@@ -35,7 +35,7 @@ func Search(c *gin.Context) {
 		}
 	}
 
-	// Add a dummy user if the query matches (for demonstration)
+	// Also include a dummy user if the query matches.
 	dummyUser := models.User{
 		ID:    1,
 		Name:  "Test User",
@@ -49,3 +49,4 @@ func Search(c *gin.Context) {
 
 	c.JSON(http.StatusOK, results)
 }
+

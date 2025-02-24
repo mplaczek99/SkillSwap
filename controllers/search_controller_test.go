@@ -13,7 +13,6 @@ import (
 
 func setupRouter() *gin.Engine {
 	router := gin.Default()
-	// Register the search endpoint.
 	router.GET("/api/search", controllers.Search)
 	return router
 }
@@ -80,7 +79,6 @@ func TestSearchEndpoint_MatchUser(t *testing.T) {
 
 	found := false
 	for _, r := range results {
-		// Look for the dummy user's email to be sure.
 		if email, ok := r["email"].(string); ok && email == "test@example.com" {
 			found = true
 			break

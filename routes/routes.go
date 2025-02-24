@@ -7,20 +7,20 @@ import (
 )
 
 func SetupRoutes(router *gin.Engine, authController *controllers.AuthController) {
-	// Create an API group for all API routes
+	// Create an API group for all API routes.
 	api := router.Group("/api")
 	{
-		// Auth routes group
+		// Auth routes.
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", authController.Register)
 			auth.POST("/login", authController.Login)
 		}
 
-		// Add the new search endpoint (public access)
+		// Search endpoint.
 		api.GET("/search", controllers.Search)
 
-		// Protected endpoints for any authenticated user
+		// Protected endpoints.
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware())
 		{
@@ -29,7 +29,7 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 			})
 		}
 
-		// Admin-only endpoints
+		// Admin endpoints.
 		admin := api.Group("/admin")
 		admin.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
 		{
@@ -39,3 +39,4 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 		}
 	}
 }
+
