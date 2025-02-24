@@ -14,16 +14,17 @@ import (
 func AddSkill(c *gin.Context) {
 	var skill models.Skill
 	if err := c.ShouldBindJSON(&skill); err != nil {
-		utils.JSONError(c, http.StatusBadRequest, err.Error())
+		utils.JSONError(c, http.StatusBadRequest, "Invalid skill data")
 		return
 	}
+
 	newSkill, err := services.CreateSkill(&skill)
 	if err != nil {
 		if strings.Contains(err.Error(), "required") {
 			utils.JSONError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		utils.JSONError(c, http.StatusInternalServerError, err.Error())
+		utils.JSONError(c, http.StatusInternalServerError, "Failed to add skill")
 		return
 	}
 	c.JSON(http.StatusCreated, newSkill)
@@ -33,7 +34,7 @@ func AddSkill(c *gin.Context) {
 func GetSkills(c *gin.Context) {
 	skills, err := services.GetAllSkills()
 	if err != nil {
-		utils.JSONError(c, http.StatusInternalServerError, err.Error())
+		utils.JSONError(c, http.StatusInternalServerError, "Failed to retrieve skills")
 		return
 	}
 	c.JSON(http.StatusOK, skills)

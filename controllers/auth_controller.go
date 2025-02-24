@@ -17,63 +17,56 @@ func NewAuthController(authService services.AuthServiceInterface) *AuthControlle
 	return &AuthController{AuthService: authService}
 }
 
-// RegisterRequest defines the required fields for registration
+// RegisterRequest defines the required fields for registration.
 type RegisterRequest struct {
-	Name     string `json:"name" binding:"required" example:"John Doe"`
-	Email    string `json:"email" binding:"required,email" example:"john@example.com"`
-	Password string `json:"password" binding:"required,min=6" example:"secret123"`
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
-// RegisterResponse defines the response after successful registration
+// RegisterResponse defines the response after successful registration.
 type RegisterResponse struct {
-	Token string `json:"token" example:"your.jwt.token"`
+	Token string `json:"token"`
 }
 
-// LoginRequest defines the required fields for login
+// LoginRequest defines the required fields for login.
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email" example:"john@example.com"`
-	Password string `json:"password" binding:"required" example:"secret123"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
-// LoginResponse defines the response after successful login
+// LoginResponse defines the response after successful login.
 type LoginResponse struct {
-	Token string `json:"token" example:"your.jwt.token"`
+	Token string `json:"token"`
 }
 
-// ErrorResponse defines the error structure
-type ErrorResponse struct {
-	Error string `json:"error" example:"Invalid input"`
-}
-
-// Register godoc
 func (c *AuthController) Register(ctx *gin.Context) {
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.JSONError(ctx, http.StatusBadRequest, "Invalid input")
+		utils.JSONError(ctx, http.StatusBadRequest, "Invalid registration data")
 		return
 	}
 
 	user := &models.User{
 		Name:     req.Name,
 		Email:    req.Email,
-		Password: req.Password, // Will be hashed in service layer
-		Role:     "User",       // Default role
+		Password: req.Password, // The service layer will handle hashing.
+		Role:     "User",
 	}
 
 	token, err := c.AuthService.Register(user)
 	if err != nil {
-		utils.JSONError(ctx, http.StatusInternalServerError, "Failed to register user")
+		utils.JSONError(ctx, http.StatusInternalServerError, "Registration failed")
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, RegisterResponse{Token: token})
 }
 
-// Login godoc
 func (c *AuthController) Login(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.JSONError(ctx, http.StatusBadRequest, "Invalid credentials")
+		utils.JSONError(ctx, http.StatusBadRequest, "Invalid login data")
 		return
 	}
 
