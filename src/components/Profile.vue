@@ -62,14 +62,18 @@
     <div class="my-skills">
       <h3>My Skills</h3>
       <div v-if="userSkills.length">
-        <ProfileCard
+        <div
           v-for="(skill, index) in userSkills"
           :key="index"
-          :title="skill.name"
-          :description="skill.description"
-          :imageSrc="skill.image || defaultSkillImage"
-          @open-profile="viewSkill(skill)"
-        />
+          class="skill-item"
+        >
+          <SkillImage :skill="skill" />
+          <div class="skill-details">
+            <h4>{{ skill.name }}</h4>
+            <p>{{ skill.description }}</p>
+            <button @click="viewSkill(skill)">Learn More</button>
+          </div>
+        </div>
       </div>
       <p v-else>You haven't added any skills yet.</p>
       <button @click="addSkill">Add New Skill</button>
@@ -79,29 +83,22 @@
 
 <script>
 import { mapGetters } from "vuex";
-import ProfileCard from "./ProfileCard.vue";
+import SkillImage from "@/components/SkillImage.vue";
 
 export default {
   name: "Profile",
-  components: {
-    ProfileCard,
-  },
+  components: { SkillImage },
   data() {
     return {
       editing: false,
-      editedProfile: {
-        name: "",
-        email: "",
-        bio: "",
-      },
+      editedProfile: { name: "", email: "", bio: "" },
       userSkills: [],
-      defaultSkillImage: "https://via.placeholder.com/80",
     };
   },
   computed: {
     ...mapGetters(["user"]),
   },
-  created() {
+  async created() {
     if (this.user) {
       this.editedProfile = {
         name: this.user.name,
@@ -109,13 +106,34 @@ export default {
         bio: this.user.bio || "",
       };
     }
-    this.fetchUserSkills();
+    // Simulate fetching user skills via API.
+    this.userSkills = [
+      {
+        name: "Go Programming",
+        description: "Learn the basics of Go",
+        image: "",
+      },
+      {
+        name: "Vue.js Development",
+        description: "Frontend development with Vue",
+        image: "",
+      },
+      {
+        name: "Guitar Lessons",
+        description: "Play your favorite tunes",
+        image: "",
+      },
+      {
+        name: "Creative Cooking",
+        description: "Exploring cuisines",
+        image: "",
+      },
+    ];
   },
   methods: {
     toggleEdit() {
       this.editing = !this.editing;
       if (!this.editing && this.user) {
-        // Reset changes if canceled
         this.editedProfile = {
           name: this.user.name,
           email: this.user.email,
@@ -126,22 +144,6 @@ export default {
     submitProfile() {
       this.$store.dispatch("updateProfile", this.editedProfile);
       this.editing = false;
-    },
-    fetchUserSkills() {
-      // Simulate user skills with dummy data
-      const dummySkills = [
-        {
-          name: "Go Programming",
-          description: "Learn the basics of Go",
-          image: "",
-        },
-        {
-          name: "Vue.js",
-          description: "Frontend development with Vue",
-          image: "",
-        },
-      ];
-      this.userSkills = dummySkills;
     },
     addSkill() {
       this.$router.push("/add-skill");
@@ -209,24 +211,15 @@ export default {
   padding: 1rem;
   border-radius: 4px;
 }
-.edit-profile-form form > div {
-  margin-bottom: 1rem;
-}
 .my-skills {
   margin-top: 2rem;
 }
-.my-skills h3 {
+.skill-item {
+  display: flex;
+  align-items: center;
   margin-bottom: 1rem;
 }
-.my-skills button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  cursor: pointer;
-}
-/* Default Font Awesome icon styling for avatar */
-.default-avatar {
-  font-size: 3rem;
-  color: #ccc;
+.skill-details {
+  margin-left: 1rem;
 }
 </style>

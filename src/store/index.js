@@ -35,7 +35,6 @@ export default createStore({
         const response = await axios.post("/api/auth/login", credentials);
         commit("setToken", response.data.token);
         const decoded = jwtDecode(response.data.token);
-        // Using a dummy name as token may not include it
         commit("setUser", {
           id: decoded.user_id,
           email: decoded.email,
@@ -67,7 +66,6 @@ export default createStore({
       commit("logout");
     },
     updateProfile({ commit }, profileData) {
-      // Simulate a profile update; replace with an API call if available.
       commit("updateUser", profileData);
     },
   },

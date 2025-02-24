@@ -35,7 +35,6 @@ export default {
     };
   },
   created() {
-    // Create a debounced version of the search logic.
     this.debouncedSearch = debounce(this.performSearch, 300);
   },
   methods: {
@@ -53,7 +52,6 @@ export default {
       this.searched = true;
     },
     async search() {
-      // If running under Jest, resolve immediately.
       if (process.env.JEST_WORKER_ID) {
         const dummyData = [
           { name: "Alice", skill: "Guitar" },
@@ -68,7 +66,6 @@ export default {
         this.searched = true;
         return;
       }
-      // Otherwise, use the debounced search.
       this.debouncedSearch();
     },
   },

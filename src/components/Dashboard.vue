@@ -1,4 +1,3 @@
-<!-- File: ./src/components/Dashboard.vue -->
 <template>
   <div class="dashboard">
     <h2>Welcome to SkillSwap, {{ user.name || "Guest" }}!</h2>
@@ -14,7 +13,7 @@
           :key="index"
         >
           <img
-            :src="skill.image || defaultSkillImage"
+            :src="getSkillImage(skill)"
             alt="Skill Image"
             class="skill-image"
           />
@@ -57,6 +56,8 @@
 </template>
 
 <script>
+import { fetchDynamicIcon } from "@/services/iconService";
+
 export default {
   name: "Dashboard",
   data() {
@@ -65,17 +66,17 @@ export default {
         {
           name: "Go Programming",
           description: "Learn the basics of Go",
-          image: "https://via.placeholder.com/150",
+          image: "",
         },
         {
           name: "Vue.js",
           description: "Frontend development with Vue",
-          image: "https://via.placeholder.com/150",
+          image: "",
         },
         {
           name: "Guitar Lessons",
           description: "Play your favorite tunes",
-          image: "https://via.placeholder.com/150",
+          image: "",
         },
       ],
       recentActivities: [
@@ -86,19 +87,49 @@ export default {
       announcements: [
         {
           title: "New Feature",
-          message: "We are excited to announce a new feature: live chat!",
+          message: "We are excited to announce live chat!",
         },
         {
           title: "Maintenance",
           message: "Scheduled maintenance on Saturday at 2 PM.",
         },
       ],
-      defaultSkillImage: "https://via.placeholder.com/150",
     };
   },
   computed: {
     user() {
       return this.$store.state.user || {};
+    },
+    defaultSkillImage() {
+      return "https://api.iconify.design/fa-solid/cog.svg";
+    },
+  },
+  async created() {
+    // Pre-fetch dynamic icons for featured skills.
+    try {
+      await Promise.all(
+        this.featuredSkills.map(async (skill) => {
+          if (!skill.image || skill.image.trim() === "") {
+            skill.dynamicIcon = await fetchDynamicIcon(skill.name);
+          }
+        }),
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch dynamic icons for featured skills:",
+        error,
+      );
+    }
+  },
+  methods: {
+    getSkillImage(skill) {
+      if (skill.image && skill.image.trim() !== "") {
+        return skill.image;
+      }
+      if (skill.dynamicIcon) {
+        return `https://api.iconify.design/fa-solid/${skill.dynamicIcon}.svg`;
+      }
+      return this.defaultSkillImage;
     },
   },
 };
@@ -110,19 +141,16 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
 }
-
 .featured-skills,
 .recent-activity,
 .announcements {
   margin-top: 2rem;
 }
-
 .skills-list {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
 }
-
 .skill-card {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -130,29 +158,24 @@ export default {
   padding: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
 .skill-image {
   width: 100%;
   height: auto;
   border-radius: 4px;
 }
-
 .skill-info {
   margin-top: 0.5rem;
 }
-
 .recent-activity ul {
   list-style: none;
   padding: 0;
 }
-
 .recent-activity li {
   background: #f9f9f9;
   padding: 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 4px;
 }
-
 .announcements .announcement {
   border: 1px solid #eee;
   padding: 1rem;

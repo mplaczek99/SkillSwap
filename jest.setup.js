@@ -1,6 +1,5 @@
-// jest.setup.js
-import { config } from '@vue/test-utils';
+global.fetch = require('node-fetch');
 
-// Stub the Font Awesome component to avoid resolution warnings in tests.
+import { config } from '@vue/test-utils';
 config.global.stubs['font-awesome-icon'] = true;
 

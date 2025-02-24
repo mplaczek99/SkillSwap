@@ -7,7 +7,7 @@ module.exports = {
   extends: [
     'plugin:vue/essential',
     'eslint:recommended',
-    'prettier' // Use the base Prettier config instead of @vue/prettier
+    'prettier'
   ],
   rules: {
     'vue/multi-word-component-names': 'off',
