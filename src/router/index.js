@@ -1,10 +1,12 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Dashboard from "@/components/Dashboard.vue";
-import LoginForm from "@/components/LoginForm.vue";
-import RegisterForm from "@/components/RegisterForm.vue";
-import Profile from "@/components/Profile.vue";
-import Search from "@/components/Search.vue";
-import Chat from "@/components/Chat.vue";
+
+// Lazy-load components for performance optimization
+const Dashboard = () => import("@/components/Dashboard.vue");
+const LoginForm = () => import("@/components/LoginForm.vue");
+const RegisterForm = () => import("@/components/RegisterForm.vue");
+const Profile = () => import("@/components/Profile.vue");
+const Search = () => import("@/components/Search.vue");
+const Chat = () => import("@/components/Chat.vue");
 
 const routes = [
   { path: "/", name: "Dashboard", component: Dashboard },
@@ -27,9 +29,11 @@ router.beforeEach((to, from, next) => {
   const loggedIn = localStorage.getItem("token");
 
   if (authRequired && !loggedIn) {
-    return next("/login");
+    next("/login");
+  } else {
+    next();
   }
-  next();
 });
 
 export default router;
+
