@@ -74,7 +74,9 @@ export default {
           (item) =>
             item.name.toLowerCase().includes(this.query.toLowerCase()) ||
             (item.description &&
-              item.description.toLowerCase().includes(this.query.toLowerCase()))
+              item.description
+                .toLowerCase()
+                .includes(this.query.toLowerCase())),
         );
         this.searched = true;
       } else {
@@ -113,4 +115,3 @@ form button {
   border-radius: 4px;
 }
 </style>
-
