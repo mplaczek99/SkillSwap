@@ -11,12 +11,7 @@
       <button type="submit">Search</button>
     </form>
     <div class="results" v-if="results.length">
-      <div
-        v-for="(item, index) in results"
-        :key="index"
-        class="result-item"
-      >
-        <!-- Display different info based on item type -->
+      <div v-for="(item, index) in results" :key="index" class="result-item">
         <h3>{{ item.name }}</h3>
         <p v-if="item.description">Description: {{ item.description }}</p>
         <p v-if="item.email">Email: {{ item.email }}</p>
@@ -34,6 +29,13 @@ import debounce from "lodash/debounce";
 
 export default {
   name: "Search",
+  props: {
+    // When set to true, the component always calls the API even in test environments.
+    forceApiCall: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       query: "",
@@ -42,7 +44,7 @@ export default {
     };
   },
   created() {
-    // Debounce the API call to limit requests on rapid input.
+    // Debounce the API call to limit rapid requests.
     this.debouncedSearch = debounce(this.performSearch, 300);
   },
   methods: {
@@ -51,7 +53,6 @@ export default {
         const response = await axios.get("/api/search", {
           params: { q: this.query },
         });
-        // Expect an array of results (skills/users)
         this.results = response.data;
       } catch (error) {
         console.error("Search API error:", error);
@@ -60,8 +61,10 @@ export default {
       this.searched = true;
     },
     async search() {
-      // In test environments, you may use dummy data.
-      if (process.env.JEST_WORKER_ID) {
+      if (this.forceApiCall) {
+        this.debouncedSearch();
+      } else if (process.env.JEST_WORKER_ID) {
+        // Fallback dummy data if forceApiCall is not enabled.
         const dummyData = [
           { name: "Alice", description: "Guitar" },
           { name: "Bob", description: "Spanish" },
@@ -75,7 +78,6 @@ export default {
         );
         this.searched = true;
       } else {
-        // Use the debounced API call for production
         this.debouncedSearch();
       }
     },
