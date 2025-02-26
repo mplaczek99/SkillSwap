@@ -30,7 +30,6 @@ import debounce from "lodash/debounce";
 export default {
   name: "Search",
   props: {
-    // When set to true, the component always calls the API even in test environments.
     forceApiCall: {
       type: Boolean,
       default: false,
@@ -44,7 +43,6 @@ export default {
     };
   },
   created() {
-    // Debounce the API call to limit rapid requests.
     this.debouncedSearch = debounce(this.performSearch, 300);
   },
   methods: {
@@ -56,6 +54,12 @@ export default {
         this.results = response.data;
       } catch (error) {
         console.error("Search API error:", error);
+        // If using a toast notification library, show a friendly error.
+        if (this.$toast) {
+          this.$toast.error(
+            "An error occurred while searching. Please try again later.",
+          );
+        }
         this.results = [];
       }
       this.searched = true;
@@ -64,7 +68,7 @@ export default {
       if (this.forceApiCall) {
         this.debouncedSearch();
       } else if (process.env.JEST_WORKER_ID) {
-        // Fallback dummy data if forceApiCall is not enabled.
+        // Provide dummy data in test environments.
         const dummyData = [
           { name: "Alice", description: "Guitar" },
           { name: "Bob", description: "Spanish" },
