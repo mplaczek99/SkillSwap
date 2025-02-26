@@ -9,7 +9,8 @@
     <div v-if="schedules.length">
       <ul>
         <li v-for="(schedule, index) in schedules" :key="index">
-          Session on Skill ID: {{ schedule.skill_id }} from {{ schedule.startTime }} to {{ schedule.endTime }}
+          Session on Skill ID: {{ schedule.skill_id }} from
+          {{ schedule.startTime }} to {{ schedule.endTime }}
         </li>
       </ul>
     </div>
@@ -29,9 +30,9 @@ export default {
       newSchedule: {
         skill_id: 1, // For demonstration, a default skill ID.
         startTime: "",
-        endTime: ""
+        endTime: "",
       },
-      schedules: []
+      schedules: [],
     };
   },
   created() {
@@ -56,8 +57,8 @@ export default {
       } catch (error) {
         console.error("Error fetching schedules:", error);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -71,4 +72,3 @@ form {
   gap: 1rem;
 }
 </style>
-
