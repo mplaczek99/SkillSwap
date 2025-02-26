@@ -54,20 +54,20 @@ describe("Profile.vue", () => {
       },
     });
 
-    // Initially, the edit form should not be visible.
-    expect(wrapper.find("form").exists()).toBe(false);
+    // Initially, the edit profile form should not be visible.
+    expect(wrapper.find('[data-test="edit-profile-form"]').exists()).toBe(false);
 
     // Click the edit button to enter edit mode.
-    await wrapper.find("button.edit-button").trigger("click");
-    expect(wrapper.find("form").exists()).toBe(true);
+    await wrapper.find('[data-test="edit-button"]').trigger("click");
+    expect(wrapper.find('[data-test="edit-profile-form"]').exists()).toBe(true);
 
     // Verify that the form inputs have the current user info.
     const nameInput = wrapper.find("input#name");
     expect(nameInput.element.value).toBe(userData.name);
 
     // Toggle edit mode off.
-    await wrapper.find("button.edit-button").trigger("click");
-    expect(wrapper.find("form").exists()).toBe(false);
+    await wrapper.find('[data-test="edit-button"]').trigger("click");
+    expect(wrapper.find('[data-test="edit-profile-form"]').exists()).toBe(false);
   });
 
   it("dispatches updateProfile on form submission", async () => {
@@ -80,14 +80,14 @@ describe("Profile.vue", () => {
     });
 
     // Enter edit mode.
-    await wrapper.find("button.edit-button").trigger("click");
+    await wrapper.find('[data-test="edit-button"]').trigger("click");
 
     // Change the bio field.
     const bioTextarea = wrapper.find("textarea#bio");
     await bioTextarea.setValue("Updated bio");
 
     // Submit the form.
-    await wrapper.find("form").trigger("submit.prevent");
+    await wrapper.find('[data-test="edit-profile-form"]').trigger("submit.prevent");
 
     expect(actions.updateProfile).toHaveBeenCalled();
     expect(actions.updateProfile.mock.calls[0][1]).toEqual(
