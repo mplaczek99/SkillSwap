@@ -6,9 +6,7 @@ describe("RegisterForm.vue", () => {
   let actions, store, routerPushMock;
 
   beforeEach(() => {
-    actions = {
-      register: jest.fn(() => Promise.resolve()),
-    };
+    actions = { register: jest.fn(() => Promise.resolve()) };
     store = createStore({
       state: {},
       actions,
@@ -16,7 +14,7 @@ describe("RegisterForm.vue", () => {
     routerPushMock = jest.fn();
   });
 
-  it("renders the register form correctly", () => {
+  it("renders register form correctly", () => {
     const wrapper = mount(RegisterForm, {
       global: {
         plugins: [store],
@@ -30,7 +28,7 @@ describe("RegisterForm.vue", () => {
     expect(wrapper.find("button").text()).toBe("Register");
   });
 
-  it("calls the register action on form submission and redirects on success", async () => {
+  it("calls register action and redirects on success", async () => {
     const wrapper = mount(RegisterForm, {
       global: {
         plugins: [store],
@@ -48,10 +46,8 @@ describe("RegisterForm.vue", () => {
     expect(routerPushMock).toHaveBeenCalledWith("/");
   });
 
-  it("displays an error message when registration fails", async () => {
-    actions.register.mockRejectedValueOnce({
-      response: { data: { error: "Registration error" } },
-    });
+  it("displays error message when registration fails", async () => {
+    actions.register.mockRejectedValueOnce({ response: { data: { error: "Registration error" } } });
     const wrapper = mount(RegisterForm, {
       global: {
         plugins: [store],
@@ -68,3 +64,4 @@ describe("RegisterForm.vue", () => {
     expect(wrapper.find(".error").text()).toBe("Registration error");
   });
 });
+

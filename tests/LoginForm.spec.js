@@ -6,9 +6,7 @@ describe("LoginForm.vue", () => {
   let actions, store, routerPushMock;
 
   beforeEach(() => {
-    actions = {
-      login: jest.fn(() => Promise.resolve()),
-    };
+    actions = { login: jest.fn(() => Promise.resolve()) };
     store = createStore({
       state: {},
       actions,
@@ -20,9 +18,7 @@ describe("LoginForm.vue", () => {
     const wrapper = mount(LoginForm, {
       global: {
         plugins: [store],
-        mocks: {
-          $router: { push: routerPushMock },
-        },
+        mocks: { $router: { push: routerPushMock } },
       },
     });
 
@@ -31,7 +27,7 @@ describe("LoginForm.vue", () => {
     expect(wrapper.find("button").text()).toBe("Login");
   });
 
-  it("calls the login action on form submission and redirects on success", async () => {
+  it("calls login action and redirects on success", async () => {
     const wrapper = mount(LoginForm, {
       global: {
         plugins: [store],
@@ -39,7 +35,6 @@ describe("LoginForm.vue", () => {
       },
     });
 
-    // Set input values
     await wrapper.find('input[type="email"]').setValue("test@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
     await wrapper.find("form").trigger("submit.prevent");
@@ -49,10 +44,8 @@ describe("LoginForm.vue", () => {
     expect(routerPushMock).toHaveBeenCalledWith("/");
   });
 
-  it("displays an error message when login fails", async () => {
-    actions.login.mockRejectedValueOnce({
-      response: { data: { error: "Invalid credentials" } },
-    });
+  it("displays error message when login fails", async () => {
+    actions.login.mockRejectedValueOnce({ response: { data: { error: "Invalid credentials" } } });
     const wrapper = mount(LoginForm, {
       global: {
         plugins: [store],
@@ -68,3 +61,4 @@ describe("LoginForm.vue", () => {
     expect(wrapper.find(".error").text()).toBe("Invalid credentials");
   });
 });
+

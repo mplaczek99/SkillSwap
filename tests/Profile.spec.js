@@ -54,18 +54,14 @@ describe("Profile.vue", () => {
       },
     });
 
-    // Initially, the edit profile form should not be visible.
     expect(wrapper.find('[data-test="edit-profile-form"]').exists()).toBe(false);
 
-    // Click the edit button to enter edit mode.
     await wrapper.find('[data-test="edit-button"]').trigger("click");
     expect(wrapper.find('[data-test="edit-profile-form"]').exists()).toBe(true);
 
-    // Verify that the form inputs have the current user info.
     const nameInput = wrapper.find("input#name");
     expect(nameInput.element.value).toBe(userData.name);
 
-    // Toggle edit mode off.
     await wrapper.find('[data-test="edit-button"]').trigger("click");
     expect(wrapper.find('[data-test="edit-profile-form"]').exists()).toBe(false);
   });
@@ -79,14 +75,11 @@ describe("Profile.vue", () => {
       },
     });
 
-    // Enter edit mode.
     await wrapper.find('[data-test="edit-button"]').trigger("click");
 
-    // Change the bio field.
     const bioTextarea = wrapper.find("textarea#bio");
     await bioTextarea.setValue("Updated bio");
 
-    // Submit the form.
     await wrapper.find('[data-test="edit-profile-form"]').trigger("submit.prevent");
 
     expect(actions.updateProfile).toHaveBeenCalled();
@@ -101,7 +94,6 @@ describe("Profile.vue", () => {
         plugins: [store],
         mocks: { $router: { push: routerPushMock } },
         stubs: {
-          // Stub ProfileCard to render a simplified version of the skill.
           ProfileCard: {
             template:
               '<div class="profile-card-stub">{{ title }} - {{ description }}</div>',
@@ -111,10 +103,10 @@ describe("Profile.vue", () => {
       },
     });
 
-    // The created hook in Profile.vue sets dummy skills: "Go Programming" and "Vue.js"
     const skillsSection = wrapper.find(".my-skills");
     expect(skillsSection.exists()).toBe(true);
     expect(skillsSection.text()).toContain("Go Programming");
-    expect(skillsSection.text()).toContain("Vue.js");
+    expect(skillsSection.text()).toContain("Vue.js Development");
   });
 });
+

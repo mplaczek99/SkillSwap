@@ -6,7 +6,6 @@ describe("App.vue", () => {
   it("renders Navbar component and router-view", () => {
     const wrapper = shallowMount(App, {
       global: {
-        // Stub router-view so it renders a simple placeholder
         stubs: {
           "router-view": { template: '<div class="router-view-stub"></div>' },
         },
@@ -16,3 +15,4 @@ describe("App.vue", () => {
     expect(wrapper.find(".router-view-stub").exists()).toBe(true);
   });
 });
+

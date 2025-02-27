@@ -6,7 +6,6 @@ describe("Navbar.vue", () => {
   let store, mutations;
 
   beforeEach(() => {
-    // Create a dummy logout mutation spy
     mutations = { logout: jest.fn() };
   });
 
@@ -19,26 +18,19 @@ describe("Navbar.vue", () => {
     const wrapper = mount(Navbar, {
       global: {
         plugins: [store],
-        // Stub router-link to render its default slot as a simple <a> tag
         stubs: {
-          "router-link": {
-            template: "<a><slot /></a>",
-          },
+          "router-link": { template: "<a><slot /></a>" },
         },
-        mocks: {
-          // Provide a dummy $router so that calls to push do not fail
-          $router: { push: jest.fn() },
-        },
+        mocks: { $router: { push: jest.fn() } },
       },
     });
 
-    // Now the stub renders text content from its slot
     expect(wrapper.text()).toContain("Login");
     expect(wrapper.text()).toContain("Register");
     expect(wrapper.text()).not.toContain("Logout");
   });
 
-  it("renders logout button when authenticated and calls logout mutation", async () => {
+  it("renders logout button when authenticated and calls logout", async () => {
     store = createStore({
       state: { token: "dummy-token" },
       getters: { isAuthenticated: (state) => !!state.token },
@@ -48,14 +40,8 @@ describe("Navbar.vue", () => {
     const wrapper = mount(Navbar, {
       global: {
         plugins: [store],
-        stubs: {
-          "router-link": {
-            template: "<a><slot /></a>",
-          },
-        },
-        mocks: {
-          $router: { push: routerPushMock },
-        },
+        stubs: { "router-link": { template: "<a><slot /></a>" } },
+        mocks: { $router: { push: routerPushMock } },
       },
     });
 
@@ -66,3 +52,4 @@ describe("Navbar.vue", () => {
     expect(routerPushMock).toHaveBeenCalledWith("/login");
   });
 });
+
