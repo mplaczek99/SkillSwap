@@ -4,9 +4,17 @@ import jwtDecode from "jwt-decode";
 
 axios.defaults.baseURL = process.env.VUE_APP_API_URL || "http://localhost:8080";
 
+// Initialize storedUser outside the store definition.
+let storedUser = null;
+try {
+  storedUser = JSON.parse(localStorage.getItem("user"));
+} catch (e) {
+  storedUser = null;
+}
+
 export default createStore({
   state: {
-    user: JSON.parse(localStorage.getItem("user")) || null,
+    user: storedUser,
     token: localStorage.getItem("token") || null,
   },
   mutations: {
