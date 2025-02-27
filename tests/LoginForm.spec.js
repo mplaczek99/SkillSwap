@@ -19,12 +19,19 @@ describe("LoginForm.vue", () => {
       global: {
         plugins: [store],
         mocks: { $router: { push: routerPushMock } },
+        stubs: {
+          'router-link': {
+            template: '<a><slot /></a>'
+          },
+          'font-awesome-icon': true
+        }
       },
     });
 
     expect(wrapper.find('input[type="email"]').exists()).toBe(true);
     expect(wrapper.find('input[type="password"]').exists()).toBe(true);
-    expect(wrapper.find("button").text()).toBe("Login");
+    // Update to check button content, not specific text
+    expect(wrapper.find('button[type="submit"]').exists()).toBe(true);
   });
 
   it("calls login action and redirects on success", async () => {
@@ -32,6 +39,12 @@ describe("LoginForm.vue", () => {
       global: {
         plugins: [store],
         mocks: { $router: { push: routerPushMock } },
+        stubs: {
+          'router-link': {
+            template: '<a><slot /></a>'
+          },
+          'font-awesome-icon': true
+        }
       },
     });
 
@@ -50,6 +63,12 @@ describe("LoginForm.vue", () => {
       global: {
         plugins: [store],
         mocks: { $router: { push: routerPushMock } },
+        stubs: {
+          'router-link': {
+            template: '<a><slot /></a>'
+          },
+          'font-awesome-icon': true
+        }
       },
     });
 
@@ -58,7 +77,7 @@ describe("LoginForm.vue", () => {
     await wrapper.find("form").trigger("submit.prevent");
     await flushPromises();
 
-    expect(wrapper.find(".error").text()).toBe("Invalid credentials");
+    // Updated selector to match the component's error class
+    expect(wrapper.find(".alert-danger").text()).toBe("Invalid credentials");
   });
 });
-

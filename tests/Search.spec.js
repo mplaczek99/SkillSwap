@@ -7,7 +7,17 @@ jest.mock("axios");
 jest.spyOn(console, 'error').mockImplementation(() => {});
 
 describe("Search.vue", () => {
-  afterEach(() => {
+  // Mock router and route for all tests
+  const mockRouter = {
+    push: jest.fn(),
+    replace: jest.fn()
+  };
+  
+  const mockRoute = {
+    query: {}
+  };
+  
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
@@ -17,7 +27,19 @@ describe("Search.vue", () => {
     ];
     axios.get.mockResolvedValue({ data: dummyResults });
 
-    const wrapper = mount(Search, { props: { forceApiCall: true } });
+    const wrapper = mount(Search, { 
+      props: { forceApiCall: true },
+      global: {
+        mocks: {
+          $router: mockRouter,
+          $route: mockRoute
+        },
+        stubs: {
+          'font-awesome-icon': true
+        }
+      }
+    });
+    
     const input = wrapper.find("input");
     await input.setValue("dummy");
     await wrapper.find("form").trigger("submit.prevent");
@@ -32,7 +54,19 @@ describe("Search.vue", () => {
   it("shows no results when API returns empty array", async () => {
     axios.get.mockResolvedValue({ data: [] });
 
-    const wrapper = mount(Search, { props: { forceApiCall: true } });
+    const wrapper = mount(Search, { 
+      props: { forceApiCall: true },
+      global: {
+        mocks: {
+          $router: mockRouter,
+          $route: mockRoute
+        },
+        stubs: {
+          'font-awesome-icon': true
+        }
+      }
+    });
+    
     const input = wrapper.find("input");
     await input.setValue("nonexistent");
     await wrapper.find("form").trigger("submit.prevent");
@@ -40,13 +74,26 @@ describe("Search.vue", () => {
     wrapper.vm.debouncedSearch.flush();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("No results found.");
+    // Updated to match the actual case in the component
+    expect(wrapper.text()).toContain("No Results Found");
   });
 
   it("handles API errors gracefully", async () => {
     axios.get.mockRejectedValue(new Error("Network Error"));
 
-    const wrapper = mount(Search, { props: { forceApiCall: true } });
+    const wrapper = mount(Search, { 
+      props: { forceApiCall: true },
+      global: {
+        mocks: {
+          $router: mockRouter,
+          $route: mockRoute
+        },
+        stubs: {
+          'font-awesome-icon': true
+        }
+      }
+    });
+    
     const input = wrapper.find("input");
     await input.setValue("dummy");
     await wrapper.find("form").trigger("submit.prevent");
@@ -57,4 +104,3 @@ describe("Search.vue", () => {
     expect(wrapper.text()).toContain("An error occurred while searching");
   });
 });
-

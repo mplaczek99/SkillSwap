@@ -1,26 +1,190 @@
 <template>
-  <div class="search-container">
-    <h2>Search for Skills or Users</h2>
-    <form @submit.prevent="search">
-      <input
-        v-model="query"
-        type="text"
-        placeholder="Search for skills or users..."
-        required
-      />
-      <button type="submit">Search</button>
-    </form>
-    <div v-if="loading" class="loading">Searching...</div>
-    <div v-if="error" class="error">{{ error }}</div>
-    <div class="results" v-if="results.length">
-      <div v-for="(item, index) in results" :key="index" class="result-item">
-        <h3>{{ item.name }}</h3>
-        <p v-if="item.description">Description: {{ item.description }}</p>
-        <p v-if="item.email">Email: {{ item.email }}</p>
-      </div>
-    </div>
-    <div v-else-if="!loading && searched">
-      <p>No results found.</p>
+  <div class="search-page">
+    <div class="container">
+      <!-- Search Hero Section -->
+      <section class="search-hero">
+        <h1>Find Skills & Connect</h1>
+        <p class="search-subtitle">
+          Discover people sharing their expertise or find the perfect skill to
+          learn
+        </p>
+
+        <form @submit.prevent="search" class="search-form">
+          <div class="search-input-group">
+            <font-awesome-icon icon="search" class="search-icon" />
+            <input
+              v-model="query"
+              type="text"
+              placeholder="Search for skills, topics, or users..."
+              class="search-input"
+              required
+              @input="onSearchInput"
+            />
+            <button
+              v-if="query"
+              type="button"
+              class="clear-search"
+              @click="clearSearch"
+            >
+              <font-awesome-icon icon="times" />
+            </button>
+          </div>
+
+          <div class="search-filters">
+            <button
+              type="button"
+              class="filter-toggle"
+              @click="toggleFilters"
+              :class="{ active: showFilters }"
+            >
+              <font-awesome-icon icon="filter" />
+              <span>Filters</span>
+              <font-awesome-icon
+                :icon="showFilters ? 'chevron-up' : 'chevron-down'"
+                class="toggle-icon"
+              />
+            </button>
+          </div>
+
+          <transition name="slide-down">
+            <div v-if="showFilters" class="advanced-filters">
+              <div class="filter-group">
+                <label class="filter-label">Categories</label>
+                <div class="filter-options">
+                  <label
+                    class="checkbox-container"
+                    v-for="category in categories"
+                    :key="category"
+                  >
+                    <input
+                      type="checkbox"
+                      v-model="selectedCategories"
+                      :value="category"
+                    />
+                    <span class="checkmark"></span>
+                    {{ category }}
+                  </label>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Type</label>
+                <div class="filter-options">
+                  <label class="radio-container">
+                    <input type="radio" v-model="searchType" value="all" />
+                    <span class="radio-mark"></span>
+                    All
+                  </label>
+                  <label class="radio-container">
+                    <input type="radio" v-model="searchType" value="skills" />
+                    <span class="radio-mark"></span>
+                    Skills
+                  </label>
+                  <label class="radio-container">
+                    <input type="radio" v-model="searchType" value="users" />
+                    <span class="radio-mark"></span>
+                    Users
+                  </label>
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  @click="resetFilters"
+                >
+                  Reset Filters
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </transition>
+        </form>
+      </section>
+
+      <!-- Search Results -->
+      <section class="search-results">
+        <div v-if="loading" class="search-loading">
+          <div class="spinner"></div>
+          <p>Searching...</p>
+        </div>
+
+        <div v-else-if="error" class="search-error">
+          <font-awesome-icon icon="exclamation-circle" class="error-icon" />
+          <p>{{ error }}</p>
+          <button @click="search" class="btn btn-outline btn-sm">
+            Try Again
+          </button>
+        </div>
+
+        <div v-else-if="results.length" class="search-results-grid">
+          <transition-group name="fade" tag="div" class="results-container">
+            <div
+              v-for="(item, index) in filteredResults"
+              :key="index"
+              class="result-card"
+              :class="{ 'user-card': item.email, 'skill-card': !item.email }"
+            >
+              <div class="result-icon">
+                <template v-if="item.email">
+                  <!-- User result -->
+                  <font-awesome-icon icon="user" />
+                </template>
+                <template v-else>
+                  <!-- Skill result -->
+                  <font-awesome-icon :icon="getSkillIcon(item.name)" />
+                </template>
+              </div>
+
+              <div class="result-details">
+                <h3>{{ item.name }}</h3>
+                <p v-if="item.description" class="result-description">
+                  {{ item.description }}
+                </p>
+                <p v-if="item.email" class="result-meta">
+                  <font-awesome-icon icon="envelope" />
+                  {{ item.email }}
+                </p>
+                <div class="result-actions">
+                  <button
+                    v-if="item.email"
+                    class="btn btn-outline btn-sm"
+                    @click="viewProfile(item)"
+                  >
+                    View Profile
+                  </button>
+                  <button
+                    v-else
+                    class="btn btn-primary btn-sm"
+                    @click="viewSkill(item)"
+                  >
+                    Learn More
+                  </button>
+                </div>
+              </div>
+            </div>
+          </transition-group>
+        </div>
+
+        <div v-else-if="!loading && searched" class="no-results">
+          <img
+            src="/default-avatar.svg"
+            alt="No results"
+            class="no-results-image"
+          />
+          <h3>No Results Found</h3>
+          <p>We couldn't find any matches for "{{ query }}"</p>
+          <p class="search-suggestions">Try:</p>
+          <ul>
+            <li>Checking your spelling</li>
+            <li>Using more general keywords</li>
+            <li>Removing filters</li>
+          </ul>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -44,15 +208,66 @@ export default {
       searched: false,
       loading: false,
       error: null,
+      showFilters: false,
+      categories: [
+        "Programming",
+        "Language",
+        "Music",
+        "Cooking",
+        "Art",
+        "Design",
+        "Education",
+        "Technology",
+      ],
+      selectedCategories: [],
+      searchType: "all",
     };
+  },
+  computed: {
+    filteredResults() {
+      if (!this.results.length) return [];
+
+      let filtered = [...this.results];
+
+      // Filter by type
+      if (this.searchType === "skills") {
+        filtered = filtered.filter((item) => !item.email);
+      } else if (this.searchType === "users") {
+        filtered = filtered.filter((item) => item.email);
+      }
+
+      // Filter by categories if any are selected
+      if (this.selectedCategories.length > 0) {
+        filtered = filtered.filter((item) => {
+          if (item.email) return true; // Always include users regardless of category
+
+          // For skills, check if any selected category is in the description
+          return this.selectedCategories.some(
+            (category) =>
+              item.description &&
+              item.description.toLowerCase().includes(category.toLowerCase()),
+          );
+        });
+      }
+
+      return filtered;
+    },
   },
   created() {
     this.debouncedSearch = debounce(this.performSearch, 300);
+
+    // Check if there's a query param in the URL
+    const queryParam = this.$route.query.q;
+    if (queryParam) {
+      this.query = queryParam;
+      this.search();
+    }
   },
   methods: {
     async performSearch() {
       this.loading = true;
       this.error = null;
+
       try {
         const response = await axios.get("/api/search", {
           params: { q: this.query },
@@ -67,6 +282,25 @@ export default {
         this.loading = false;
         this.searched = true;
       }
+    },
+    onSearchInput() {
+      // Update URL query parameter as user types
+      this.$router.replace({
+        query: { ...this.$route.query, q: this.query || undefined },
+      });
+
+      if (this.query.length > 2) {
+        this.debouncedSearch();
+      } else if (this.query.length === 0) {
+        this.results = [];
+        this.searched = false;
+      }
+    },
+    clearSearch() {
+      this.query = "";
+      this.results = [];
+      this.searched = false;
+      this.$router.replace({ query: {} });
     },
     async search() {
       if (this.forceApiCall) {
@@ -91,43 +325,467 @@ export default {
         this.debouncedSearch();
       }
     },
+    toggleFilters() {
+      this.showFilters = !this.showFilters;
+    },
+    resetFilters() {
+      this.selectedCategories = [];
+      this.searchType = "all";
+    },
+    getSkillIcon(skillName) {
+      const skillIcons = {
+        programming: "code",
+        language: "language",
+        music: "music",
+        cooking: "utensils",
+        art: "palette",
+        design: "pen-fancy",
+        go: "code",
+        vue: "code",
+        guitar: "guitar",
+        spanish: "language",
+        python: "code",
+        singing: "music",
+      };
+
+      // Look for matches in the skillName
+      for (const [key, icon] of Object.entries(skillIcons)) {
+        if (skillName.toLowerCase().includes(key.toLowerCase())) {
+          return icon;
+        }
+      }
+
+      return "cog"; // Default icon
+    },
+    viewProfile(user) {
+      // In a real application, navigate to the user's profile
+      alert(`Viewing profile for ${user.name}`);
+    },
+    viewSkill(skill) {
+      // In a real application, navigate to the skill details page
+      alert(`Viewing details for ${skill.name}`);
+    },
   },
 };
 </script>
 
 <style scoped>
-.search-container {
-  padding: 2rem;
+.search-page {
+  padding-bottom: var(--space-12);
 }
-form {
+
+/* Search Hero Section */
+.search-hero {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.search-hero h1 {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-2);
+  color: var(--dark);
+}
+
+.search-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--medium);
+  margin-bottom: var(--space-6);
+}
+
+/* Search Form */
+.search-form {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.search-input-group {
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--medium);
+  font-size: var(--font-size-lg);
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-10);
+  font-size: var(--font-size-lg);
+  border: 2px solid var(--light);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-fast) ease;
+}
+
+.search-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--primary-light),
+    var(--shadow-md);
+}
+
+.clear-search {
+  position: absolute;
+  right: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--medium);
+  cursor: pointer;
+  font-size: var(--font-size-md);
+}
+
+.clear-search:hover {
+  color: var(--dark);
+}
+
+/* Search Filters */
+.search-filters {
   display: flex;
-  margin-bottom: 1rem;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
 }
-form input {
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  padding: var(--space-2);
+}
+
+.filter-toggle:hover,
+.filter-toggle.active {
+  color: var(--primary-dark);
+}
+
+.toggle-icon {
+  font-size: var(--font-size-xs);
+  transition: transform var(--transition-fast) ease;
+}
+
+.advanced-filters {
+  background-color: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-6);
+}
+
+.filter-group {
+  margin-bottom: var(--space-4);
+}
+
+.filter-label {
+  display: block;
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-2);
+  color: var(--dark);
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Checkbox and Radio styles */
+.checkbox-container,
+.radio-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 28px;
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-sm);
+}
+
+.checkbox-container input,
+.radio-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark,
+.radio-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 18px;
+  width: 18px;
+  background-color: var(--white);
+  border: 1px solid var(--medium);
+}
+
+.checkmark {
+  border-radius: var(--radius-sm);
+}
+
+.radio-mark {
+  border-radius: 50%;
+}
+
+.checkbox-container:hover input ~ .checkmark,
+.radio-container:hover input ~ .radio-mark {
+  border-color: var(--primary-color);
+}
+
+.checkbox-container input:checked ~ .checkmark,
+.radio-container input:checked ~ .radio-mark {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkmark:after,
+.radio-mark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after,
+.radio-container input:checked ~ .radio-mark:after {
+  display: block;
+}
+
+.checkbox-container .checkmark:after {
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.radio-container .radio-mark:after {
+  top: 5px;
+  left: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* Search Results */
+.search-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) 0;
+  color: var(--medium);
+}
+
+.search-loading .spinner {
+  margin-bottom: var(--space-4);
+  width: 40px;
+  height: 40px;
+  border-width: 4px;
+}
+
+.search-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) 0;
+  color: var(--error-color);
+}
+
+.error-icon {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-4);
+}
+
+.search-results-grid {
+  margin-top: var(--space-6);
+}
+
+.results-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.result-card {
+  display: flex;
+  background-color: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition:
+    transform var(--transition-normal) ease,
+    box-shadow var(--transition-normal) ease;
+  padding: var(--space-4);
+}
+
+.result-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.user-card {
+  border-left: 4px solid var(--info-color);
+}
+
+.skill-card {
+  border-left: 4px solid var(--success-color);
+}
+
+.result-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--space-3);
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+}
+
+.user-card .result-icon {
+  background-color: var(--info-color);
+  color: white;
+}
+
+.skill-card .result-icon {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.result-details {
   flex: 1;
-  padding: 0.5rem;
-  font-size: 1rem;
 }
-form button {
-  padding: 0.5rem 1rem;
-  margin-left: 0.5rem;
-  font-size: 1rem;
+
+.result-details h3 {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-2);
 }
-.loading {
-  font-style: italic;
-  margin-bottom: 1rem;
+
+.result-description {
+  color: var(--medium);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.error {
-  color: red;
-  margin-bottom: 1rem;
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--medium);
+  margin-bottom: var(--space-3);
 }
-.results {
-  margin-top: 1rem;
+
+.result-actions {
+  display: flex;
+  gap: var(--space-2);
 }
-.result-item {
-  border: 1px solid #ccc;
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
+
+/* Empty state */
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8) 0;
+  color: var(--medium);
+}
+
+.no-results-image {
+  width: 120px;
+  height: 120px;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.no-results h3 {
+  font-size: var(--font-size-xl);
+  color: var(--dark);
+  margin-bottom: var(--space-2);
+}
+
+.search-suggestions {
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.no-results ul {
+  list-style-type: none;
+  padding: 0;
+  text-align: center;
+}
+
+.no-results li {
+  margin-bottom: var(--space-1);
+}
+
+/* Animations */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all var(--transition-normal) ease;
+  max-height: 500px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-hero h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .search-subtitle {
+    font-size: var(--font-size-md);
+  }
+
+  .search-input {
+    font-size: var(--font-size-md);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
+  }
+
+  .search-icon {
+    left: var(--space-3);
+    font-size: var(--font-size-md);
+  }
+
+  .filter-options {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
 }
 </style>

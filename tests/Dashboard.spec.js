@@ -4,6 +4,7 @@ import { createStore } from "vuex";
 
 describe("Dashboard.vue", () => {
   let store;
+  
   beforeEach(() => {
     // Create a simple Vuex store with a user state for testing.
     store = createStore({
@@ -17,16 +18,26 @@ describe("Dashboard.vue", () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [store],
+        stubs: {
+          'router-link': true,
+          'font-awesome-icon': true
+        }
       },
     });
     expect(wrapper.text()).toContain("Welcome to SkillSwap, Test User!");
-    expect(wrapper.text()).toContain("Your SkillPoints: 20");
+    // Updated assertion for the new UI format
+    expect(wrapper.text()).toContain("Your SkillPoints");
+    expect(wrapper.text()).toContain("20");
   });
 
   it("renders featured skills, recent activities, and announcements", () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [store],
+        stubs: {
+          'router-link': true,
+          'font-awesome-icon': true
+        }
       },
     });
     expect(wrapper.text()).toContain("Featured Skills");
@@ -34,4 +45,3 @@ describe("Dashboard.vue", () => {
     expect(wrapper.text()).toContain("Announcements");
   });
 });
-

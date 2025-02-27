@@ -46,10 +46,10 @@ describe("Navbar.vue", () => {
     });
 
     expect(wrapper.text()).toContain("Logout");
-    const logoutButton = wrapper.find("button");
+    // Use a more specific selector to find the logout button
+    const logoutButton = wrapper.find("button.btn-outline");
     await logoutButton.trigger("click");
     expect(mutations.logout).toHaveBeenCalled();
     expect(routerPushMock).toHaveBeenCalledWith("/login");
   });
 });
-
