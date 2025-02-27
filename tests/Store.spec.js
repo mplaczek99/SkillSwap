@@ -1,6 +1,5 @@
 import store from "@/store";
 import axios from "axios";
-import jwtDecode from "jwt-decode";
 
 jest.mock("jwt-decode", () =>
   jest.fn(() => ({
@@ -43,4 +42,3 @@ describe("Vuex Store", () => {
     axios.post.mockRestore();
   });
 });
-
