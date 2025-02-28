@@ -45,6 +45,16 @@
             <font-awesome-icon icon="comments" />
             <span>Chat</span>
           </router-link>
+          <!-- Add this new link for video uploads -->
+          <router-link
+            v-if="isAuthenticated"
+            to="/upload-video"
+            class="navbar-link"
+            active-class="active"
+          >
+            <font-awesome-icon icon="video" />
+            <span>Upload Video</span>
+          </router-link>
         </div>
 
         <div class="navbar-auth">
