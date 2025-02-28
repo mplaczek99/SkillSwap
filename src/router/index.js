@@ -9,6 +9,7 @@ const Search = () => import("@/components/Search.vue");
 const Chat = () => import("@/components/Chat.vue");
 const Schedule = () => import("@/components/Schedule.vue");
 const VideoUpload = () => import("@/components/VideoUpload.vue"); // Add this line
+const VideosList = () => import("@/components/VideosList.vue");
 
 const routes = [
   { path: "/", name: "Dashboard", component: Dashboard },
@@ -19,6 +20,7 @@ const routes = [
   { path: "/chat", name: "Chat", component: Chat },
   { path: "/schedule", name: "Schedule", component: Schedule },
   { path: "/upload-video", name: "VideoUpload", component: VideoUpload }, // Add this line
+  { path: "/videos", name: "VideosList", component: VideosList },
 ];
 
 const router = createRouter({

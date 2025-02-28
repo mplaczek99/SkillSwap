@@ -37,6 +37,9 @@ import {
   faFilm, // Add this for film icon
   faSpinner, // Add this for loading animation
   faCheckCircle, // Add this for success message
+  faPlay,       // For play button
+  faPlayCircle, // For play overlay
+  faDownload,   // For download button
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add all icons to the library
@@ -71,6 +74,9 @@ library.add(
   faFilm, // Add this for film icon
   faSpinner, // Add this for loading animation
   faCheckCircle, // Add this for success message
+  faPlay,       // For play button
+  faPlayCircle, // For play overlay
+  faDownload,   // For download button
 );
 
 const app = createApp(App);

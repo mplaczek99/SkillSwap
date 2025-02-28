@@ -55,6 +55,15 @@
             <font-awesome-icon icon="video" />
             <span>Upload Video</span>
           </router-link>
+          <router-link
+            v-if="isAuthenticated"
+            to="/videos"
+            class="navbar-link"
+            active-class="active"
+          >
+            <font-awesome-icon icon="film" />
+            <span>My Videos</span>
+          </router-link>
         </div>
 
         <div class="navbar-auth">
