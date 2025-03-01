@@ -18,7 +18,7 @@ SkillSwap is a skill exchange platform where users can share their expertise and
 
 **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/SkillSwap.git
+git clone https://github.com/mplaczek99/SkillSwap.git
 cd SkillSwap
 ```
 
