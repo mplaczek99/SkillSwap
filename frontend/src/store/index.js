@@ -2,7 +2,9 @@ import { createStore } from "vuex";
 import axios from "axios";
 import jwtDecode from "jwt-decode";
 
-axios.defaults.baseURL = process.env.VUE_APP_API_URL || "http://localhost:8080";
+// Set up axios with the API URL from environment variables
+const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
+axios.defaults.baseURL = apiUrl;
 
 // Initialize storedUser outside the store definition.
 let storedUser = null;

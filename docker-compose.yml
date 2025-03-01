@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: skillswap_db
+    environment:
+      POSTGRES_USER: ${APP_DB_USER:-techie}
+      POSTGRES_PASSWORD: ${APP_DB_PASS:-techiestrongpassword}
+      POSTGRES_DB: ${APP_DB_NAME:-skillswap_db}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${APP_DB_USER:-techie}", "-d", "${APP_DB_NAME:-skillswap_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: skillswap_backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_DRIVER: ${DB_DRIVER:-postgres}
+      DB_SOURCE: ${DB_SOURCE:-host=db port=5432 user=techie password=techiestrongpassword dbname=skillswap_db sslmode=disable}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      JWT_SECRET: ${JWT_SECRET:-your_secret_key}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/root/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: skillswap_frontend
+    ports:
+      - "8081:80"
+    environment:
+      VUE_APP_API_URL: ${VUE_APP_API_URL:-http://backend:8080}
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

@@ -98,8 +98,9 @@ export default {
     },
 
     getThumbnailUrl(video) {
-      // In a real app, this should be the correct path to access thumbnails
-      return `/uploads/${video.thumbnail}`;
+      // Use the API URL from the store configuration
+      const baseUrl = axios.defaults.baseURL || '';
+      return `${baseUrl}/uploads/${video.thumbnail}`;
     },
 
     formatFileName(fileName) {
@@ -129,18 +130,50 @@ export default {
     },
 
     playVideo(video) {
-      // In a real app, you would navigate to a video player or open a modal
-      // For now, we'll just show a message
-      alert(`Playing video: ${this.formatFileName(video.name)}`);
-
-      // Future enhancement: Implement a video player or modal
-      // this.$router.push(`/video/${video.id}`);
+      // Get the API base URL from the store
+      const baseUrl = axios.defaults.baseURL || '';
+      const videoUrl = `${baseUrl}/uploads/${video.name}`;
+      
+      // Create a modal or overlay to play the video
+      const win = window.open("", "_blank");
+      win.document.write(`
+        <html>
+          <head>
+            <title>${this.formatFileName(video.name)}</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                background: #000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+              }
+              video {
+                max-width: 100%;
+                max-height: 100vh;
+              }
+            </style>
+          </head>
+          <body>
+            <video controls autoplay>
+              <source src="${videoUrl}" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </body>
+        </html>
+      `);
     },
 
     downloadVideo(video) {
+      // Get the API base URL from the store
+      const baseUrl = axios.defaults.baseURL || '';
+      const videoUrl = `${baseUrl}/uploads/${video.name}`;
+      
       // Create a link to download the video
       const link = document.createElement("a");
-      link.href = `/uploads/${video.name}`;
+      link.href = videoUrl;
       link.download = video.name;
       document.body.appendChild(link);
       link.click();
