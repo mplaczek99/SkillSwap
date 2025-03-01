@@ -29,6 +29,24 @@
           </router-link>
           <router-link
             v-if="isAuthenticated"
+            to="/transactions"
+            class="navbar-link"
+            active-class="active"
+          >
+            <font-awesome-icon icon="coins" />
+            <span>SkillPoints</span>
+          </router-link>
+          <router-link
+            v-if="isAuthenticated"
+            to="/feedback"
+            class="navbar-link"
+            active-class="active"
+          >
+            <font-awesome-icon icon="star" />
+            <span>Feedback</span>
+          </router-link>
+          <router-link
+            v-if="isAuthenticated"
             to="/profile"
             class="navbar-link"
             active-class="active"
@@ -45,7 +63,15 @@
             <font-awesome-icon icon="comments" />
             <span>Chat</span>
           </router-link>
-          <!-- Add this new link for video uploads -->
+          <router-link
+            v-if="isAuthenticated"
+            to="/schedule"
+            class="navbar-link"
+            active-class="active"
+          >
+            <font-awesome-icon icon="calendar-alt" />
+            <span>Schedule</span>
+          </router-link>
           <router-link
             v-if="isAuthenticated"
             to="/upload-video"

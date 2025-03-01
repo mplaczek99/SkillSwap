@@ -23,6 +23,7 @@ import {
   faTimes,
   faHistory,
   faStar,
+  faStarHalfAlt,
   faArrowRight,
   faBellSlash,
   faMusic,
@@ -32,14 +33,24 @@ import {
   faGuitar,
   faLanguage,
   faCog,
-  faVideo, // Add this for video icon
-  faUpload, // Add this for upload icon
-  faFilm, // Add this for film icon
-  faSpinner, // Add this for loading animation
-  faCheckCircle, // Add this for success message
-  faPlay, // For play button
-  faPlayCircle, // For play overlay
-  faDownload, // For download button
+  faVideo,
+  faUpload,
+  faFilm,
+  faSpinner,
+  faCheckCircle,
+  faPlay,
+  faPlayCircle,
+  faDownload,
+  faCoins,
+  faCalendarAlt,
+  faGraduationCap,
+  faExchangeAlt,
+  faComment,
+  faCommentAlt,
+  faPaperPlane,
+  faSync,
+  faArrowUp,
+  faArrowDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add all icons to the library
@@ -60,6 +71,7 @@ library.add(
   faTimes,
   faHistory,
   faStar,
+  faStarHalfAlt,
   faArrowRight,
   faBellSlash,
   faMusic,
@@ -69,14 +81,24 @@ library.add(
   faGuitar,
   faLanguage,
   faCog,
-  faVideo, // Add this for video icon
-  faUpload, // Add this for upload icon
-  faFilm, // Add this for film icon
-  faSpinner, // Add this for loading animation
-  faCheckCircle, // Add this for success message
-  faPlay, // For play button
-  faPlayCircle, // For play overlay
-  faDownload, // For download button
+  faVideo,
+  faUpload,
+  faFilm,
+  faSpinner,
+  faCheckCircle,
+  faPlay,
+  faPlayCircle,
+  faDownload,
+  faCoins,
+  faCalendarAlt,
+  faGraduationCap,
+  faExchangeAlt,
+  faComment,
+  faCommentAlt,
+  faPaperPlane,
+  faSync,
+  faArrowUp,
+  faArrowDown,
 );
 
 const app = createApp(App);
