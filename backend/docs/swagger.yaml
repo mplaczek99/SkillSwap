@@ -1,18 +1,10 @@
-basePath: /
+basePath: /api
 definitions:
-  controllers.ErrorResponse:
-    properties:
-      error:
-        example: Invalid input
-        type: string
-    type: object
   controllers.LoginRequest:
     properties:
       email:
-        example: john@example.com
         type: string
       password:
-        example: secret123
         type: string
     required:
     - email
@@ -21,19 +13,15 @@ definitions:
   controllers.LoginResponse:
     properties:
       token:
-        example: your.jwt.token
         type: string
     type: object
   controllers.RegisterRequest:
     properties:
       email:
-        example: john@example.com
         type: string
       name:
-        example: John Doe
         type: string
       password:
-        example: secret123
         minLength: 6
         type: string
     required:
@@ -44,23 +32,59 @@ definitions:
   controllers.RegisterResponse:
     properties:
       token:
-        example: your.jwt.token
         type: string
+    type: object
+  models.Schedule:
+    properties:
+      created_at:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: integer
+      skill_id:
+        type: integer
+      start_time:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.Skill:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      user_id:
+        description: ID of the user offering the skill
+        type: integer
     type: object
 host: localhost:8080
 info:
-  contact: {}
-  description: This is a SkillSwap API server.
+  contact:
+    email: support@skillswap.com
+    name: API Support
+    url: http://www.skillswap.com/support
+  description: API for the SkillSwap platform where users can exchange skills using
+    SkillPoints
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
   title: SkillSwap API
   version: "1.0"
 paths:
-  /login:
+  /auth/login:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return a JWT token
+      description: Authenticate a user and return a JWT token
       parameters:
-      - description: User credentials
+      - description: User Login Credentials
         in: body
         name: credentials
         required: true
@@ -70,27 +94,31 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Successfully logged in
           schema:
             $ref: '#/definitions/controllers.LoginResponse'
         "400":
-          description: Bad Request
+          description: Invalid login data
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
         "401":
-          description: Unauthorized
+          description: Invalid email or password
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
-      summary: Login a user
+            additionalProperties:
+              type: string
+            type: object
+      summary: Log in a user
       tags:
-      - Auth
-  /register:
+      - auth
+  /auth/register:
     post:
       consumes:
       - application/json
-      description: Create a new user and return a JWT token
+      description: Create a new user account and return a JWT token
       parameters:
-      - description: User registration details
+      - description: User Registration Info
         in: body
         name: user
         required: true
@@ -100,18 +128,252 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Successfully registered
           schema:
             $ref: '#/definitions/controllers.RegisterResponse'
         "400":
-          description: Bad Request
+          description: Invalid registration data
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
         "500":
-          description: Internal Server Error
+          description: Registration failed
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
       summary: Register a new user
       tags:
-      - Auth
+      - auth
+  /schedule:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all schedules for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of schedules
+          schema:
+            items:
+              $ref: '#/definitions/models.Schedule'
+            type: array
+        "401":
+          description: User not authenticated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to retrieve schedules
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user schedules
+      tags:
+      - schedules
+    post:
+      consumes:
+      - application/json
+      description: Schedule a new skill exchange session
+      parameters:
+      - description: Schedule information
+        in: body
+        name: schedule
+        required: true
+        schema:
+          $ref: '#/definitions/models.Schedule'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created schedule
+          schema:
+            $ref: '#/definitions/models.Schedule'
+        "400":
+          description: Invalid schedule data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to schedule session
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new schedule
+      tags:
+      - schedules
+  /search:
+    get:
+      consumes:
+      - application/json
+      description: Find skills and users based on the provided query string
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of skills and users matching the query
+          schema:
+            items: {}
+            type: array
+        "400":
+          description: Missing query parameter
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Search for skills and users
+      tags:
+      - search
+  /skills:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all available skills
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of skills
+          schema:
+            items:
+              $ref: '#/definitions/models.Skill'
+            type: array
+        "500":
+          description: Failed to retrieve skills
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all skills
+      tags:
+      - skills
+    post:
+      consumes:
+      - application/json
+      description: Create a new skill entry
+      parameters:
+      - description: Skill information
+        in: body
+        name: skill
+        required: true
+        schema:
+          $ref: '#/definitions/models.Skill'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created skill
+          schema:
+            $ref: '#/definitions/models.Skill'
+        "400":
+          description: Invalid skill data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to add skill
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a new skill
+      tags:
+      - skills
+  /videos:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all uploaded videos
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of videos
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Failed to read videos directory
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get videos list
+      tags:
+      - videos
+  /videos/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a video file and generate a thumbnail
+      parameters:
+      - description: Video file to upload
+        in: formData
+        name: video
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully uploaded video
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Video file is required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to save video
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload a video
+      tags:
+      - videos
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and the JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

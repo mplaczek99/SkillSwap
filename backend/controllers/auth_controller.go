@@ -30,6 +30,16 @@ type RegisterResponse struct {
 }
 
 // Register handles user registration.
+// @Summary Register a new user
+// @Description Create a new user account and return a JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body RegisterRequest true "User Registration Info"
+// @Success 201 {object} RegisterResponse "Successfully registered"
+// @Failure 400 {object} map[string]string "Invalid registration data"
+// @Failure 500 {object} map[string]string "Registration failed"
+// @Router /auth/register [post]
 func (c *AuthController) Register(ctx *gin.Context) {
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -62,6 +72,16 @@ type LoginResponse struct {
 }
 
 // Login handles user login.
+// @Summary Log in a user
+// @Description Authenticate a user and return a JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body LoginRequest true "User Login Credentials"
+// @Success 200 {object} LoginResponse "Successfully logged in"
+// @Failure 400 {object} map[string]string "Invalid login data"
+// @Failure 401 {object} map[string]string "Invalid email or password"
+// @Router /auth/login [post]
 func (c *AuthController) Login(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

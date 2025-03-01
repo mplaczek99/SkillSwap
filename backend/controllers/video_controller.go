@@ -12,6 +12,17 @@ import (
 )
 
 // VideoUpload handles uploading and processing of video files.
+// @Summary Upload a video
+// @Description Upload a video file and generate a thumbnail
+// @Tags videos
+// @Accept multipart/form-data
+// @Produce json
+// @Param video formData file true "Video file to upload"
+// @Success 200 {object} map[string]string "Successfully uploaded video"
+// @Failure 400 {object} map[string]string "Video file is required"
+// @Failure 500 {object} map[string]string "Failed to save video"
+// @Security BearerAuth
+// @Router /videos/upload [post]
 func VideoUpload(c *gin.Context) {
 	// Retrieve the file from the form data.
 	file, err := c.FormFile("video")
@@ -56,6 +67,15 @@ func processVideo(filePath string) {
 }
 
 // GetVideosList handles retrieving a list of all uploaded videos.
+// @Summary Get videos list
+// @Description Retrieve a list of all uploaded videos
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Success 200 {array} map[string]interface{} "List of videos"
+// @Failure 500 {object} map[string]string "Failed to read videos directory"
+// @Security BearerAuth
+// @Router /videos [get]
 func GetVideosList(c *gin.Context) {
 	// Define the directory where uploads are stored.
 	uploadDir := "./uploads"
@@ -99,18 +119,15 @@ func GetVideosList(c *gin.Context) {
 		// Get file info for additional metadata
 		fileInfo, err := file.Info()
 		if err != nil {
-			// Skip this file if we can't get info
 			continue
 		}
 
-		// Add to our results
 		videos = append(videos, gin.H{
-			"id":           filename, // Using filename as ID
+			"id":           filename,
 			"name":         filename,
-			"thumbnail":    thumbnailPath,
-			"hasThumbnail": hasThumbnail,
 			"size":         fileInfo.Size(),
 			"uploadedAt":   fileInfo.ModTime(),
+			"hasThumbnail": hasThumbnail,
 		})
 	}
 

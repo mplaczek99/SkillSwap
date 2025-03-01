@@ -12,6 +12,16 @@ import (
 
 // Search handles GET requests to search for skills and users.
 // It expects a query parameter "q" and returns matching results.
+// @Summary Search for skills and users
+// @Description Find skills and users based on the provided query string
+// @Tags search
+// @Accept json
+// @Produce json
+// @Param q query string true "Search query"
+// @Success 200 {array} interface{} "List of skills and users matching the query"
+// @Failure 400 {object} map[string]string "Missing query parameter"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /search [get]
 func Search(c *gin.Context) {
 	q := c.Query("q")
 	if q == "" {

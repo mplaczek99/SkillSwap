@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
@@ -16,11 +15,32 @@ import (
 	"github.com/mplaczek99/SkillSwap/routes"
 	"github.com/mplaczek99/SkillSwap/services"
 
-	_ "github.com/mplaczek99/SkillSwap/docs"
+	_ "github.com/mplaczek99/SkillSwap/docs" // Import generated Swagger docs
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
+
+// @title SkillSwap API
+// @version 1.0
+// @description API for the SkillSwap platform where users can exchange skills using SkillPoints
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.skillswap.com/support
+// @contact.email support@skillswap.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api
+// @schemes http https
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the JWT token.
 
 // getenv is a small helper to read environment variables or a fallback.
 func getenv(key, fallback string) string {
@@ -98,16 +118,10 @@ func main() {
 	// 7) Setup routes
 	routes.SetupRoutes(router, authController)
 
-	// Create uploads directory if it doesn't exist
-	os.MkdirAll("./uploads", os.ModePerm)
-
-	// 8) Determine which port to run on (from environment, default = 8080)
+	// 8) Start the server
 	port := getenv("SERVER_PORT", "8080")
-	addr := fmt.Sprintf(":%s", port)
-
-	// 9) Start the server
-	log.Printf("Server starting on port %s\n", port)
-	if err := router.Run(addr); err != nil {
-		log.Fatal(err)
+	log.Printf("Server starting on port %s...", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }

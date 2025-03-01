@@ -1,17 +1,30 @@
 {
+    "schemes": [
+        "http",
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
-        "description": "This is a SkillSwap API server.",
+        "description": "API for the SkillSwap platform where users can exchange skills using SkillPoints",
         "title": "SkillSwap API",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.skillswap.com/support",
+            "email": "support@skillswap.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
         "version": "1.0"
     },
     "host": "localhost:8080",
-    "basePath": "/",
+    "basePath": "/api",
     "paths": {
-        "/login": {
+        "/auth/login": {
             "post": {
-                "description": "Authenticate user and return a JWT token",
+                "description": "Authenticate a user and return a JWT token",
                 "consumes": [
                     "application/json"
                 ],
@@ -19,12 +32,12 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
-                "summary": "Login a user",
+                "summary": "Log in a user",
                 "parameters": [
                     {
-                        "description": "User credentials",
+                        "description": "User Login Credentials",
                         "name": "credentials",
                         "in": "body",
                         "required": true,
@@ -35,29 +48,35 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Successfully logged in",
                         "schema": {
                             "$ref": "#/definitions/controllers.LoginResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid login data",
                         "schema": {
-                            "$ref": "#/definitions/controllers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Invalid email or password",
                         "schema": {
-                            "$ref": "#/definitions/controllers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
             }
         },
-        "/register": {
+        "/auth/register": {
             "post": {
-                "description": "Create a new user and return a JWT token",
+                "description": "Create a new user account and return a JWT token",
                 "consumes": [
                     "application/json"
                 ],
@@ -65,12 +84,12 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
                 "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "User registration details",
+                        "description": "User Registration Info",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -81,21 +100,371 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Successfully registered",
                         "schema": {
                             "$ref": "#/definitions/controllers.RegisterResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid registration data",
                         "schema": {
-                            "$ref": "#/definitions/controllers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Registration failed",
                         "schema": {
-                            "$ref": "#/definitions/controllers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schedule": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all schedules for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schedules"
+                ],
+                "summary": "Get user schedules",
+                "responses": {
+                    "200": {
+                        "description": "List of schedules",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Schedule"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "User not authenticated",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve schedules",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Schedule a new skill exchange session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schedules"
+                ],
+                "summary": "Create a new schedule",
+                "parameters": [
+                    {
+                        "description": "Schedule information",
+                        "name": "schedule",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Schedule"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created schedule",
+                        "schema": {
+                            "$ref": "#/definitions/models.Schedule"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid schedule data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to schedule session",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "description": "Find skills and users based on the provided query string",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Search for skills and users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of skills and users matching the query",
+                        "schema": {
+                            "type": "array",
+                            "items": {}
+                        }
+                    },
+                    "400": {
+                        "description": "Missing query parameter",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/skills": {
+            "get": {
+                "description": "Retrieve a list of all available skills",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "skills"
+                ],
+                "summary": "Get all skills",
+                "responses": {
+                    "200": {
+                        "description": "List of skills",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Skill"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve skills",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new skill entry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "skills"
+                ],
+                "summary": "Add a new skill",
+                "parameters": [
+                    {
+                        "description": "Skill information",
+                        "name": "skill",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Skill"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created skill",
+                        "schema": {
+                            "$ref": "#/definitions/models.Skill"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid skill data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to add skill",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a list of all uploaded videos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Get videos list",
+                "responses": {
+                    "200": {
+                        "description": "List of videos",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to read videos directory",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a video file and generate a thumbnail",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Upload a video",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Video file to upload",
+                        "name": "video",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully uploaded video",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Video file is required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save video",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -103,15 +472,6 @@
         }
     },
     "definitions": {
-        "controllers.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "Invalid input"
-                }
-            }
-        },
         "controllers.LoginRequest": {
             "type": "object",
             "required": [
@@ -120,12 +480,10 @@
             ],
             "properties": {
                 "email": {
-                    "type": "string",
-                    "example": "john@example.com"
+                    "type": "string"
                 },
                 "password": {
-                    "type": "string",
-                    "example": "secret123"
+                    "type": "string"
                 }
             }
         },
@@ -133,8 +491,7 @@
             "type": "object",
             "properties": {
                 "token": {
-                    "type": "string",
-                    "example": "your.jwt.token"
+                    "type": "string"
                 }
             }
         },
@@ -147,17 +504,14 @@
             ],
             "properties": {
                 "email": {
-                    "type": "string",
-                    "example": "john@example.com"
+                    "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "example": "John Doe"
+                    "type": "string"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 6,
-                    "example": "secret123"
+                    "minLength": 6
                 }
             }
         },
@@ -165,10 +519,61 @@
             "type": "object",
             "properties": {
                 "token": {
-                    "type": "string",
-                    "example": "your.jwt.token"
+                    "type": "string"
                 }
             }
+        },
+        "models.Schedule": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "skill_id": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Skill": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "ID of the user offering the skill",
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and the JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
