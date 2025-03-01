@@ -1,70 +1,160 @@
 package routes_test
 
-// import (
-//     "bytes"
-//     "net/http"
-//     "net/http/httptest"
-//     "strings"
-//     "testing"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-//     "github.com/gin-gonic/gin"
-//     "github.com/mplaczek99/SkillSwap/routes"
-// )
+	"github.com/gin-gonic/gin"
+	"github.com/mplaczek99/SkillSwap/controllers"
+	"github.com/mplaczek99/SkillSwap/models"
+	"github.com/mplaczek99/SkillSwap/routes"
+)
 
-// func TestPublicRoutes(t *testing.T) {
-//     router := gin.New()
-//     routes.SetupRoutes(router)
+// MockAuthService is a mock implementation of the AuthServiceInterface
+type MockAuthService struct{}
 
-//     // Test /api/login
-//     reqBody := `{"email":"test@example.com","password":"somepassword"}`
-//     req, _ := http.NewRequest("POST", "/api/login", bytes.NewBuffer([]byte(reqBody)))
-//     req.Header.Set("Content-Type", "application/json")
-//     w := httptest.NewRecorder()
-//     router.ServeHTTP(w, req)
+// Register is a mock implementation of Register with the correct signature
+func (m *MockAuthService) Register(user *models.User) (string, error) {
+	return "mock-token", nil
+}
 
-//     if w.Code != http.StatusOK && w.Code != http.StatusUnauthorized {
-//         t.Errorf("expected 200 or 401, got %d", w.Code)
-//     }
+// Login is a mock implementation of Login
+func (m *MockAuthService) Login(email, password string) (string, error) {
+	if email == "test@example.com" && password == "password" {
+		return "mock-login-token", nil
+	}
+	return "", errors.New("invalid email or password")
+}
 
-//     // Test /api/register
-//     reqBody = `{"email":"new@ex.com","password":"1234"}`
-//     req, _ = http.NewRequest("POST", "/api/register", bytes.NewBuffer([]byte(reqBody)))
-//     req.Header.Set("Content-Type", "application/json")
-//     w = httptest.NewRecorder()
-//     router.ServeHTTP(w, req)
+func TestRoutes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 
-//     if w.Code != http.StatusCreated && w.Code != http.StatusBadRequest {
-//         t.Errorf("expected 201 or 400, got %d", w.Code)
-//     }
-// }
+	t.Run("Routes Configuration", func(t *testing.T) {
+		// Create a new instance of the real AuthController with a mock service
+		mockService := &MockAuthService{}
+		authController := controllers.NewAuthController(mockService)
 
-// func TestProtectedRoutes(t *testing.T) {
-//     router := gin.New()
-//     routes.SetupRoutes(router)
+		// Setup router with the real controller
+		router := gin.New()
+		routes.SetupRoutes(router, authController)
 
-//     // We need a token to test protected routes properly. For now,
-//     // send no token and expect a 401.
+		// Test auth endpoints
+		testAuthEndpoints(t, router)
 
-//     w := httptest.NewRecorder()
-//     req, _ := http.NewRequest("GET", "/api/user/1", nil)
-//     router.ServeHTTP(w, req)
-//     if w.Code != http.StatusUnauthorized {
-//         t.Errorf("expected 401 for missing token, got %d", w.Code)
-//     }
+		// Test search endpoint
+		testSearchEndpoint(t, router)
 
-//     // Similarly, you can test /api/skills, etc.
-//     w = httptest.NewRecorder()
-//     req, _ = http.NewRequest("GET", "/api/skills", nil)
-//     router.ServeHTTP(w, req)
-//     if w.Code != http.StatusUnauthorized {
-//         t.Errorf("expected 401 for missing token, got %d", w.Code)
-//     }
+		// Test protected routes
+		testProtectedRoutes(t, router)
 
-//     // If you want to test a valid token scenario, you'd generate a token
-//     // (via your AuthService or a direct call to utils.GenerateJWT) and attach
-//     // it as "Authorization: Bearer <token>" in the header, then check for success.
-// }
+		// Test static file routing
+		testStaticFileRouting(t, router)
+	})
+}
 
-// func contains(body, substr string) bool {
-//     return strings.Contains(body, substr)
-// }
+func testAuthEndpoints(t *testing.T, router *gin.Engine) {
+	// Test register endpoint
+	t.Run("Register Endpoint", func(t *testing.T) {
+		reqBody := `{"name": "Test User", "email": "new@example.com", "password": "password123"}`
+		req, _ := http.NewRequest("POST", "/api/auth/register", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+	})
+
+	// Test login endpoint
+	t.Run("Login Endpoint", func(t *testing.T) {
+		reqBody := `{"email": "test@example.com", "password": "password"}`
+		req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Response: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var response map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if _, exists := response["token"]; !exists {
+			t.Error("Expected token in response")
+		}
+	})
+}
+
+func testSearchEndpoint(t *testing.T, router *gin.Engine) {
+	t.Run("Search Without Query", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/search", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
+		}
+	})
+
+	t.Run("Search With Query", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/search?q=test", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
+		}
+	})
+}
+
+func testProtectedRoutes(t *testing.T, router *gin.Engine) {
+	// Test protected endpoint without token
+	t.Run("Protected Endpoint Without Token", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/protected", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		}
+	})
+
+	// Test admin endpoint without token
+	t.Run("Admin Endpoint Without Token", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/admin/dashboard", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		}
+	})
+}
+
+func testStaticFileRouting(t *testing.T, router *gin.Engine) {
+	// Test accessing a static file path
+	req, _ := http.NewRequest("GET", "/uploads/test.txt", nil)
+	w := httptest.NewRecorder()
+
+	// Note: This won't actually find a file, but should route correctly
+	router.ServeHTTP(w, req)
+
+	// We don't expect a 501 Not Implemented because the route exists
+	if w.Code == http.StatusNotImplemented {
+		t.Errorf("Static file route not implemented")
+	}
+}
