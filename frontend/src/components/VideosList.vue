@@ -99,7 +99,7 @@ export default {
 
     getThumbnailUrl(video) {
       // Use the API URL from the store configuration
-      const baseUrl = axios.defaults.baseURL || '';
+      const baseUrl = axios.defaults.baseURL || "";
       return `${baseUrl}/uploads/${video.thumbnail}`;
     },
 
@@ -131,9 +131,9 @@ export default {
 
     playVideo(video) {
       // Get the API base URL from the store
-      const baseUrl = axios.defaults.baseURL || '';
+      const baseUrl = axios.defaults.baseURL || "";
       const videoUrl = `${baseUrl}/uploads/${video.name}`;
-      
+
       // Create a modal or overlay to play the video
       const win = window.open("", "_blank");
       win.document.write(`
@@ -168,9 +168,9 @@ export default {
 
     downloadVideo(video) {
       // Get the API base URL from the store
-      const baseUrl = axios.defaults.baseURL || '';
+      const baseUrl = axios.defaults.baseURL || "";
       const videoUrl = `${baseUrl}/uploads/${video.name}`;
-      
+
       // Create a link to download the video
       const link = document.createElement("a");
       link.href = videoUrl;
