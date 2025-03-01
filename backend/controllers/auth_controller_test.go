@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -12,76 +13,246 @@ import (
 	"github.com/mplaczek99/SkillSwap/models"
 )
 
-// DummyAuthService is a mock implementation of the AuthServiceInterface.
-type DummyAuthService struct{}
-
-func (d *DummyAuthService) Register(user *models.User) (string, error) {
-	if user.Email == "" || user.Password == "" {
-		return "", errors.New("invalid input")
-	}
-	return "dummy_register_token", nil
+// MockAuthService is a mock implementation of the AuthServiceInterface
+type MockAuthService struct {
+	// Maps to store expected returns for specific inputs
+	registerResponses map[string]registerResponse
+	loginResponses    map[string]loginResponse
 }
 
-func (d *DummyAuthService) Login(email, password string) (string, error) {
-	if email == "test@example.com" && password == "somepassword" {
-		return "dummy_login_token", nil
-	}
-	return "", errors.New("invalid email or password")
+type registerResponse struct {
+	token string
+	err   error
 }
 
-func TestLogin(t *testing.T) {
+type loginResponse struct {
+	token string
+	err   error
+}
+
+func NewMockAuthService() *MockAuthService {
+	return &MockAuthService{
+		registerResponses: make(map[string]registerResponse),
+		loginResponses:    make(map[string]loginResponse),
+	}
+}
+
+// Register mocks the Register method
+func (m *MockAuthService) Register(user *models.User) (string, error) {
+	resp, exists := m.registerResponses[user.Email]
+	if !exists {
+		return "", errors.New("unexpected email in test")
+	}
+	return resp.token, resp.err
+}
+
+// Login mocks the Login method
+func (m *MockAuthService) Login(email, password string) (string, error) {
+	key := email + ":" + password
+	resp, exists := m.loginResponses[key]
+	if !exists {
+		return "", errors.New("unexpected credentials in test")
+	}
+	return resp.token, resp.err
+}
+
+// SetupRegisterResponse sets up an expected response for Register
+func (m *MockAuthService) SetupRegisterResponse(email string, token string, err error) {
+	m.registerResponses[email] = registerResponse{token: token, err: err}
+}
+
+// SetupLoginResponse sets up an expected response for Login
+func (m *MockAuthService) SetupLoginResponse(email, password string, token string, err error) {
+	key := email + ":" + password
+	m.loginResponses[key] = loginResponse{token: token, err: err}
+}
+
+func TestAuthController_Register(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	// Create a dummy AuthController with DummyAuthService
-	authController := controllers.NewAuthController(&DummyAuthService{})
 
-	router := gin.Default()
-	router.POST("/login", authController.Login)
+	mockService := NewMockAuthService()
 
-	tests := []struct {
-		name           string
-		requestBody    string
-		wantStatusCode int
-		wantContains   string
-	}{
-		{
-			name:           "Valid Credentials",
-			requestBody:    `{"email":"test@example.com","password":"somepassword"}`,
-			wantStatusCode: http.StatusOK,
-			wantContains:   `"token":"dummy_login_token"`,
-		},
-		{
-			name:           "Missing Fields",
-			requestBody:    `{"email":""}`,
-			wantStatusCode: http.StatusBadRequest,
-			wantContains:   `"error"`,
-		},
-		{
-			name:           "Invalid Email Format",
-			requestBody:    `{"email":"notanemail","password":"secret"}`,
-			wantStatusCode: http.StatusBadRequest,
-			wantContains:   `"error"`,
-		},
-		{
-			name:           "User not found",
-			requestBody:    `{"email":"nope@example.com","password":"secret"}`,
-			wantStatusCode: http.StatusUnauthorized,
-			wantContains:   `"error"`,
-		},
-	}
+	// Set up expected responses
+	mockService.SetupRegisterResponse("success@example.com", "valid-token", nil)
+	mockService.SetupRegisterResponse("error@example.com", "", errors.New("registration failed"))
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer([]byte(tt.requestBody)))
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
+	controller := controllers.NewAuthController(mockService)
 
-			if w.Code != tt.wantStatusCode {
-				t.Errorf("[%s] expected status %d, got %d", tt.name, tt.wantStatusCode, w.Code)
-			}
-			if tt.wantContains != "" && !bytes.Contains(w.Body.Bytes(), []byte(tt.wantContains)) {
-				t.Errorf("[%s] response body does not contain %q. Body: %s", tt.name, tt.wantContains, w.Body.String())
-			}
-		})
-	}
+	t.Run("Successful Registration", func(t *testing.T) {
+		router := gin.New()
+		router.POST("/register", controller.Register)
+
+		// Create request body
+		reqBody := `{
+			"name": "Test User",
+			"email": "success@example.com",
+			"password": "password123"
+		}`
+
+		req, _ := http.NewRequest("POST", "/register", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d", http.StatusCreated, w.Code)
+		}
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("Failed to parse response JSON: %v", err)
+		}
+
+		if token, exists := response["token"]; !exists || token != "valid-token" {
+			t.Errorf("Expected token 'valid-token', got %s", token)
+		}
+	})
+
+	t.Run("Failed Registration", func(t *testing.T) {
+		router := gin.New()
+		router.POST("/register", controller.Register)
+
+		// Create request body
+		reqBody := `{
+			"name": "Error User",
+			"email": "error@example.com",
+			"password": "password123"
+		}`
+
+		req, _ := http.NewRequest("POST", "/register", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, w.Code)
+		}
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("Failed to parse response JSON: %v", err)
+		}
+
+		if errMsg, exists := response["error"]; !exists || errMsg != "Registration failed" {
+			t.Errorf("Expected error message 'Registration failed', got %s", errMsg)
+		}
+	})
+
+	t.Run("Invalid Request Body", func(t *testing.T) {
+		router := gin.New()
+		router.POST("/register", controller.Register)
+
+		// Create invalid request body (missing required fields)
+		reqBody := `{
+			"name": "Invalid User"
+		}`
+
+		req, _ := http.NewRequest("POST", "/register", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
+		}
+	})
+}
+
+func TestAuthController_Login(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mockService := NewMockAuthService()
+
+	// Set up expected responses
+	mockService.SetupLoginResponse("success@example.com", "password123", "valid-login-token", nil)
+	mockService.SetupLoginResponse("error@example.com", "password123", "", errors.New("invalid credentials"))
+
+	controller := controllers.NewAuthController(mockService)
+
+	t.Run("Successful Login", func(t *testing.T) {
+		router := gin.New()
+		router.POST("/login", controller.Login)
+
+		// Create request body
+		reqBody := `{
+			"email": "success@example.com",
+			"password": "password123"
+		}`
+
+		req, _ := http.NewRequest("POST", "/login", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
+		}
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("Failed to parse response JSON: %v", err)
+		}
+
+		if token, exists := response["token"]; !exists || token != "valid-login-token" {
+			t.Errorf("Expected token 'valid-login-token', got %s", token)
+		}
+	})
+
+	t.Run("Failed Login", func(t *testing.T) {
+		router := gin.New()
+		router.POST("/login", controller.Login)
+
+		// Create request body
+		reqBody := `{
+			"email": "error@example.com",
+			"password": "password123"
+		}`
+
+		req, _ := http.NewRequest("POST", "/login", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		}
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("Failed to parse response JSON: %v", err)
+		}
+
+		if errMsg, exists := response["error"]; !exists || errMsg != "Invalid email or password" {
+			t.Errorf("Expected error message 'Invalid email or password', got %s", errMsg)
+		}
+	})
+
+	t.Run("Invalid Request Body", func(t *testing.T) {
+		router := gin.New()
+		router.POST("/login", controller.Login)
+
+		// Create invalid request body (missing required fields)
+		reqBody := `{
+			"email": "missing@example.com"
+		}`
+
+		req, _ := http.NewRequest("POST", "/login", bytes.NewBufferString(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
+		}
+	})
 }
