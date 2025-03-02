@@ -19,7 +19,7 @@
 
       <div class="navbar-menu" :class="{ 'is-active': menuActive }">
         <div class="navbar-links">
-          <!-- Primary Links - Always visible -->
+          <!-- Primary Links -->
           <router-link to="/" class="navbar-link" active-class="active">
             <font-awesome-icon icon="home" />
             <span>Home</span>
@@ -85,9 +85,12 @@
                   <font-awesome-icon icon="calendar-alt" />
                   <span>Schedule</span>
                 </router-link>
-                <router-link to="/chat" class="dropdown-item">
+                <router-link to="/chat" class="dropdown-item position-relative">
                   <font-awesome-icon icon="comments" />
                   <span>Chat</span>
+                  <span v-if="unreadMessagesCount > 0" class="unread-badge">{{
+                    unreadMessagesCount
+                  }}</span>
                 </router-link>
               </div>
             </div>
@@ -96,13 +99,30 @@
 
         <div class="navbar-auth">
           <template v-if="!isAuthenticated">
-            <router-link to="/login" class="btn btn-outline btn-sm">Login</router-link>
-            <router-link to="/register" class="btn btn-primary btn-sm">Register</router-link>
+            <router-link to="/login" class="btn btn-outline btn-sm"
+              >Login</router-link
+            >
+            <router-link to="/register" class="btn btn-primary btn-sm"
+              >Register</router-link
+            >
           </template>
-          <button v-else @click="handleLogout" class="btn btn-outline btn-sm">
-            <font-awesome-icon icon="sign-out-alt" />
-            Logout
-          </button>
+          <template v-else>
+            <!-- Chat Button -->
+            <router-link
+              to="/chat"
+              class="btn btn-icon btn-sm navbar-chat-btn"
+              v-tooltip="'Messages'"
+            >
+              <font-awesome-icon icon="comments" />
+              <span v-if="unreadMessagesCount > 0" class="unread-badge">{{
+                unreadMessagesCount
+              }}</span>
+            </router-link>
+            <button @click="handleLogout" class="btn btn-outline btn-sm">
+              <font-awesome-icon icon="sign-out-alt" />
+              Logout
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -111,16 +131,29 @@
 
 <script>
 import { mapGetters, mapMutations } from "vuex";
+import ChatService from "@/services/ChatService";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "Navbar",
   data() {
     return {
-      menuActive: false
+      menuActive: false,
+      unreadMessagesCount: 0,
     };
   },
   computed: {
     ...mapGetters(["isAuthenticated"]),
+  },
+  mounted() {
+    // Listen for message events using the event bus.
+    eventBus.on("chat:new-message", this.handleNewMessage);
+    eventBus.on("chat:read-messages", this.handleReadMessages);
+    this.fetchUnreadCount();
+  },
+  beforeUnmount() {
+    eventBus.off("chat:new-message", this.handleNewMessage);
+    eventBus.off("chat:read-messages", this.handleReadMessages);
   },
   methods: {
     ...mapMutations(["logout"]),
@@ -131,18 +164,39 @@ export default {
       this.logout();
       this.$router.push("/login");
       this.menuActive = false;
-    }
+    },
+    async fetchUnreadCount() {
+      if (!this.isAuthenticated) return;
+      try {
+        this.unreadMessagesCount = await ChatService.getUnreadCount();
+      } catch (error) {
+        console.error("Error fetching unread count:", error);
+      }
+    },
+    handleNewMessage() {
+      // Increment the unread count.
+      this.unreadMessagesCount += 1;
+    },
+    handleReadMessages() {
+      // Refresh the unread count when messages are read.
+      this.fetchUnreadCount();
+    },
   },
-  watch: {
-    $route() {
-      // Close mobile menu when route changes
-      this.menuActive = false;
+  directives: {
+    tooltip: {
+      mounted(el, binding) {
+        el.setAttribute("title", binding.value);
+      },
+      updated(el, binding) {
+        el.setAttribute("title", binding.value);
+      },
     },
   },
 };
 </script>
 
 <style scoped>
+/* (CSS remains unchanged) */
 .navbar {
   background-color: var(--white);
   box-shadow: var(--shadow-md);
@@ -150,19 +204,16 @@ export default {
   top: 0;
   z-index: var(--z-header);
 }
-
 .navbar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 4rem;
 }
-
 .navbar-brand {
   display: flex;
   align-items: center;
 }
-
 .navbar-logo {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
@@ -172,15 +223,12 @@ export default {
   align-items: center;
   gap: var(--space-2);
 }
-
 .navbar-logo:hover {
   text-decoration: none;
 }
-
 .logo-icon {
   color: var(--primary-color);
 }
-
 .navbar-menu {
   display: flex;
   align-items: center;
@@ -188,13 +236,11 @@ export default {
   flex-grow: 1;
   margin-left: var(--space-6);
 }
-
 .navbar-links {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
-
 .navbar-link {
   color: var(--dark);
   font-weight: var(--font-weight-medium);
@@ -207,38 +253,31 @@ export default {
   gap: var(--space-2);
   position: relative;
 }
-
 .navbar-link:hover {
   color: var(--primary-color);
   text-decoration: none;
   background-color: var(--primary-light);
 }
-
 .navbar-link.active {
   color: var(--primary-color);
   font-weight: var(--font-weight-semibold);
 }
-
 /* Dropdown styles */
 .navbar-dropdown-wrapper {
   position: relative;
 }
-
 .dropdown-trigger {
   cursor: pointer;
   user-select: none;
 }
-
 .dropdown-icon {
   font-size: 0.7em;
   margin-left: var(--space-1);
   transition: transform var(--transition-fast) ease;
 }
-
 .navbar-dropdown-wrapper:hover .dropdown-icon {
   transform: rotate(180deg);
 }
-
 .dropdown-menu {
   position: absolute;
   top: 100%;
@@ -255,14 +294,12 @@ export default {
   z-index: 100;
   overflow: hidden;
 }
-
 .navbar-dropdown-wrapper:hover .dropdown-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
 }
-
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -271,20 +308,18 @@ export default {
   color: var(--dark);
   text-decoration: none;
   transition: all var(--transition-fast) ease;
+  position: relative;
 }
-
 .dropdown-item:hover {
   background-color: var(--primary-light);
   color: var(--primary-color);
   text-decoration: none;
 }
-
 .navbar-auth {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
-
 .navbar-toggler {
   display: none;
   background: transparent;
@@ -294,7 +329,6 @@ export default {
   flex-direction: column;
   gap: 5px;
 }
-
 .navbar-toggler span {
   display: block;
   width: 25px;
@@ -302,17 +336,61 @@ export default {
   background-color: var(--dark);
   transition: transform var(--transition-fast) ease;
 }
-
+.navbar-chat-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  transition: all var(--transition-fast) ease;
+}
+.navbar-chat-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-icon {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.position-relative {
+  position: relative;
+}
+.unread-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--primary-color);
+  color: white;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  transform: translate(50%, -50%);
+}
+.dropdown-item .unread-badge {
+  right: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+}
 /* Mobile navigation */
 @media (max-width: 768px) {
   .navbar-container {
     flex-wrap: wrap;
   }
-
   .navbar-toggler {
     display: flex;
   }
-
   .navbar-menu {
     display: none;
     width: 100%;
@@ -321,27 +399,23 @@ export default {
     padding: var(--space-4) 0;
     margin-left: 0;
   }
-
   .navbar-menu.is-active {
     display: flex;
   }
-
   .navbar-links {
     flex-direction: column;
     align-items: flex-start;
     width: 100%;
     gap: var(--space-1);
   }
-
-  .navbar-link, .dropdown-trigger {
+  .navbar-link,
+  .dropdown-trigger {
     width: 100%;
     padding: var(--space-3) var(--space-2);
   }
-
   .navbar-dropdown-wrapper {
     width: 100%;
   }
-
   .dropdown-menu {
     position: static;
     box-shadow: none;
@@ -355,24 +429,24 @@ export default {
     margin-left: var(--space-6);
     overflow: hidden;
   }
-
   .navbar-dropdown-wrapper:hover .dropdown-menu {
     max-height: 500px;
   }
-
   .dropdown-item {
     padding: var(--space-2) var(--space-4);
   }
-
   .navbar-auth {
     margin-top: var(--space-4);
     width: 100%;
     justify-content: center;
   }
-
   .navbar-auth .btn {
     width: 100%;
     justify-content: center;
+  }
+  .dropdown-item .unread-badge {
+    right: auto;
+    left: 85px;
   }
 }
 </style>

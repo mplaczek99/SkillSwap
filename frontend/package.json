@@ -20,7 +20,8 @@
     "node-fetch": "^2.7.0",
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
-    "vuex": "^4.0.0"
+    "vuex": "^4.0.0",
+    "mitt": "^3.0.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.9",

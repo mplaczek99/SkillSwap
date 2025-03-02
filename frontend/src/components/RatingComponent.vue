@@ -50,7 +50,10 @@
           type="button"
           class="btn btn-primary btn-sm"
           @click="submitRating"
-          :disabled="!currentRating || (feedbackEnabled && feedbackRequired && !feedback.trim())"
+          :disabled="
+            !currentRating ||
+            (feedbackEnabled && feedbackRequired && !feedback.trim())
+          "
         >
           Submit
         </button>

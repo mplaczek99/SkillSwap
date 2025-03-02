@@ -11,7 +11,7 @@
     <!-- Main Content -->
     <div class="container profile-content">
       <!-- Profile Card -->
-      <div class="card profile-card">
+      <div class="profile-card">
         <div class="profile-avatar">
           <template v-if="user && user.avatar">
             <img :src="user.avatar" alt="Profile Picture" />
@@ -28,9 +28,19 @@
           <p class="skillpoints">
             SkillPoints: <strong>{{ user ? user.skillPoints || 0 : 0 }}</strong>
           </p>
-          <button class="edit-btn" data-test="edit-button" @click="toggleEdit">
-            {{ editing ? "Cancel Edit" : "Edit Profile" }}
-          </button>
+          <div class="profile-actions">
+            <button
+              class="edit-btn"
+              data-test="edit-button"
+              @click="toggleEdit"
+            >
+              {{ editing ? "Cancel Edit" : "Edit Profile" }}
+            </button>
+            <button v-if="!isOwnProfile" class="message-btn" @click="startChat">
+              <font-awesome-icon icon="comment" />
+              Message
+            </button>
+          </div>
         </div>
       </div>
 
@@ -161,6 +171,13 @@ export default {
   },
   computed: {
     ...mapGetters(["user"]),
+    isOwnProfile() {
+      // Check if this is the current user's profile
+      return (
+        !this.$route.params.userId ||
+        (this.user && this.$route.params.userId == this.user.id)
+      );
+    },
   },
   created() {
     if (this.user) {
@@ -196,6 +213,27 @@ export default {
     this.fetchSchedules();
   },
   methods: {
+    startChat() {
+      // Navigate to chat with this user
+      const userId = this.$route.params.userId;
+      const userName = this.profileData ? this.profileData.name : "User";
+
+      this.$router.push({
+        name: "Chat",
+        query: {
+          user: userId,
+          userName: userName,
+        },
+      });
+
+      // Show notification
+      this.$root.$emit("show-notification", {
+        type: "info",
+        title: "Starting Chat",
+        message: `Starting a conversation with ${userName}`,
+        duration: 3000,
+      });
+    },
     toggleEdit() {
       this.editing = !this.editing;
       if (!this.editing && this.user) {
@@ -277,6 +315,30 @@ export default {
 </script>
 
 <style scoped>
+.profile-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.message-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: background-color var(--transition-fast) ease;
+}
+
+.message-btn:hover {
+  background-color: var(--primary-dark);
+}
+
 /* General page styling */
 .profile-page {
   font-family: "Helvetica Neue", Arial, sans-serif;

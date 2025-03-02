@@ -16,17 +16,9 @@ describe("Profile.vue", () => {
     actions = {
       updateProfile: jest.fn(() => Promise.resolve()),
     };
-    state = {
-      user: userData,
-    };
-    getters = {
-      user: (state) => state.user,
-    };
-    store = createStore({
-      state,
-      getters,
-      actions,
-    });
+    state = { user: userData };
+    getters = { user: (state) => state.user };
+    store = createStore({ state, getters, actions });
     routerPushMock = jest.fn();
   });
 
@@ -34,7 +26,10 @@ describe("Profile.vue", () => {
     const wrapper = mount(Profile, {
       global: {
         plugins: [store],
-        mocks: { $router: { push: routerPushMock } },
+        mocks: { 
+          $router: { push: routerPushMock },
+          $route: { params: {} } // Provide an empty params object
+        },
         stubs: { ProfileCard: true },
       },
     });
@@ -49,7 +44,10 @@ describe("Profile.vue", () => {
     const wrapper = mount(Profile, {
       global: {
         plugins: [store],
-        mocks: { $router: { push: routerPushMock } },
+        mocks: { 
+          $router: { push: routerPushMock },
+          $route: { params: {} }
+        },
         stubs: { ProfileCard: true },
       },
     });
@@ -70,7 +68,10 @@ describe("Profile.vue", () => {
     const wrapper = mount(Profile, {
       global: {
         plugins: [store],
-        mocks: { $router: { push: routerPushMock } },
+        mocks: { 
+          $router: { push: routerPushMock },
+          $route: { params: {} }
+        },
         stubs: { ProfileCard: true },
       },
     });
@@ -92,11 +93,13 @@ describe("Profile.vue", () => {
     const wrapper = mount(Profile, {
       global: {
         plugins: [store],
-        mocks: { $router: { push: routerPushMock } },
+        mocks: { 
+          $router: { push: routerPushMock },
+          $route: { params: {} }
+        },
         stubs: {
           ProfileCard: {
-            template:
-              '<div class="profile-card-stub">{{ title }} - {{ description }}</div>',
+            template: '<div class="profile-card-stub">{{ title }} - {{ description }}</div>',
             props: ["title", "description"],
           },
         },

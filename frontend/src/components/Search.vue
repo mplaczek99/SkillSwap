@@ -130,11 +130,9 @@
             >
               <div class="result-icon">
                 <template v-if="item.email">
-                  <!-- User result -->
                   <font-awesome-icon icon="user" />
                 </template>
                 <template v-else>
-                  <!-- Skill result -->
                   <font-awesome-icon :icon="getSkillIcon(item.name)" />
                 </template>
               </div>
@@ -162,6 +160,13 @@
                     @click="viewSkill(item)"
                   >
                     Learn More
+                  </button>
+                  <button
+                    v-if="item.email"
+                    class="btn btn-primary btn-sm"
+                    @click="startChat(item)"
+                  >
+                    Message
                   </button>
                 </div>
               </div>
@@ -192,6 +197,7 @@
 <script>
 import axios from "axios";
 import debounce from "lodash/debounce";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "Search",
@@ -226,22 +232,15 @@ export default {
   computed: {
     filteredResults() {
       if (!this.results.length) return [];
-
       let filtered = [...this.results];
-
-      // Filter by type
       if (this.searchType === "skills") {
         filtered = filtered.filter((item) => !item.email);
       } else if (this.searchType === "users") {
         filtered = filtered.filter((item) => item.email);
       }
-
-      // Filter by categories if any are selected
       if (this.selectedCategories.length > 0) {
         filtered = filtered.filter((item) => {
-          if (item.email) return true; // Always include users regardless of category
-
-          // For skills, check if any selected category is in the description
+          if (item.email) return true;
           return this.selectedCategories.some(
             (category) =>
               item.description &&
@@ -249,14 +248,11 @@ export default {
           );
         });
       }
-
       return filtered;
     },
   },
   created() {
     this.debouncedSearch = debounce(this.performSearch, 300);
-
-    // Check if there's a query param in the URL
     const queryParam = this.$route.query.q;
     if (queryParam) {
       this.query = queryParam;
@@ -267,7 +263,6 @@ export default {
     async performSearch() {
       this.loading = true;
       this.error = null;
-
       try {
         const response = await axios.get("/api/search", {
           params: { q: this.query },
@@ -284,11 +279,9 @@ export default {
       }
     },
     onSearchInput() {
-      // Update URL query parameter as user types
       this.$router.replace({
         query: { ...this.$route.query, q: this.query || undefined },
       });
-
       if (this.query.length > 2) {
         this.debouncedSearch();
       } else if (this.query.length === 0) {
@@ -306,7 +299,6 @@ export default {
       if (this.forceApiCall) {
         this.debouncedSearch();
       } else if (process.env.JEST_WORKER_ID) {
-        // Provide dummy data in test environments.
         const dummyData = [
           { name: "Alice", description: "Guitar" },
           { name: "Bob", description: "Spanish" },
@@ -347,62 +339,63 @@ export default {
         python: "code",
         singing: "music",
       };
-
-      // Look for matches in the skillName
       for (const [key, icon] of Object.entries(skillIcons)) {
         if (skillName.toLowerCase().includes(key.toLowerCase())) {
           return icon;
         }
       }
-
-      return "cog"; // Default icon
+      return "cog";
     },
     viewProfile(user) {
-      // In a real application, navigate to the user's profile
       alert(`Viewing profile for ${user.name}`);
     },
     viewSkill(skill) {
-      // In a real application, navigate to the skill details page
       alert(`Viewing details for ${skill.name}`);
+    },
+    // Updated startChat method to use eventBus.emit
+    startChat(user) {
+      this.$router.push({
+        name: "Chat",
+        query: { user: user.id, userName: user.name },
+      });
+      eventBus.emit("show-notification", {
+        type: "info",
+        title: "Starting Chat",
+        message: `Starting a conversation with ${user.name}`,
+        duration: 3000,
+      });
     },
   },
 };
 </script>
 
 <style scoped>
+/* (CSS remains unchanged) */
 .search-page {
   padding-bottom: var(--space-12);
 }
-
-/* Search Hero Section */
 .search-hero {
   text-align: center;
   margin-bottom: var(--space-8);
 }
-
 .search-hero h1 {
   font-size: var(--font-size-3xl);
   margin-bottom: var(--space-2);
   color: var(--dark);
 }
-
 .search-subtitle {
   font-size: var(--font-size-lg);
   color: var(--medium);
   margin-bottom: var(--space-6);
 }
-
-/* Search Form */
 .search-form {
   max-width: 700px;
   margin: 0 auto;
 }
-
 .search-input-group {
   position: relative;
   margin-bottom: var(--space-4);
 }
-
 .search-icon {
   position: absolute;
   left: var(--space-4);
@@ -411,7 +404,6 @@ export default {
   color: var(--medium);
   font-size: var(--font-size-lg);
 }
-
 .search-input {
   width: 100%;
   padding: var(--space-4) var(--space-4) var(--space-4) var(--space-10);
@@ -421,7 +413,6 @@ export default {
   box-shadow: var(--shadow-md);
   transition: all var(--transition-fast) ease;
 }
-
 .search-input:focus {
   border-color: var(--primary-color);
   outline: none;
@@ -429,7 +420,6 @@ export default {
     0 0 0 3px var(--primary-light),
     var(--shadow-md);
 }
-
 .clear-search {
   position: absolute;
   right: var(--space-4);
@@ -441,18 +431,14 @@ export default {
   cursor: pointer;
   font-size: var(--font-size-md);
 }
-
 .clear-search:hover {
   color: var(--dark);
 }
-
-/* Search Filters */
 .search-filters {
   display: flex;
   justify-content: flex-end;
   margin-bottom: var(--space-3);
 }
-
 .filter-toggle {
   display: flex;
   align-items: center;
@@ -464,17 +450,14 @@ export default {
   cursor: pointer;
   padding: var(--space-2);
 }
-
 .filter-toggle:hover,
 .filter-toggle.active {
   color: var(--primary-dark);
 }
-
 .toggle-icon {
   font-size: var(--font-size-xs);
   transition: transform var(--transition-fast) ease;
 }
-
 .advanced-filters {
   background-color: var(--white);
   border-radius: var(--radius-lg);
@@ -482,25 +465,20 @@ export default {
   box-shadow: var(--shadow-md);
   margin-bottom: var(--space-6);
 }
-
 .filter-group {
   margin-bottom: var(--space-4);
 }
-
 .filter-label {
   display: block;
   font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-2);
   color: var(--dark);
 }
-
 .filter-options {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
 }
-
-/* Checkbox and Radio styles */
 .checkbox-container,
 .radio-container {
   display: flex;
@@ -511,14 +489,12 @@ export default {
   user-select: none;
   font-size: var(--font-size-sm);
 }
-
 .checkbox-container input,
 .radio-container input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
 }
-
 .checkmark,
 .radio-mark {
   position: absolute;
@@ -529,38 +505,31 @@ export default {
   background-color: var(--white);
   border: 1px solid var(--medium);
 }
-
 .checkmark {
   border-radius: var(--radius-sm);
 }
-
 .radio-mark {
   border-radius: 50%;
 }
-
 .checkbox-container:hover input ~ .checkmark,
 .radio-container:hover input ~ .radio-mark {
   border-color: var(--primary-color);
 }
-
 .checkbox-container input:checked ~ .checkmark,
 .radio-container input:checked ~ .radio-mark {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
-
 .checkmark:after,
 .radio-mark:after {
   content: "";
   position: absolute;
   display: none;
 }
-
 .checkbox-container input:checked ~ .checkmark:after,
 .radio-container input:checked ~ .radio-mark:after {
   display: block;
 }
-
 .checkbox-container .checkmark:after {
   left: 6px;
   top: 2px;
@@ -570,7 +539,6 @@ export default {
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
-
 .radio-container .radio-mark:after {
   top: 5px;
   left: 5px;
@@ -579,15 +547,12 @@ export default {
   border-radius: 50%;
   background: white;
 }
-
 .filter-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-3);
   margin-top: var(--space-3);
 }
-
-/* Search Results */
 .search-loading {
   display: flex;
   flex-direction: column;
@@ -596,14 +561,12 @@ export default {
   padding: var(--space-12) 0;
   color: var(--medium);
 }
-
 .search-loading .spinner {
   margin-bottom: var(--space-4);
   width: 40px;
   height: 40px;
   border-width: 4px;
 }
-
 .search-error {
   display: flex;
   flex-direction: column;
@@ -612,22 +575,18 @@ export default {
   padding: var(--space-12) 0;
   color: var(--error-color);
 }
-
 .error-icon {
   font-size: var(--font-size-3xl);
   margin-bottom: var(--space-4);
 }
-
 .search-results-grid {
   margin-top: var(--space-6);
 }
-
 .results-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-4);
 }
-
 .result-card {
   display: flex;
   background-color: var(--white);
@@ -639,20 +598,16 @@ export default {
     box-shadow var(--transition-normal) ease;
   padding: var(--space-4);
 }
-
 .result-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
 }
-
 .user-card {
   border-left: 4px solid var(--info-color);
 }
-
 .skill-card {
   border-left: 4px solid var(--success-color);
 }
-
 .result-icon {
   width: 48px;
   height: 48px;
@@ -664,26 +619,21 @@ export default {
   font-size: var(--font-size-xl);
   flex-shrink: 0;
 }
-
 .user-card .result-icon {
   background-color: var(--info-color);
   color: white;
 }
-
 .skill-card .result-icon {
   background-color: var(--success-color);
   color: white;
 }
-
 .result-details {
   flex: 1;
 }
-
 .result-details h3 {
   font-size: var(--font-size-lg);
   margin-bottom: var(--space-2);
 }
-
 .result-description {
   color: var(--medium);
   font-size: var(--font-size-sm);
@@ -693,7 +643,6 @@ export default {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
 .result-meta {
   display: flex;
   align-items: center;
@@ -702,13 +651,10 @@ export default {
   color: var(--medium);
   margin-bottom: var(--space-3);
 }
-
 .result-actions {
   display: flex;
   gap: var(--space-2);
 }
-
-/* Empty state */
 .no-results {
   display: flex;
   flex-direction: column;
@@ -717,37 +663,30 @@ export default {
   padding: var(--space-8) 0;
   color: var(--medium);
 }
-
 .no-results-image {
   width: 120px;
   height: 120px;
   margin-bottom: var(--space-4);
   opacity: 0.5;
 }
-
 .no-results h3 {
   font-size: var(--font-size-xl);
   color: var(--dark);
   margin-bottom: var(--space-2);
 }
-
 .search-suggestions {
   font-weight: var(--font-weight-semibold);
   margin-top: var(--space-4);
   margin-bottom: var(--space-2);
 }
-
 .no-results ul {
   list-style-type: none;
   padding: 0;
   text-align: center;
 }
-
 .no-results li {
   margin-bottom: var(--space-1);
 }
-
-/* Animations */
 .slide-down-enter-active,
 .slide-down-leave-active {
   transition: all var(--transition-normal) ease;
@@ -755,34 +694,27 @@ export default {
   opacity: 1;
   overflow: hidden;
 }
-
 .slide-down-enter-from,
 .slide-down-leave-to {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
 }
-
-/* Responsive */
 @media (max-width: 768px) {
   .search-hero h1 {
     font-size: var(--font-size-2xl);
   }
-
   .search-subtitle {
     font-size: var(--font-size-md);
   }
-
   .search-input {
     font-size: var(--font-size-md);
     padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
   }
-
   .search-icon {
     left: var(--space-3);
     font-size: var(--font-size-md);
   }
-
   .filter-options {
     flex-direction: column;
     gap: var(--space-2);
