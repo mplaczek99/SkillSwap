@@ -29,6 +29,12 @@
             <span>Search</span>
           </router-link>
 
+          <!-- Jobs Link - New Addition -->
+          <router-link to="/jobs" class="navbar-link" active-class="active">
+            <font-awesome-icon icon="briefcase" />
+            <span>Jobs</span>
+          </router-link>
+
           <!-- Authenticated-only content -->
           <template v-if="isAuthenticated">
             <!-- Profile Dropdown -->
@@ -91,6 +97,12 @@
                   <span v-if="unreadMessagesCount > 0" class="unread-badge">{{
                     unreadMessagesCount
                   }}</span>
+                </router-link>
+
+                <!-- Post Job Link - New Addition -->
+                <router-link to="/post-job" class="dropdown-item">
+                  <font-awesome-icon icon="plus-circle" />
+                  <span>Post a Job</span>
                 </router-link>
               </div>
             </div>
@@ -196,7 +208,7 @@ export default {
 </script>
 
 <style scoped>
-/* (CSS remains unchanged) */
+/* (CSS remains unchanged - using the existing styles) */
 .navbar {
   background-color: var(--white);
   box-shadow: var(--shadow-md);

@@ -6,6 +6,8 @@ import store from "./store";
 // Import Font Awesome core and icons
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+
+// Import solid icons
 import {
   faUser,
   faSignOutAlt,
@@ -51,9 +53,21 @@ import {
   faSync,
   faArrowUp,
   faArrowDown,
+  // New icons for job posting features
+  faBriefcase,
+  faBuilding,
+  faMapMarkerAlt,
+  faExternalLinkAlt,
+  faBookmark,
+  faMoneyBillAlt,
+  faPlus,
+  faPlusCircle,
+  faCheck,
+  faArrowLeft,
+  faUndo,
 } from "@fortawesome/free-solid-svg-icons";
 
-// Add all icons to the library
+// Add all solid icons to the library
 library.add(
   faUser,
   faSignOutAlt,
@@ -99,6 +113,18 @@ library.add(
   faSync,
   faArrowUp,
   faArrowDown,
+  // New icons
+  faBriefcase,
+  faBuilding,
+  faMapMarkerAlt,
+  faExternalLinkAlt,
+  faBookmark,
+  faMoneyBillAlt,
+  faPlus,
+  faPlusCircle,
+  faCheck,
+  faArrowLeft,
+  faUndo
 );
 
 const app = createApp(App);

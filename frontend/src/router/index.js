@@ -10,8 +10,13 @@ const Chat = () => import("@/components/Chat.vue");
 const Schedule = () => import("@/components/Schedule.vue");
 const VideoUpload = () => import("@/components/VideoUpload.vue");
 const VideosList = () => import("@/components/VideosList.vue");
-const Transactions = () => import("@/components/Transactions.vue"); // New component
-const FeedbackSystem = () => import("@/components/FeedbackSystem.vue"); // New component
+const Transactions = () => import("@/components/Transactions.vue");
+const FeedbackSystem = () => import("@/components/FeedbackSystem.vue");
+
+// New job posting components
+const JobPostings = () => import("@/components/JobPostings.vue");
+const JobDetail = () => import("@/components/JobDetail.vue");
+const PostJob = () => import("@/components/PostJob.vue");
 
 const routes = [
   { path: "/", name: "Dashboard", component: Dashboard },
@@ -23,13 +28,23 @@ const routes = [
   { path: "/schedule", name: "Schedule", component: Schedule },
   { path: "/upload-video", name: "VideoUpload", component: VideoUpload },
   { path: "/videos", name: "VideosList", component: VideosList },
-  { path: "/transactions", name: "Transactions", component: Transactions }, // New route
-  { path: "/feedback", name: "Feedback", component: FeedbackSystem }, // New route
+  { path: "/transactions", name: "Transactions", component: Transactions },
+  { path: "/feedback", name: "Feedback", component: FeedbackSystem },
+
+  // Job posting routes
+  { path: "/jobs", name: "JobPostings", component: JobPostings },
+  { path: "/jobs/:id", name: "JobDetail", component: JobDetail },
+  { path: "/post-job", name: "PostJob", component: PostJob },
+  { path: "/edit-job/:id", name: "EditJob", component: PostJob },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  // Scroll to top on route navigation
+  scrollBehavior() {
+    return { top: 0 };
+  },
 });
 
 const publicPages = ["/login", "/register"];
