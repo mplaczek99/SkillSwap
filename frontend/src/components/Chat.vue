@@ -219,6 +219,7 @@
 <script>
 import ChatService from "@/services/ChatService";
 import { debounce } from "lodash";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "Chat",
@@ -600,8 +601,8 @@ export default {
           this.conversations.unshift(convo);
         }
 
-        // Show notification
-        this.$root.$emit("show-notification", {
+        // Show notification using eventBus instead of $root.$emit
+        eventBus.emit("show-notification", {
           type: "message",
           title: `New message from ${this.conversations[0].recipient.name}`,
           message: message.text,

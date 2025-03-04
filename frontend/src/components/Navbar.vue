@@ -119,7 +119,7 @@
             >
           </template>
           <template v-else>
-            <!-- Chat Button -->
+            <!-- Chat Button - Fixed to use router-link -->
             <router-link
               to="/chat"
               class="btn btn-icon btn-sm navbar-chat-btn"

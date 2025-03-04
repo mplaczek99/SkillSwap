@@ -11,9 +11,11 @@ import (
 
 // ConnectDB opens a connection to your PostgreSQL database using the DSN from environment variables.
 func ConnectDB() *gorm.DB {
-	// Example DSN for PostgreSQL:
-	// "host=localhost user=postgres password=your_postgres_password dbname=skillswap_db port=5432 sslmode=disable"
 	dsn := os.Getenv("DB_SOURCE")
+	if dsn == "" {
+		log.Fatal("DB_SOURCE environment variable not set")
+	}
+	
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)

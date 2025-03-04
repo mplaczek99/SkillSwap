@@ -28,6 +28,11 @@
             >
               <font-awesome-icon icon="times" />
             </button>
+            <!-- Added explicit search button -->
+            <button type="submit" class="search-button">
+              <font-awesome-icon icon="search" />
+              Search
+            </button>
           </div>
 
           <div class="search-filters">
@@ -252,7 +257,10 @@ export default {
     },
   },
   created() {
+    // Only initialize the debounced search but won't use it for auto-search
     this.debouncedSearch = debounce(this.performSearch, 300);
+    
+    // Check for query parameter in URL and perform initial search if present
     const queryParam = this.$route.query.q;
     if (queryParam) {
       this.query = queryParam;
@@ -288,17 +296,10 @@ export default {
       }
     },
     onSearchInput() {
-      // Update URL query parameter
+      // Only update URL query parameter, don't trigger search automatically
       this.$router.replace({
         query: { ...this.$route.query, q: this.query || undefined },
       });
-
-      if (this.query.length > 2) {
-        this.debouncedSearch();
-      } else if (this.query.length === 0) {
-        this.results = [];
-        this.searched = false;
-      }
     },
     clearSearch() {
       this.query = "";
@@ -308,7 +309,7 @@ export default {
     },
     async search() {
       if (this.forceApiCall) {
-        this.debouncedSearch();
+        this.performSearch();
       } else if (process.env.JEST_WORKER_ID) {
         // For testing environment
         const dummyData = [
@@ -326,7 +327,7 @@ export default {
         );
         this.searched = true;
       } else {
-        this.debouncedSearch();
+        this.performSearch();
       }
     },
     toggleFilters() {
@@ -379,7 +380,6 @@ export default {
       }
       alert(`Viewing details for ${skill.name}`);
     },
-    // Updated startChat method with proper error handling
     startChat(user) {
       if (!user || !user.id) {
         console.error("Invalid user object for chat:", user);
@@ -404,7 +404,6 @@ export default {
 </script>
 
 <style scoped>
-/* (CSS remains unchanged) */
 .search-page {
   padding-bottom: var(--space-12);
 }
@@ -429,6 +428,8 @@ export default {
 .search-input-group {
   position: relative;
   margin-bottom: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
 }
 .search-icon {
   position: absolute;
@@ -439,7 +440,7 @@ export default {
   font-size: var(--font-size-lg);
 }
 .search-input {
-  width: 100%;
+  flex: 1;
   padding: var(--space-4) var(--space-4) var(--space-4) var(--space-10);
   font-size: var(--font-size-lg);
   border: 2px solid var(--light);
@@ -456,7 +457,7 @@ export default {
 }
 .clear-search {
   position: absolute;
-  right: var(--space-4);
+  right: calc(var(--space-4) + 120px); /* Adjust based on search button width */
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -467,6 +468,23 @@ export default {
 }
 .clear-search:hover {
   color: var(--dark);
+}
+/* Added styles for the search button */
+.search-button {
+  padding: 0 var(--space-4);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: background-color var(--transition-fast) ease;
+}
+.search-button:hover {
+  background-color: var(--primary-dark);
 }
 .search-filters {
   display: flex;
@@ -741,6 +759,9 @@ export default {
   .search-subtitle {
     font-size: var(--font-size-md);
   }
+  .search-input-group {
+    flex-direction: column;
+  }
   .search-input {
     font-size: var(--font-size-md);
     padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
@@ -748,6 +769,12 @@ export default {
   .search-icon {
     left: var(--space-3);
     font-size: var(--font-size-md);
+  }
+  .clear-search {
+    right: var(--space-3);
+  }
+  .search-button {
+    margin-top: var(--space-2);
   }
   .filter-options {
     flex-direction: column;

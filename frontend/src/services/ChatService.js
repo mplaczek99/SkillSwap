@@ -209,6 +209,8 @@ class ChatService {
         timestamp: new Date(),
       };
       newConversation.messages.push(newMessage);
+      // Update the lastMessageTime with the new message timestamp
+      newConversation.lastMessageTime = newMessage.timestamp;
     }
 
     // Add to conversations

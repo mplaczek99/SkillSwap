@@ -1,17 +1,27 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// getJWTSecret reads the JWT secret from the environment or returns a default (for development).
+// getJWTSecret reads the JWT secret from the environment or generates a random one if not set.
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "default_secret_key" // Warning: use a strong secret in production!
+		log.Println("WARNING: JWT_SECRET not set! Using a randomly generated secret which will change on restart.")
+		// Generate a random 32-byte secret
+		randomBytes := make([]byte, 32)
+		if _, err := rand.Read(randomBytes); err != nil {
+			log.Println("Failed to generate random secret, using fallback secret")
+			return "temporary_fallback_secret_key_please_set_JWT_SECRET"
+		}
+		return base64.StdEncoding.EncodeToString(randomBytes)
 	}
 	return secret
 }

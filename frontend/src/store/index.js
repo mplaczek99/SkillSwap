@@ -53,14 +53,19 @@ export default createStore({
       try {
         const response = await axios.post("/api/auth/login", credentials);
         commit("setToken", response.data.token);
-        const decoded = jwtDecode(response.data.token);
-        commit("setUser", {
-          id: decoded.user_id,
-          email: decoded.email,
-          role: decoded.role,
-          name: "Test User",
-          bio: "",
-        });
+        try {
+          const decoded = jwtDecode(response.data.token);
+          commit("setUser", {
+            id: decoded.user_id || 0,
+            email: decoded.email || "",
+            role: decoded.role || "User",
+            name: decoded.name || "Test User",
+            bio: decoded.bio || "",
+          });
+        } catch (decodeError) {
+          console.error("Error decoding JWT token:", decodeError);
+          throw new Error("Invalid authentication token received");
+        }
       } catch (error) {
         throw error;
       }
@@ -69,14 +74,19 @@ export default createStore({
       try {
         const response = await axios.post("/api/auth/register", credentials);
         commit("setToken", response.data.token);
-        const decoded = jwtDecode(response.data.token);
-        commit("setUser", {
-          id: decoded.user_id,
-          email: decoded.email,
-          role: decoded.role,
-          name: credentials.name,
-          bio: "",
-        });
+        try {
+          const decoded = jwtDecode(response.data.token);
+          commit("setUser", {
+            id: decoded.user_id || 0,
+            email: decoded.email || "",
+            role: decoded.role || "User",
+            name: credentials.name || "New User",
+            bio: "",
+          });
+        } catch (decodeError) {
+          console.error("Error decoding JWT token:", decodeError);
+          throw new Error("Invalid authentication token received");
+        }
       } catch (error) {
         throw error;
       }
