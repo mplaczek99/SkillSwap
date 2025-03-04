@@ -73,12 +73,18 @@ class ChatService {
         // Find the other participant (not the current user)
         const otherParticipant = convo.participants.find(
           (p) => p.id !== currentUserId,
-        );
+        ) || { id: 0, name: "Unknown User", avatar: null };
+
+        const lastMessage =
+          convo.messages.length > 0
+            ? convo.messages[convo.messages.length - 1]
+            : { text: "", timestamp: new Date() };
+
         return {
           id: convo.id,
           recipient: otherParticipant,
-          lastMessage: convo.messages[convo.messages.length - 1],
-          unreadCount: convo.unreadCount,
+          lastMessage: lastMessage,
+          unreadCount: convo.unreadCount || 0,
         };
       })
       .sort(
@@ -107,7 +113,8 @@ class ChatService {
     // Format the conversation for the UI
     const otherParticipant = conversation.participants.find(
       (p) => p.id !== currentUserId,
-    );
+    ) || { id: 0, name: "Unknown User", avatar: null };
+
     return {
       id: conversation.id,
       recipient: otherParticipant,
@@ -157,6 +164,10 @@ class ChatService {
     // Simulate API call
     await this.simulateNetworkDelay(500);
 
+    if (!userId) {
+      throw new Error("User ID is required to start a conversation");
+    }
+
     const currentUserId = store.state.user ? store.state.user.id : 1;
     const currentUserName = store.state.user
       ? store.state.user.name
@@ -182,7 +193,7 @@ class ChatService {
       id: conversations.length + 1,
       participants: [
         { id: currentUserId, name: currentUserName, avatar: null },
-        { id: userId, name: userName, avatar: null },
+        { id: userId, name: userName || "Unknown User", avatar: null },
       ],
       messages: [],
       lastMessageTime: new Date(),
@@ -211,7 +222,7 @@ class ChatService {
    */
   async getUnreadCount() {
     const convos = await this.getConversations();
-    return convos.reduce((total, convo) => total + convo.unreadCount, 0);
+    return convos.reduce((total, convo) => total + (convo.unreadCount || 0), 0);
   }
 
   /**
@@ -226,12 +237,14 @@ class ChatService {
    */
   async simulateIncomingMessage(conversationId, text) {
     const conversation = conversations.find((c) => c.id == conversationId);
-    if (!conversation) return;
+    if (!conversation) return null;
 
     const currentUserId = store.state.user ? store.state.user.id : 1;
     const otherParticipant = conversation.participants.find(
       (p) => p.id !== currentUserId,
     );
+
+    if (!otherParticipant) return null;
 
     const newMessage = {
       id: conversation.messages.length + 1,
@@ -242,7 +255,7 @@ class ChatService {
 
     conversation.messages.push(newMessage);
     conversation.lastMessageTime = newMessage.timestamp;
-    conversation.unreadCount += 1;
+    conversation.unreadCount = (conversation.unreadCount || 0) + 1;
 
     // Return the formatted message
     return {
