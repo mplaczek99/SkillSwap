@@ -124,7 +124,7 @@ library.add(
   faPlusCircle,
   faCheck,
   faArrowLeft,
-  faUndo
+  faUndo,
 );
 
 const app = createApp(App);
