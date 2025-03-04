@@ -35,18 +35,18 @@ export default createStore({
       try {
         const storedUser = JSON.parse(localStorage.getItem("user"));
         const storedToken = localStorage.getItem("token");
-        
+
         if (storedUser) {
           state.user = storedUser;
         }
-        
+
         if (storedToken) {
           state.token = storedToken;
         }
       } catch (e) {
         console.error("Error initializing store from localStorage:", e);
       }
-    }
+    },
   },
   actions: {
     async login({ commit }, credentials) {
@@ -89,7 +89,7 @@ export default createStore({
     },
     initializeStore({ commit }) {
       commit("initializeStore");
-    }
+    },
   },
   getters: {
     isAuthenticated: (state) => !!state.token,

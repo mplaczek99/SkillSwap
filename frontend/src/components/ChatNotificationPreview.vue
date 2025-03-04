@@ -50,16 +50,14 @@ export default {
   beforeUnmount() {
     // Clean up the event listener and any pending timeout.
     eventBus.off("chat:incoming-message", this.handleIncomingMessage);
-    if (this.messageTimeout) {
-      clearTimeout(this.messageTimeout);
-    }
+    this.clearTimeouts();
   },
   methods: {
     handleIncomingMessage(message) {
       // If currently in the chat conversation for the message, ignore.
       if (
         this.$route.name === "Chat" &&
-        this.$route.query.conversation == message.conversationId
+        this.$route.query.conversation === message.conversationId.toString()
       ) {
         return;
       }
@@ -75,16 +73,14 @@ export default {
       }
       this.activeMessage = this.messageQueue.shift();
       // Auto-dismiss after 5 seconds.
+      this.clearTimeouts();
       this.messageTimeout = setTimeout(() => {
         this.closeMessage();
       }, 5000);
     },
     closeMessage() {
       this.activeMessage = null;
-      if (this.messageTimeout) {
-        clearTimeout(this.messageTimeout);
-        this.messageTimeout = null;
-      }
+      this.clearTimeouts();
       if (this.messageQueue.length > 0) {
         setTimeout(() => {
           this.showNextMessage();
@@ -104,6 +100,12 @@ export default {
         hour: "2-digit",
         minute: "2-digit",
       });
+    },
+    clearTimeouts() {
+      if (this.messageTimeout) {
+        clearTimeout(this.messageTimeout);
+        this.messageTimeout = null;
+      }
     },
   },
 };
