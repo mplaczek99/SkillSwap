@@ -18,7 +18,6 @@
               placeholder="Search for skills, topics, or users..."
               class="search-input"
               required
-              @input="onSearchInput"
             />
             <button
               v-if="query"
@@ -28,7 +27,7 @@
             >
               <font-awesome-icon icon="times" />
             </button>
-            <!-- Added explicit search button -->
+            <!-- Explicit search button -->
             <button type="submit" class="search-button">
               <font-awesome-icon icon="search" />
               Search
@@ -201,7 +200,6 @@
 
 <script>
 import axios from "axios";
-import debounce from "lodash/debounce";
 import eventBus from "@/utils/eventBus";
 
 export default {
@@ -257,14 +255,10 @@ export default {
     },
   },
   created() {
-    // Only initialize the debounced search but won't use it for auto-search
-    this.debouncedSearch = debounce(this.performSearch, 300);
-    
-    // Check for query parameter in URL and perform initial search if present
+    // Check for query parameter in URL and set as initial value
     const queryParam = this.$route.query.q;
     if (queryParam) {
       this.query = queryParam;
-      this.search();
     }
   },
   methods: {
@@ -295,19 +289,12 @@ export default {
         this.searched = true;
       }
     },
-    onSearchInput() {
-      // Only update URL query parameter, don't trigger search automatically
-      this.$router.replace({
-        query: { ...this.$route.query, q: this.query || undefined },
-      });
-    },
     clearSearch() {
       this.query = "";
       this.results = [];
       this.searched = false;
-      this.$router.replace({ query: {} });
     },
-    async search() {
+    search() {
       if (this.forceApiCall) {
         this.performSearch();
       } else if (process.env.JEST_WORKER_ID) {
@@ -469,7 +456,7 @@ export default {
 .clear-search:hover {
   color: var(--dark);
 }
-/* Added styles for the search button */
+/* Search button styles */
 .search-button {
   padding: 0 var(--space-4);
   background-color: var(--primary-color);
@@ -482,9 +469,13 @@ export default {
   align-items: center;
   gap: var(--space-2);
   transition: background-color var(--transition-fast) ease;
+  min-width: 120px;
+  justify-content: center;
 }
 .search-button:hover {
   background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 .search-filters {
   display: flex;
@@ -649,6 +640,7 @@ export default {
     transform var(--transition-normal) ease,
     box-shadow var(--transition-normal) ease;
   padding: var(--space-4);
+  height: 100%;
 }
 .result-card:hover {
   transform: translateY(-4px);
@@ -681,6 +673,8 @@ export default {
 }
 .result-details {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .result-details h3 {
   font-size: var(--font-size-lg);
@@ -694,6 +688,7 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex-grow: 1;
 }
 .result-meta {
   display: flex;
@@ -706,6 +701,7 @@ export default {
 .result-actions {
   display: flex;
   gap: var(--space-2);
+  margin-top: auto;
 }
 .no-results {
   display: flex;
@@ -752,6 +748,29 @@ export default {
   opacity: 0;
   overflow: hidden;
 }
+/* Animation for search results */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+/* Loading animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid var(--primary-color);
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
 @media (max-width: 768px) {
   .search-hero h1 {
     font-size: var(--font-size-2xl);
@@ -775,10 +794,14 @@ export default {
   }
   .search-button {
     margin-top: var(--space-2);
+    width: 100%;
   }
   .filter-options {
     flex-direction: column;
     gap: var(--space-2);
+  }
+  .results-container {
+    grid-template-columns: 1fr;
   }
 }
 </style>
