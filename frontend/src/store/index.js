@@ -6,18 +6,10 @@ import jwtDecode from "jwt-decode";
 const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
 axios.defaults.baseURL = apiUrl;
 
-// Initialize storedUser outside the store definition.
-let storedUser = null;
-try {
-  storedUser = JSON.parse(localStorage.getItem("user"));
-} catch (e) {
-  storedUser = null;
-}
-
 export default createStore({
   state: {
-    user: storedUser,
-    token: localStorage.getItem("token") || null,
+    user: null,
+    token: null,
   },
   mutations: {
     setUser(state, user) {
@@ -38,6 +30,23 @@ export default createStore({
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     },
+    initializeStore(state) {
+      // Initialize store from localStorage if available
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const storedToken = localStorage.getItem("token");
+        
+        if (storedUser) {
+          state.user = storedUser;
+        }
+        
+        if (storedToken) {
+          state.token = storedToken;
+        }
+      } catch (e) {
+        console.error("Error initializing store from localStorage:", e);
+      }
+    }
   },
   actions: {
     async login({ commit }, credentials) {
@@ -78,6 +87,9 @@ export default createStore({
     updateProfile({ commit }, profileData) {
       commit("updateUser", profileData);
     },
+    initializeStore({ commit }) {
+      commit("initializeStore");
+    }
   },
   getters: {
     isAuthenticated: (state) => !!state.token,
