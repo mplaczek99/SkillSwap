@@ -261,13 +261,22 @@ export default {
   },
   methods: {
     async performSearch() {
+      if (!this.query.trim()) {
+        this.results = [];
+        this.error = null;
+        this.loading = false;
+        this.searched = false;
+        return;
+      }
+
       this.loading = true;
       this.error = null;
       try {
         const response = await axios.get("/api/search", {
           params: { q: this.query },
+          timeout: 10000, // Add timeout to prevent hanging requests
         });
-        this.results = response.data;
+        this.results = response.data || [];
       } catch (err) {
         console.error("Search API error:", err);
         this.error =
@@ -279,9 +288,11 @@ export default {
       }
     },
     onSearchInput() {
+      // Update URL query parameter
       this.$router.replace({
         query: { ...this.$route.query, q: this.query || undefined },
       });
+
       if (this.query.length > 2) {
         this.debouncedSearch();
       } else if (this.query.length === 0) {
@@ -299,6 +310,7 @@ export default {
       if (this.forceApiCall) {
         this.debouncedSearch();
       } else if (process.env.JEST_WORKER_ID) {
+        // For testing environment
         const dummyData = [
           { name: "Alice", description: "Guitar" },
           { name: "Bob", description: "Spanish" },
@@ -325,6 +337,8 @@ export default {
       this.searchType = "all";
     },
     getSkillIcon(skillName) {
+      if (!skillName) return "cog";
+
       const skillIcons = {
         programming: "code",
         language: "language",
@@ -339,25 +353,45 @@ export default {
         python: "code",
         singing: "music",
       };
+
+      const skillNameLower = skillName.toLowerCase();
+
       for (const [key, icon] of Object.entries(skillIcons)) {
-        if (skillName.toLowerCase().includes(key.toLowerCase())) {
+        if (skillNameLower.includes(key.toLowerCase())) {
           return icon;
         }
       }
       return "cog";
     },
     viewProfile(user) {
+      if (!user || !user.id) {
+        console.error("Invalid user object:", user);
+        alert("Cannot view profile: invalid user data");
+        return;
+      }
       alert(`Viewing profile for ${user.name}`);
     },
     viewSkill(skill) {
+      if (!skill || !skill.name) {
+        console.error("Invalid skill object:", skill);
+        alert("Cannot view skill: invalid skill data");
+        return;
+      }
       alert(`Viewing details for ${skill.name}`);
     },
-    // Updated startChat method to use eventBus.emit
+    // Updated startChat method with proper error handling
     startChat(user) {
+      if (!user || !user.id) {
+        console.error("Invalid user object for chat:", user);
+        alert("Cannot start chat: invalid user data");
+        return;
+      }
+
       this.$router.push({
         name: "Chat",
         query: { user: user.id, userName: user.name },
       });
+
       eventBus.emit("show-notification", {
         type: "info",
         title: "Starting Chat",

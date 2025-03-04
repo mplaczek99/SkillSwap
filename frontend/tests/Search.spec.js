@@ -47,7 +47,10 @@ describe("Search.vue", () => {
     wrapper.vm.debouncedSearch.flush();
     await flushPromises();
 
-    expect(axios.get).toHaveBeenCalledWith("/api/search", { params: { q: "dummy" } });
+    expect(axios.get).toHaveBeenCalledWith("/api/search", { 
+      params: { q: "dummy" },
+      timeout: 10000
+    });
     expect(wrapper.text()).toContain("Dummy Skill");
   });
 
