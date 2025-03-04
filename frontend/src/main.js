@@ -129,4 +129,8 @@ library.add(
 
 const app = createApp(App);
 app.component("font-awesome-icon", FontAwesomeIcon);
+
+// Initialize the store from localStorage before mounting the app
+store.dispatch("initializeStore");
+
 app.use(store).use(router).mount("#app");
