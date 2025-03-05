@@ -83,15 +83,16 @@ export default {
       this.error = null;
 
       try {
-        const response = await axios.get("/api/videos", {
-          headers: {
-            Authorization: `Bearer ${this.$store.state.token}`,
-          },
-        });
+        const response = await axios.get("/api/videos");
         this.videos = response.data;
       } catch (error) {
         console.error("Error fetching videos:", error);
-        this.error = "Failed to load videos. Please try again later.";
+
+        if (error.response && error.response.status === 401) {
+          this.error = "Your session has expired. Please login again.";
+        } else {
+          this.error = "Failed to load videos. Please try again later.";
+        }
       } finally {
         this.loading = false;
       }

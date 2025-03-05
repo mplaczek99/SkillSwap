@@ -13,20 +13,20 @@
         <form @submit.prevent="createSchedule" class="schedule-form">
           <div class="form-group">
             <label for="startTime">Start Time</label>
-            <input 
+            <input
               id="startTime"
-              type="datetime-local" 
-              v-model="newSchedule.startTime" 
-              required 
+              type="datetime-local"
+              v-model="newSchedule.startTime"
+              required
             />
           </div>
           <div class="form-group">
             <label for="endTime">End Time</label>
-            <input 
+            <input
               id="endTime"
-              type="datetime-local" 
-              v-model="newSchedule.endTime" 
-              required 
+              type="datetime-local"
+              v-model="newSchedule.endTime"
+              required
             />
           </div>
           <button type="submit" class="schedule-btn">
@@ -39,7 +39,7 @@
       <div v-if="scheduleError" class="error-message">
         {{ scheduleError }}
       </div>
-      
+
       <div v-if="scheduleLoading" class="loading-indicator">
         <div class="loading-spinner"></div>
         <span>Processing your request...</span>
@@ -48,7 +48,11 @@
       <div class="card sessions-card" v-if="schedules.length">
         <h2>Upcoming Sessions</h2>
         <ul class="schedule-list">
-          <li v-for="(schedule, index) in schedules" :key="index" class="schedule-item">
+          <li
+            v-for="(schedule, index) in schedules"
+            :key="index"
+            class="schedule-item"
+          >
             <div class="session-icon">📚</div>
             <div class="session-details">
               <h3>Skill Exchange Session</h3>
@@ -56,11 +60,15 @@
               <div class="session-time">
                 <div class="time-block">
                   <span class="time-label">Starts:</span>
-                  <span class="time-value">{{ formatDate(schedule.startTime) }}</span>
+                  <span class="time-value">{{
+                    formatDate(schedule.startTime)
+                  }}</span>
                 </div>
                 <div class="time-block">
                   <span class="time-label">Ends:</span>
-                  <span class="time-value">{{ formatDate(schedule.endTime) }}</span>
+                  <span class="time-value">{{
+                    formatDate(schedule.endTime)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -68,7 +76,10 @@
         </ul>
       </div>
 
-      <div v-else-if="!scheduleLoading && schedulesFetched" class="card empty-card">
+      <div
+        v-else-if="!scheduleLoading && schedulesFetched"
+        class="card empty-card"
+      >
         <div class="empty-state">
           <div class="empty-icon">📅</div>
           <h3>No Sessions Scheduled</h3>
@@ -201,7 +212,9 @@ export default {
   border: 1px solid #f0f0f0;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card:hover {
@@ -250,7 +263,9 @@ export default {
   border: 1px solid #ddd;
   border-radius: var(--radius-md);
   font-size: 1rem;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-group input:focus {
@@ -449,17 +464,17 @@ export default {
   .schedule-form {
     grid-template-columns: 1fr;
   }
-  
+
   .session-time {
     flex-direction: column;
     gap: var(--space-2);
   }
-  
+
   .schedule-item {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .session-icon {
     margin-bottom: var(--space-2);
   }

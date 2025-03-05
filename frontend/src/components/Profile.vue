@@ -362,7 +362,9 @@ export default {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   padding: var(--space-6);
   margin-bottom: var(--space-6);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -400,7 +402,11 @@ export default {
   right: 0;
   width: 150px;
   height: 100%;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
   pointer-events: none;
 }
 
@@ -725,17 +731,17 @@ export default {
     text-align: center;
     padding: var(--space-4);
   }
-  
+
   .profile-details .bio {
     border-left: none;
     padding-left: 0;
     text-align: center;
   }
-  
+
   .profile-actions {
     justify-content: center;
   }
-  
+
   .skills-list {
     grid-template-columns: 1fr;
   }

@@ -118,7 +118,7 @@ export default {
         const response = await axios.post("/api/videos/upload", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${this.$store.state.token}`,
+            // Authorization header will be added by the interceptor
           },
           onUploadProgress: (progressEvent) => {
             this.uploadProgress = Math.round(
@@ -140,9 +140,15 @@ export default {
         }, 3000);
       } catch (error) {
         console.error("Upload error:", error);
-        this.errorMessage =
-          error.response?.data?.error ||
-          "Failed to upload video. Please try again.";
+
+        // Handle authentication errors
+        if (error.response && error.response.status === 401) {
+          this.errorMessage = "Your session has expired. Please login again.";
+        } else {
+          this.errorMessage =
+            error.response?.data?.error ||
+            "Failed to upload video. Please try again.";
+        }
 
         // Reset progress on error
         this.uploadProgress = 0;
