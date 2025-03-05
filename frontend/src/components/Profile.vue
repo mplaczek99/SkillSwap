@@ -315,256 +315,429 @@ export default {
 </script>
 
 <style scoped>
-.profile-actions {
-  display: flex;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-}
-
-.message-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-4);
-  cursor: pointer;
-  font-weight: var(--font-weight-medium);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  transition: background-color var(--transition-fast) ease;
-}
-
-.message-btn:hover {
-  background-color: var(--primary-dark);
-}
-
 /* General page styling */
 .profile-page {
   font-family: "Helvetica Neue", Arial, sans-serif;
   color: #333;
-  background: #f4f7f9;
+  background: linear-gradient(to bottom, #f4f7f9, #e8eef2);
   min-height: 100vh;
+  padding-bottom: var(--space-8);
 }
 
 /* Header section */
 .profile-header {
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   color: #fff;
-  padding: 2rem 0;
+  padding: 3rem 0;
   text-align: center;
+  margin-bottom: var(--space-6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
 .profile-header h1 {
   margin: 0;
   font-size: 2.5rem;
+  letter-spacing: 0.5px;
 }
+
 .profile-header p {
   margin: 0.5rem 0 0;
   font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Container */
-.container {
-  width: 90%;
-  max-width: 1200px;
-  margin: 0 auto;
+/* Profile content container */
+.profile-content {
+  position: relative;
+  margin-top: -2rem;
 }
 
 /* Card styling */
 .card {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* Profile card */
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  position: relative;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
+  border-bottom: 2px solid var(--primary-light);
+}
+
+/* Profile Card Enhancements */
 .profile-card {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-.profile-avatar {
-  flex-shrink: 0;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  background: linear-gradient(135deg, #f0f4ff 0%, #e5eeff 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid var(--primary-color);
+  margin-bottom: var(--space-6);
+  position: relative;
   overflow: hidden;
 }
+
+.profile-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 100%);
+  pointer-events: none;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 5px solid white;
+  position: relative;
+}
+
 .profile-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .default-avatar {
-  font-size: 4rem;
-  color: #ccc;
-}
-.profile-details h2 {
-  margin: 0;
-  font-size: 2rem;
-}
-.profile-details .email {
-  color: #777;
-  margin: 0.25rem 0;
-}
-.profile-details .bio {
-  margin: 0.5rem 0;
-  font-size: 1rem;
-  line-height: 1.4;
-}
-.profile-details .skillpoints {
-  font-size: 1.1rem;
-  margin: 0.5rem 0;
-}
-.edit-btn {
-  background: #2575fc;
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-.edit-btn:hover {
-  background: #1b5bb8;
-}
-
-/* Edit profile card */
-.edit-profile-card h3 {
-  margin-top: 0;
-}
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-}
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-.save-btn {
-  background: #6a11cb;
-  color: #fff;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.save-btn:hover {
-  background: #561b9f;
-}
-
-/* Skills card */
-.skills-card h3 {
-  margin-top: 0;
-}
-.my-skills {
-  /* Wrapper for skills section to satisfy test selectors */
-}
-.skills-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: #f0f4ff;
+  color: var(--primary-color);
+  font-size: 5rem;
 }
-.skill-item {
-  background: #f9f9f9;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 1rem;
-  width: calc(50% - 1rem);
+
+.profile-details h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--space-2) 0;
+  color: var(--dark);
+  letter-spacing: -0.5px;
+}
+
+.profile-details .email {
+  color: var(--medium);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: 1rem;
 }
+
+.profile-details .email::before {
+  content: "✉";
+  opacity: 0.7;
+}
+
+.profile-details .bio {
+  margin: var(--space-3) 0;
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+  color: var(--dark);
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--primary-color);
+  max-width: 550px;
+}
+
+.profile-details .skillpoints {
+  font-size: var(--font-size-lg);
+  color: var(--primary-color);
+  font-weight: var(--font-weight-semibold);
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  background-color: rgba(79, 70, 229, 0.1);
+  border-radius: var(--radius-full);
+  margin-top: var(--space-2);
+}
+
+.profile-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.edit-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.edit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: var(--primary-dark);
+}
+
+.message-btn {
+  background-color: var(--secondary-color);
+}
+
+.message-btn:hover {
+  background-color: var(--secondary-dark);
+}
+
+/* Skills Section Improvements */
+.card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  border: 1px solid #f0f0f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.card h3 {
+  color: var(--dark);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.skills-card h3::before {
+  content: "★";
+  margin-right: var(--space-2);
+  color: var(--primary-color);
+}
+
+.skills-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.skill-item {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  transition: all 0.25s ease;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.skill-item::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--primary-color);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.skill-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-light);
+}
+
+.skill-item:hover::after {
+  opacity: 1;
+}
+
+.skill-info {
+  flex: 1;
+}
+
 .skill-info h4 {
   margin: 0;
   font-size: 1.25rem;
-}
-.skill-info p {
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
-  color: #555;
-}
-.add-skill-btn {
-  background: #2575fc;
-  color: #fff;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 1rem;
-}
-.add-skill-btn:hover {
-  background: #1b5bb8;
+  color: var(--dark);
+  font-weight: 600;
 }
 
-/* Schedules card */
-.schedules-card h3 {
-  margin-top: 0;
+.skill-info p {
+  margin: var(--space-1) 0 var(--space-3) 0;
+  color: var(--medium);
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
-.schedule-form-wrapper {
-  margin-top: 1rem;
+
+.skill-item button {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  border: none;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
+
+.skill-item button:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.add-skill-btn {
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: auto;
+  align-self: flex-start;
+}
+
+.add-skill-btn::before {
+  content: "+";
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.add-skill-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: var(--secondary-dark);
+}
+
+/* Schedule Section Improvements */
+.schedules-card h3::before {
+  content: "📅";
+  margin-right: var(--space-2);
+  font-size: 1.2rem;
+}
+
 .schedule-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-}
-.schedule-form .form-group {
-  flex: 1;
-  min-width: 200px;
-}
-.schedule-btn {
-  background: #6a11cb;
-  color: #fff;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  align-self: flex-end;
-}
-.schedule-btn:hover {
-  background: #561b9f;
-}
-.loading-message {
-  font-style: italic;
-  margin-top: 1rem;
-}
-.error-message {
-  color: red;
-  margin-top: 1rem;
-}
-.schedule-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 1rem;
-}
-.schedule-list li {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
-}
-.no-schedules {
-  margin-top: 1rem;
-  color: #777;
+  gap: var(--space-4);
+  background-color: #f8fafc;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+  border: 1px solid #edf2f7;
 }
 
-/* Responsive adjustments */
+.schedule-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.schedule-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: var(--primary-dark);
+}
+
+.error-message {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: var(--error-color);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--error-color);
+  margin: var(--space-3) 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+}
+
+.error-message::before {
+  content: "⚠️";
+  margin-right: var(--space-2);
+}
+
+.no-schedules {
+  text-align: center;
+  padding: var(--space-8);
+  background-color: #f8fafc;
+  border-radius: var(--radius-lg);
+  color: var(--medium);
+  border: 1px dashed #e2e8f0;
+  font-size: 1rem;
+}
+
+.no-schedules::before {
+  content: "📆";
+  display: block;
+  font-size: 2.5rem;
+  margin-bottom: var(--space-3);
+  opacity: 0.7;
+}
+
+/* Responsive improvements */
 @media (max-width: 768px) {
   .profile-card {
     flex-direction: column;
     text-align: center;
+    padding: var(--space-4);
   }
-  .skill-item {
-    width: 100%;
+  
+  .profile-details .bio {
+    border-left: none;
+    padding-left: 0;
+    text-align: center;
+  }
+  
+  .profile-actions {
+    justify-content: center;
+  }
+  
+  .skills-list {
+    grid-template-columns: 1fr;
   }
 }
 </style>
