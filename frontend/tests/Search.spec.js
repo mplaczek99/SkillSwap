@@ -44,7 +44,7 @@ describe("Search.vue", () => {
     await input.setValue("dummy");
     await wrapper.find("form").trigger("submit.prevent");
 
-    wrapper.vm.debouncedSearch.flush();
+    // Remove the flush() call that was causing the error
     await flushPromises();
 
     expect(axios.get).toHaveBeenCalledWith("/api/search", { 
@@ -74,7 +74,7 @@ describe("Search.vue", () => {
     await input.setValue("nonexistent");
     await wrapper.find("form").trigger("submit.prevent");
 
-    wrapper.vm.debouncedSearch.flush();
+    // Remove the flush() call that was causing the error
     await flushPromises();
 
     // Updated to match the actual case in the component
@@ -101,7 +101,7 @@ describe("Search.vue", () => {
     await input.setValue("dummy");
     await wrapper.find("form").trigger("submit.prevent");
 
-    wrapper.vm.debouncedSearch.flush();
+    // Remove the flush() call that was causing the error
     await flushPromises();
 
     expect(wrapper.text()).toContain("An error occurred while searching");

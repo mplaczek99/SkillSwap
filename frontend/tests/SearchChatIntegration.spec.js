@@ -47,7 +47,8 @@ describe("Search Chat Integration", () => {
     const input = wrapper.find("input");
     await input.setValue("alice");
     await wrapper.find("form").trigger("submit.prevent");
-    wrapper.vm.debouncedSearch.flush();
+    
+    // Remove the flush() call that was causing the error
     await flushPromises();
     
     // Simulate startChat call directly.
@@ -67,4 +68,3 @@ describe("Search Chat Integration", () => {
     });
   });
 });
-
