@@ -84,9 +84,10 @@ export default {
 
       try {
         const response = await axios.get("/api/videos");
-        this.videos = response.data;
+        this.videos = response.data || [];
       } catch (error) {
         console.error("Error fetching videos:", error);
+        this.videos = [];
 
         if (error.response && error.response.status === 401) {
           this.error = "Your session has expired. Please login again.";
