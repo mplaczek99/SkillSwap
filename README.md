@@ -206,12 +206,3 @@ go test ./...
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-- Vue.js team for the amazing frontend framework
-- Go team for the powerful backend language
-- All contributors and users of the SkillSwap platform
