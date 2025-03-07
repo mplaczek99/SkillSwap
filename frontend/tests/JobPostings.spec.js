@@ -160,9 +160,6 @@ describe("JobPostings.vue", () => {
   });
 
   it("handles empty search results", async () => {
-    // Create a mock that returns empty jobs
-    const emptyJobsMock = [];
-
     // Mount component
     const wrapper = mount(JobPostings, {
       global: {
