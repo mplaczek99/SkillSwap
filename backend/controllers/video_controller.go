@@ -60,9 +60,13 @@ func GetVideosList(c *gin.Context) {
 	// Define the directory where uploads are stored.
 	uploadDir := "./uploads"
 
+	// Initialize an empty videos slice to ensure we always return a JSON array
+	videos := []gin.H{}
+
 	// Ensure directory exists
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		c.JSON(http.StatusOK, []interface{}{})
+		// Return empty array if directory doesn't exist
+		c.JSON(http.StatusOK, videos)
 		return
 	}
 
@@ -74,8 +78,6 @@ func GetVideosList(c *gin.Context) {
 	}
 
 	// Collect video information
-	var videos []gin.H
-
 	for _, file := range files {
 		if file.IsDir() {
 			continue // Skip directories
