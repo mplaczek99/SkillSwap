@@ -10,6 +10,7 @@ export default createStore({
   state: {
     user: null,
     token: null,
+    rememberMe: false,
   },
   mutations: {
     setUser(state, user) {
@@ -20,6 +21,10 @@ export default createStore({
       state.token = token;
       localStorage.setItem("token", token);
     },
+    setRememberMe(state, value) {
+      state.rememberMe = value;
+      localStorage.setItem("rememberMe", value.toString());
+    },
     updateUser(state, userUpdates) {
       state.user = { ...state.user, ...userUpdates };
       localStorage.setItem("user", JSON.stringify(state.user));
@@ -27,21 +32,45 @@ export default createStore({
     logout(state) {
       state.user = null;
       state.token = null;
+      state.rememberMe = false;
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      localStorage.removeItem("rememberMe");
     },
     initializeStore(state) {
       // Initialize store from localStorage if available
       try {
-        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const storedUserJSON = localStorage.getItem("user");
         const storedToken = localStorage.getItem("token");
+        const storedRememberMe = localStorage.getItem("rememberMe");
 
-        if (storedUser) {
-          state.user = storedUser;
+        // Check for remember me flag
+        const isRemembered = storedRememberMe === "true";
+
+        // If remember me is false and this is a new browser session, don't restore
+        // We can detect a new session by checking a session variable
+        const sessionMarker = sessionStorage.getItem("sessionMarker");
+
+        if (!isRemembered && !sessionMarker && storedToken) {
+          // This is a new session and rememberMe was false, clear stored data
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          return;
+        }
+
+        // Mark this as an active session
+        sessionStorage.setItem("sessionMarker", "active");
+
+        if (storedUserJSON) {
+          state.user = JSON.parse(storedUserJSON);
         }
 
         if (storedToken) {
           state.token = storedToken;
+        }
+
+        if (storedRememberMe) {
+          state.rememberMe = isRemembered;
         }
       } catch (e) {
         console.error("Error initializing store from localStorage:", e);
@@ -53,6 +82,8 @@ export default createStore({
       try {
         const response = await axios.post("/api/auth/login", credentials);
         commit("setToken", response.data.token);
+        commit("setRememberMe", !!credentials.rememberMe);
+
         try {
           const decoded = jwtDecode(response.data.token);
           commit("setUser", {
@@ -74,6 +105,8 @@ export default createStore({
       try {
         const response = await axios.post("/api/auth/register", credentials);
         commit("setToken", response.data.token);
+        commit("setRememberMe", true); // Default to remember for new registrations
+
         try {
           const decoded = jwtDecode(response.data.token);
           commit("setUser", {

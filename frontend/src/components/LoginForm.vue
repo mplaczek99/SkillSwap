@@ -147,10 +147,8 @@ export default {
         await this.$store.dispatch("login", {
           email: this.email,
           password: this.password,
+          rememberMe: this.rememberMe, // Pass this value to the login action
         });
-
-        // If remember me is checked, we could set a longer expiration on the token
-        // or handle this on the backend
 
         // Redirect to home page or intended destination
         this.$router.push("/");
@@ -168,7 +166,8 @@ export default {
 
 <style scoped>
 .auth-page {
-  min-height: calc(100vh - 4rem - 108px); /* Adjust for navbar and footer */
+  min-height: calc(100vh - 4rem - 108px);
+  /* Adjust for navbar and footer */
   display: flex;
   align-items: center;
   padding: var(--space-8) 0;

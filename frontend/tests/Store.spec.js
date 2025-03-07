@@ -6,13 +6,14 @@ jest.mock("jwt-decode", () =>
     user_id: 1,
     email: "test@example.com",
     role: "User",
-  }))
+  })),
 );
 
 describe("Vuex Store", () => {
   beforeEach(() => {
     localStorage.clear();
-    store.replaceState({ user: null, token: null });
+    sessionStorage.clear();
+    store.replaceState({ user: null, token: null, rememberMe: false });
   });
 
   it("commits a token via mutation", () => {
@@ -29,15 +30,26 @@ describe("Vuex Store", () => {
   });
 
   it("login action commits token on success", async () => {
-    jest.spyOn(axios, "post").mockResolvedValue({ data: { token: "test-token" } });
-    await store.dispatch("login", { email: "test@example.com", password: "123" });
+    jest
+      .spyOn(axios, "post")
+      .mockResolvedValue({ data: { token: "test-token" } });
+    await store.dispatch("login", {
+      email: "test@example.com",
+      password: "123",
+    });
     expect(store.state.token).toBe("test-token");
     axios.post.mockRestore();
   });
 
   it("register action commits token on success", async () => {
-    jest.spyOn(axios, "post").mockResolvedValue({ data: { token: "register-token" } });
-    await store.dispatch("register", { name: "Test", email: "test@example.com", password: "123" });
+    jest
+      .spyOn(axios, "post")
+      .mockResolvedValue({ data: { token: "register-token" } });
+    await store.dispatch("register", {
+      name: "Test",
+      email: "test@example.com",
+      password: "123",
+    });
     expect(store.state.token).toBe("register-token");
     axios.post.mockRestore();
   });
