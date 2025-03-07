@@ -44,75 +44,96 @@ export default {
     };
   },
   created() {
-    // Listen for incoming message events using the event bus.
+    // Set up event listeners
     eventBus.on("chat:incoming-message", this.handleIncomingMessage);
+    eventBus.on("chat:read-messages", this.handleReadMessages);
   },
   beforeUnmount() {
-    // Clean up the event listener and any pending timeout.
+    // Clean up event listeners and timeouts
     eventBus.off("chat:incoming-message", this.handleIncomingMessage);
+    eventBus.off("chat:read-messages", this.handleReadMessages);
     this.clearTimeouts();
   },
   methods: {
     handleIncomingMessage(message) {
-      // If currently in the chat conversation for the message, ignore.
+      // Skip if user is already viewing this conversation
       if (
         this.$route.name === "Chat" &&
         this.$route.query.conversation === message.conversationId.toString()
       ) {
         return;
       }
+
+      // Add to queue and show if no active message
       this.messageQueue.push(message);
       if (!this.activeMessage) {
         this.showNextMessage();
       }
     },
+
     showNextMessage() {
       if (this.messageQueue.length === 0) {
         this.activeMessage = null;
         return;
       }
+
       this.activeMessage = this.messageQueue.shift();
-      // Auto-dismiss after 5 seconds.
+
+      // Auto-dismiss after 5 seconds
       this.clearTimeouts();
       this.messageTimeout = setTimeout(() => {
         this.closeMessage();
       }, 5000);
     },
+
     closeMessage() {
       this.activeMessage = null;
       this.clearTimeouts();
+
+      // Show next message after a short delay if queue isn't empty
       if (this.messageQueue.length > 0) {
         setTimeout(() => {
           this.showNextMessage();
         }, 300);
       }
     },
+
     viewConversation() {
       if (!this.activeMessage) return;
+
       this.$router.push({
         name: "Chat",
         query: { conversation: this.activeMessage.conversationId },
       });
+
       this.closeMessage();
     },
+
     formatTime(timestamp) {
       return new Date(timestamp).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
     },
+
     clearTimeouts() {
       if (this.messageTimeout) {
         clearTimeout(this.messageTimeout);
         this.messageTimeout = null;
       }
     },
+
+    handleReadMessages() {
+      // Clear any active message and message queue when messages have been read
+      this.activeMessage = null;
+      this.messageQueue = [];
+      this.clearTimeouts();
+    },
   },
 };
 </script>
 
 <style scoped>
-/* (CSS remains unchanged) */
 .message-preview-container {
   position: fixed;
   bottom: 1.5rem;
@@ -121,6 +142,7 @@ export default {
   max-width: 350px;
   width: 100%;
 }
+
 .message-preview {
   background-color: var(--white);
   border-radius: var(--radius-lg);
@@ -134,9 +156,11 @@ export default {
   border-left: 4px solid var(--primary-color);
   transition: transform var(--transition-fast) ease;
 }
+
 .message-preview:hover {
   transform: translateY(-3px);
 }
+
 .message-avatar {
   width: 40px;
   height: 40px;
@@ -149,34 +173,40 @@ export default {
   font-size: var(--font-size-lg);
   flex-shrink: 0;
 }
+
 .message-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
 }
+
 .message-content {
   flex: 1;
   min-width: 0;
 }
+
 .message-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--space-1);
 }
+
 .message-sender {
   font-weight: var(--font-weight-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .message-time {
   font-size: var(--font-size-xs);
   color: var(--medium);
   white-space: nowrap;
   margin-left: var(--space-2);
 }
+
 .message-text {
   font-size: var(--font-size-sm);
   color: var(--medium);
@@ -186,6 +216,7 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
 .message-close {
   background: transparent;
   border: none;
@@ -196,14 +227,17 @@ export default {
   padding: var(--space-1);
   margin-left: var(--space-1);
 }
+
 .message-close:hover {
   opacity: 1;
   color: var(--dark);
 }
+
 .message-pop-enter-active,
 .message-pop-leave-active {
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
 .message-pop-enter-from,
 .message-pop-leave-to {
   opacity: 0;

@@ -14,7 +14,7 @@
             </button>
           </div>
 
-          <!-- Search for users to start a conversation -->
+          <!-- Search for users -->
           <div class="chat-search">
             <input
               type="text"
@@ -33,7 +33,7 @@
                 @click="startNewConversation(user)"
               >
                 <div class="user-avatar">
-                  <font-awesome-icon icon="user" v-if="!user.avatar" />
+                  <font-awesome-icon v-if="!user.avatar" icon="user" />
                   <img v-else :src="user.avatar" :alt="user.name" />
                 </div>
                 <div class="user-info">
@@ -233,8 +233,6 @@ export default {
       searchQuery: "",
       searchResults: [],
       showSearchResults: false,
-      searchingUsers: false,
-      // Mock user search results
       mockUsers: [
         {
           id: 2,
@@ -261,17 +259,12 @@ export default {
   created() {
     this.loadConversations();
     this.searchUsers = debounce(this.performSearch, 300);
-
-    // Set up demo mock message receiver
     this.setupMockMessageReceiver();
 
-    // Check for conversation ID in route query
+    // Check for route params
     if (this.$route.query.conversation) {
       this.loadConversation(this.$route.query.conversation);
-    }
-
-    // Check for user ID in route query (to start a new conversation)
-    if (this.$route.query.user && this.$route.query.userName) {
+    } else if (this.$route.query.user && this.$route.query.userName) {
       this.startNewConversation({
         id: parseInt(this.$route.query.user),
         name: this.$route.query.userName,
@@ -279,7 +272,6 @@ export default {
     }
   },
   mounted() {
-    // Close search results when clicking outside
     document.addEventListener("click", this.handleOutsideClick);
   },
   beforeUnmount() {
@@ -308,18 +300,18 @@ export default {
           query: { ...this.$route.query, conversation: conversationId },
         });
 
-        // Update the unread count in the conversations list
+        // Update unread count and notify other components
         const convoIndex = this.conversations.findIndex(
           (c) => c.id === conversationId,
         );
         if (convoIndex !== -1) {
           this.conversations[convoIndex].unreadCount = 0;
+          // Emit event to notify that messages have been read
+          eventBus.emit("chat:read-messages");
         }
 
         // Scroll to bottom of messages
-        this.$nextTick(() => {
-          this.scrollToBottom();
-        });
+        this.$nextTick(this.scrollToBottom);
       } catch (error) {
         console.error("Failed to load conversation:", error);
       }
@@ -338,29 +330,23 @@ export default {
         // Add message to conversation
         this.activeConversation.messages.push(message);
 
-        // Update last message in conversations list
+        // Update conversation in list
         const convoIndex = this.conversations.findIndex(
           (c) => c.id === this.activeConversation.id,
         );
         if (convoIndex !== -1) {
-          this.conversations[convoIndex].lastMessage = {
+          const convo = this.conversations.splice(convoIndex, 1)[0];
+          convo.lastMessage = {
             text: message.text,
             timestamp: message.timestamp,
           };
-
-          // Move conversation to top of list
-          const convo = this.conversations.splice(convoIndex, 1)[0];
           this.conversations.unshift(convo);
         }
 
         // Clear input
         this.newMessage = "";
         this.$refs.messageInput.style.height = "auto";
-
-        // Scroll to bottom
-        this.$nextTick(() => {
-          this.scrollToBottom();
-        });
+        this.$nextTick(this.scrollToBottom);
       } catch (error) {
         console.error("Failed to send message:", error);
       } finally {
@@ -376,13 +362,11 @@ export default {
     },
 
     autoGrow(e) {
-      // Auto-resize textarea
       e.target.style.height = "auto";
       e.target.style.height = e.target.scrollHeight + "px";
     },
 
     handleKeyDown(e) {
-      // Send on Enter, allow Shift+Enter for new line
       if (!e.shiftKey) {
         this.sendMessage();
       }
@@ -417,8 +401,7 @@ export default {
     },
 
     formatMessageTime(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleTimeString([], {
+      return new Date(timestamp).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -471,10 +454,7 @@ export default {
         return;
       }
 
-      this.searchingUsers = true;
-
-      // In a real app, we would call an API
-      // For now, use our mock users
+      // Simple client-side search
       const query = this.searchQuery.toLowerCase();
       this.searchResults = this.mockUsers.filter(
         (user) =>
@@ -483,30 +463,25 @@ export default {
       );
 
       this.showSearchResults = true;
-      this.searchingUsers = false;
     },
 
     async startNewConversation(user) {
-      // Hide search results
       this.showSearchResults = false;
       this.searchQuery = "";
 
       try {
-        // Start new conversation (or get existing one)
+        // Start or get existing conversation
         const conversationId = await ChatService.startConversation(
           user.id,
           user.name,
         );
 
-        // Refresh conversations list
         await this.loadConversations();
-
-        // Load the conversation
         await this.loadConversation(conversationId);
 
         // Focus message input
         this.$nextTick(() => {
-          this.$refs.messageInput.focus();
+          this.$refs.messageInput?.focus();
         });
       } catch (error) {
         console.error("Failed to start conversation:", error);
@@ -515,24 +490,19 @@ export default {
 
     openUserProfile() {
       if (!this.activeConversation) return;
-
-      // In a real app, navigate to user profile
       alert(`Viewing profile for ${this.activeConversation.recipient.name}`);
     },
 
     handleOutsideClick(event) {
-      // Close search results when clicking outside
       if (this.showSearchResults && !event.target.closest(".chat-search")) {
         this.showSearchResults = false;
       }
     },
 
-    // For demo purposes - simulate receiving messages
     setupMockMessageReceiver() {
-      // Every 45-90 seconds, simulate receiving a message in one of the conversations
       this.mockMessageInterval = setInterval(
         async () => {
-          if (this.conversations.length === 0) return;
+          if (!this.conversations.length) return;
 
           // Pick a random conversation
           const randomIndex = Math.floor(
@@ -547,10 +517,6 @@ export default {
             "I have some free time next week if you'd like to schedule a session.",
             "I found a great resource that might help you learn faster!",
             "Quick question about our last session...",
-            "Are you still interested in learning this skill?",
-            "I enjoyed our last skill exchange session! Hope we can do it again soon.",
-            "Do you think you could teach me more about advanced techniques?",
-            "I've been practicing what you taught me last time. Making progress!",
           ];
           const randomMessage =
             messages[Math.floor(Math.random() * messages.length)];
@@ -561,15 +527,14 @@ export default {
             randomMessage,
           );
 
-          // Update UI
           this.handleIncomingMessage(message);
         },
-        Math.floor(Math.random() * 45000) + 45000,
-      ); // Random between 45-90 seconds
+        Math.floor(Math.random() * 45000) + 45000, // Random 45-90 seconds
+      );
     },
 
     handleIncomingMessage(message) {
-      // Update active conversation if it's the one receiving the message
+      // If viewing this conversation, mark as read immediately
       if (
         this.activeConversation &&
         this.activeConversation.id === message.conversationId
@@ -579,15 +544,15 @@ export default {
           isOutgoing: false,
         });
 
-        // Scroll to bottom
-        this.$nextTick(() => {
-          this.scrollToBottom();
-        });
+        // Mark as read immediately and notify other components
+        eventBus.emit("chat:read-messages");
+        this.$nextTick(this.scrollToBottom);
       } else {
         // Update conversation in list
         const convoIndex = this.conversations.findIndex(
           (c) => c.id === message.conversationId,
         );
+
         if (convoIndex !== -1) {
           const convo = this.conversations[convoIndex];
           convo.lastMessage = {
@@ -599,15 +564,15 @@ export default {
           // Move to top of list
           this.conversations.splice(convoIndex, 1);
           this.conversations.unshift(convo);
-        }
 
-        // Show notification using eventBus instead of $root.$emit
-        eventBus.emit("show-notification", {
-          type: "message",
-          title: `New message from ${this.conversations[0].recipient.name}`,
-          message: message.text,
-          duration: 5000,
-        });
+          // Show notification
+          eventBus.emit("show-notification", {
+            type: "message",
+            title: `New message from ${convo.recipient.name}`,
+            message: message.text,
+            duration: 5000,
+          });
+        }
       }
     },
   },
@@ -827,6 +792,7 @@ export default {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -979,10 +945,12 @@ export default {
     opacity: 0.4;
     transform: translateY(0);
   }
+
   50% {
     opacity: 1;
     transform: translateY(-5px);
   }
+
   100% {
     opacity: 0.4;
     transform: translateY(0);
