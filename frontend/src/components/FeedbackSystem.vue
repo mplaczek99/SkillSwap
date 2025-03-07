@@ -24,8 +24,10 @@
           >
             <div class="session-info">
               <div class="user-avatar">
+                <font-awesome-icon v-if="!session.partnerAvatar" icon="user" />
                 <img
-                  :src="session.partnerAvatar || '/default-avatar.svg'"
+                  v-else
+                  :src="session.partnerAvatar"
                   :alt="session.partnerName"
                 />
               </div>
@@ -79,11 +81,17 @@
           >
             <div class="review-header">
               <div class="reviewer-info">
-                <img
-                  :src="review.reviewerAvatar || '/default-avatar.svg'"
-                  :alt="review.reviewerName"
-                  class="reviewer-avatar"
-                />
+                <div class="reviewer-avatar">
+                  <font-awesome-icon
+                    v-if="!review.reviewerAvatar"
+                    icon="user"
+                  />
+                  <img
+                    v-else
+                    :src="review.reviewerAvatar"
+                    :alt="review.reviewerName"
+                  />
+                </div>
                 <div>
                   <h4 class="reviewer-name">{{ review.reviewerName }}</h4>
                   <p class="review-date">{{ formatDate(review.date) }}</p>
@@ -130,11 +138,17 @@
           >
             <div class="review-header">
               <div class="reviewer-info">
-                <img
-                  :src="review.recipientAvatar || '/default-avatar.svg'"
-                  :alt="review.recipientName"
-                  class="reviewer-avatar"
-                />
+                <div class="reviewer-avatar">
+                  <font-awesome-icon
+                    v-if="!review.recipientAvatar"
+                    icon="user"
+                  />
+                  <img
+                    v-else
+                    :src="review.recipientAvatar"
+                    :alt="review.recipientName"
+                  />
+                </div>
                 <div>
                   <h4 class="reviewer-name">{{ review.recipientName }}</h4>
                   <p class="review-date">{{ formatDate(review.date) }}</p>
@@ -239,43 +253,58 @@ export default {
   },
   methods: {
     formatDate(date) {
-      return new Date(date).toLocaleDateString(undefined, {
+      const options = {
         year: "numeric",
         month: "short",
         day: "numeric",
-      });
+      };
+      return new Date(date).toLocaleDateString(undefined, options);
     },
     submitFeedback(sessionId, feedback) {
       console.log(`Submitting feedback for session ${sessionId}:`, feedback);
 
-      // In a real app, you would send this to your API
-      alert(`Feedback submitted: ${feedback.rating} stars`);
-
       // Remove from pending list
-      this.pendingFeedbacks = this.pendingFeedbacks.filter(
-        (session) => session.id !== sessionId,
-      );
-
-      // Add to given feedbacks
       const session = this.pendingFeedbacks.find((s) => s.id === sessionId);
       if (session) {
+        // Add to given feedbacks first to avoid UI flicker
         this.givenFeedbacks.unshift({
           id: Date.now(), // Generate a unique ID
           recipientName: session.partnerName,
           recipientAvatar: session.partnerAvatar,
           rating: feedback.rating,
-          feedback: feedback.feedback,
+          feedback: feedback.feedback || "",
           date: new Date(),
           skillName: session.skillName,
           type: session.type === "taught" ? "learned" : "teacher",
         });
       }
+
+      // Then remove from pending
+      this.pendingFeedbacks = this.pendingFeedbacks.filter(
+        (s) => s.id !== sessionId,
+      );
+
+      // Notify user
+      this.$root.$emit("show-notification", {
+        type: "success",
+        title: "Feedback Submitted",
+        message: "Thank you for your feedback!",
+        duration: 3000,
+      });
     },
     skipFeedback(sessionId) {
       // Just remove from pending list
       this.pendingFeedbacks = this.pendingFeedbacks.filter(
-        (session) => session.id !== sessionId,
+        (s) => s.id !== sessionId,
       );
+
+      // Notify user
+      this.$root.$emit("show-notification", {
+        type: "info",
+        title: "Feedback Skipped",
+        message: "You can provide feedback later from your profile.",
+        duration: 3000,
+      });
     },
   },
 };
@@ -334,15 +363,23 @@ h3 {
   margin-bottom: var(--space-4);
 }
 
-.user-avatar {
+.user-avatar,
+.reviewer-avatar {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
 }
 
-.user-avatar img {
+.user-avatar img,
+.reviewer-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -414,13 +451,6 @@ h3 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.reviewer-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
 }
 
 .reviewer-name {
