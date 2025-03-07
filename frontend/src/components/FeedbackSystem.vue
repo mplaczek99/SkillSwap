@@ -184,6 +184,7 @@
 
 <script>
 import RatingComponent from "./RatingComponent.vue";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "FeedbackSystem",
@@ -261,7 +262,9 @@ export default {
       return new Date(date).toLocaleDateString(undefined, options);
     },
     submitFeedback(sessionId, feedback) {
-      console.log(`Submitting feedback for session ${sessionId}:`, feedback);
+      if (process.env.NODE_ENV !== "test") {
+        console.log(`Submitting feedback for session ${sessionId}:`, feedback);
+      }
 
       // Remove from pending list
       const session = this.pendingFeedbacks.find((s) => s.id === sessionId);
@@ -285,7 +288,7 @@ export default {
       );
 
       // Notify user
-      this.$root.$emit("show-notification", {
+      eventBus.emit("show-notification", {
         type: "success",
         title: "Feedback Submitted",
         message: "Thank you for your feedback!",
@@ -299,7 +302,7 @@ export default {
       );
 
       // Notify user
-      this.$root.$emit("show-notification", {
+      eventBus.emit("show-notification", {
         type: "info",
         title: "Feedback Skipped",
         message: "You can provide feedback later from your profile.",

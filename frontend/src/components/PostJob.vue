@@ -319,6 +319,7 @@
 <script>
 // Import will be needed when connecting to real API
 // import axios from 'axios';
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "PostJob",
@@ -497,7 +498,12 @@ export default {
     truncateText(text, maxLength) {
       if (!text) return "";
       if (text.length <= maxLength) return text;
-      return text.substring(0, maxLength) + "...";
+
+      // Get the substring exactly at max length
+      const truncated = text.substring(0, maxLength);
+
+      // Remove any trailing spaces and add ellipsis
+      return truncated.trimEnd() + "...";
     },
 
     async submitForm() {
@@ -521,7 +527,7 @@ export default {
           this.isSubmitting = false;
 
           // Show success message
-          this.$root.$emit("show-notification", {
+          eventBus.emit("show-notification", {
             type: "success",
             title: this.isEditing ? "Job Updated" : "Job Posted",
             message: this.isEditing
@@ -545,7 +551,7 @@ export default {
         this.isSubmitting = false;
 
         // Show error message
-        this.$root.$emit("show-notification", {
+        eventBus.emit("show-notification", {
           type: "error",
           title: "Error",
           message:
@@ -712,6 +718,7 @@ export default {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -967,6 +974,7 @@ export default {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
