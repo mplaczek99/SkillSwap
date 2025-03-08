@@ -5,28 +5,39 @@ import (
 	"encoding/base64"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// getJWTSecret reads the JWT secret from the environment or generates a random one if not set.
-func getJWTSecret() string {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		log.Println("WARNING: JWT_SECRET not set! Using a randomly generated secret which will change on restart.")
-		// Generate a random 32-byte secret
-		randomBytes := make([]byte, 32)
-		if _, err := rand.Read(randomBytes); err != nil {
-			log.Println("Failed to generate random secret, using fallback secret")
-			return "temporary_fallback_secret_key_please_set_JWT_SECRET"
-		}
-		return base64.StdEncoding.EncodeToString(randomBytes)
-	}
-	return secret
-}
+// Static secret to prevent regeneration on each call
+var (
+	secretKey []byte
+	once      sync.Once
+)
 
-var secretKey = []byte(getJWTSecret())
+// getJWTSecret reads the JWT secret from the environment or generates a random one if not set.
+// Uses sync.Once to ensure the secret is only generated once during the application lifecycle.
+func getJWTSecret() []byte {
+	once.Do(func() {
+		secret := os.Getenv("JWT_SECRET")
+		if secret == "" {
+			log.Println("WARNING: JWT_SECRET not set! Using a randomly generated secret which will remain consistent until restart.")
+			// Generate a random 32-byte secret
+			randomBytes := make([]byte, 32)
+			if _, err := rand.Read(randomBytes); err != nil {
+				log.Println("Failed to generate random secret, using fallback secret")
+				secretKey = []byte("temporary_fallback_secret_key_please_set_JWT_SECRET")
+				return
+			}
+			secretKey = []byte(base64.StdEncoding.EncodeToString(randomBytes))
+			return
+		}
+		secretKey = []byte(secret)
+	})
+	return secretKey
+}
 
 // Claims defines the JWT claims structure.
 type Claims struct {
@@ -38,6 +49,7 @@ type Claims struct {
 
 // GenerateToken creates a JWT token with the user's ID, role, and email.
 func GenerateToken(userID uint, role, email string) (string, error) {
+	secret := getJWTSecret()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		UserID: userID,
 		Role:   role,
@@ -47,13 +59,14 @@ func GenerateToken(userID uint, role, email string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	})
-	return token.SignedString(secretKey)
+	return token.SignedString(secret)
 }
 
 // ValidateToken parses and validates a JWT token string and returns its claims.
 func ValidateToken(tokenString string) (*Claims, error) {
+	secret := getJWTSecret()
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
+		return secret, nil
 	})
 	if err != nil {
 		return nil, err

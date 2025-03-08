@@ -9,10 +9,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Set environment variables for API URL - use localhost for browser access
-ENV VUE_APP_API_URL=http://localhost:8080
+# Build the application with API URL from build arg
+ARG VUE_APP_API_URL=http://localhost:8080
+ENV VUE_APP_API_URL=${VUE_APP_API_URL}
 
-# Build the application
+RUN echo "Building with API URL: $VUE_APP_API_URL"
 RUN npm run build
 
 # Production stage

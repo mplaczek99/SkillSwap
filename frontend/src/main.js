@@ -4,6 +4,9 @@ import router from "./router";
 import store from "./store";
 import axios from "axios";
 
+// Import event bus compatibility layer
+import { setupRootCompatibility } from "./utils/eventBus";
+
 // Import Font Awesome core and icons
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
@@ -160,10 +163,21 @@ axios.interceptors.response.use(
   },
 );
 
+// Create the app
 const app = createApp(App);
+
+// Set up event bus compatibility for $root.$emit pattern
+setupRootCompatibility(app);
+
+// Register the FontAwesome component
 app.component("font-awesome-icon", FontAwesomeIcon);
 
 // Initialize the store from localStorage before mounting the app
 store.dispatch("initializeStore");
 
+// Set base URL from env
+const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
+axios.defaults.baseURL = apiUrl;
+
+// Mount the app
 app.use(store).use(router).mount("#app");

@@ -23,7 +23,7 @@ func VideoUpload(c *gin.Context) {
 	// Define a directory to store uploads.
 	uploadDir := "./uploads"
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		if err := os.Mkdir(uploadDir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 			return
 		}
@@ -44,6 +44,12 @@ func VideoUpload(c *gin.Context) {
 
 // processVideo demonstrates invoking FFmpeg to generate a thumbnail image.
 func processVideo(filePath string) {
+	// Check if ffmpeg is available
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		log.Printf("FFmpeg not found, skipping thumbnail generation for %s: %v", filePath, err)
+		return
+	}
+
 	// Example: generate a thumbnail 1 second into the video.
 	thumbnailPath := filePath + ".jpg"
 	cmd := exec.Command("ffmpeg", "-i", filePath, "-ss", "00:00:01.000", "-vframes", "1", thumbnailPath)

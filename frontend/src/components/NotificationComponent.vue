@@ -26,9 +26,10 @@
 </template>
 
 <script>
+import { defineComponent } from "vue";
 import eventBus from "@/utils/eventBus";
 
-export default {
+export default defineComponent({
   name: "NotificationComponent",
   data() {
     return {
@@ -38,7 +39,7 @@ export default {
     };
   },
   created() {
-    // Listen for notification events using eventBus instead of $root
+    // Listen for notification events using the eventBus
     eventBus.on("show-notification", this.showNotification);
   },
   beforeUnmount() {
@@ -101,7 +102,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style scoped>

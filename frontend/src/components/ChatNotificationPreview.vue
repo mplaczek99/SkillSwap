@@ -32,9 +32,10 @@
 </template>
 
 <script>
+import { defineComponent } from "vue";
 import eventBus from "@/utils/eventBus";
 
-export default {
+export default defineComponent({
   name: "ChatNotificationPreview",
   data() {
     return {
@@ -130,7 +131,7 @@ export default {
       this.clearTimeouts();
     },
   },
-};
+});
 </script>
 
 <style scoped>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -77,12 +78,15 @@ func main() {
 	// Enable CORS middleware with updated configuration
 	corsConfig := cors.DefaultConfig()
 
+	// Get allowed origins from environment, defaulting to localhost
+	allowedOrigins := getenv("CORS_ALLOWED_ORIGINS", "http://localhost:8081,http://frontend:80")
+
 	// Check if we should allow all origins
 	if os.Getenv("CORS_ALLOW_ALL") == "true" {
 		corsConfig.AllowAllOrigins = true
 	} else {
 		// Only set specific origins if we're not allowing all
-		corsConfig.AllowOrigins = []string{"http://localhost:8081", "http://frontend:80"}
+		corsConfig.AllowOrigins = strings.Split(allowedOrigins, ",")
 	}
 
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
@@ -107,6 +111,8 @@ func main() {
 
 	// 9) Start the server
 	log.Printf("Server starting on port %s\n", port)
+	log.Printf("CORS configuration: AllowAllOrigins=%v, AllowedOrigins=%v",
+		corsConfig.AllowAllOrigins, corsConfig.AllowOrigins)
 	if err := router.Run(addr); err != nil {
 		log.Fatal(err)
 	}
