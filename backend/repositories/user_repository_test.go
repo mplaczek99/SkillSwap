@@ -2,6 +2,7 @@ package repositories_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/mplaczek99/SkillSwap/models"
@@ -11,11 +12,21 @@ import (
 type MockUserRepository struct {
 	users      map[string]*models.User
 	errToThrow error
+	// Add these methods for testing
+	UpdateUser             func(user *models.User) error
+	GetUsersWithPagination func(limit, offset int) ([]*models.User, int, error)
 }
 
 func NewMockUserRepository() *MockUserRepository {
 	return &MockUserRepository{
 		users: make(map[string]*models.User),
+		// Initialize with stub implementations
+		UpdateUser: func(user *models.User) error {
+			return errors.New("method not implemented")
+		},
+		GetUsersWithPagination: func(limit, offset int) ([]*models.User, int, error) {
+			return nil, 0, errors.New("method not implemented")
+		},
 	}
 }
 
@@ -34,13 +45,15 @@ func (m *MockUserRepository) CreateUser(user *models.User) error {
 		user.ID = uint(len(m.users) + 1)
 	}
 
-	// Store a copy
+	// Store a copy - make sure to include Bio field
 	m.users[user.Email] = &models.User{
-		ID:       user.ID,
-		Name:     user.Name,
-		Email:    user.Email,
-		Password: user.Password,
-		Role:     user.Role,
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Password:  user.Password,
+		Bio:       user.Bio, // Important: Include Bio field
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
 	}
 
 	return nil
@@ -56,13 +69,15 @@ func (m *MockUserRepository) GetUserByEmail(email string) (*models.User, error) 
 		return nil, errors.New("user not found")
 	}
 
-	// Return a copy
+	// Return a copy - make sure to include Bio field
 	return &models.User{
-		ID:       user.ID,
-		Name:     user.Name,
-		Email:    user.Email,
-		Password: user.Password,
-		Role:     user.Role,
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Password:  user.Password,
+		Bio:       user.Bio, // Important: Include Bio field
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
 	}, nil
 }
 
@@ -89,7 +104,11 @@ func TestUserRepository_Interface(t *testing.T) {
 		// Verify the user was stored
 		savedUser, err := mockRepo.GetUserByEmail("test@example.com")
 		if err != nil {
-			t.Errorf("Failed to get user: %v", err)
+			t.Errorf("Failed to retrieve registered user: %v", err)
+		}
+
+		if savedUser == nil {
+			t.Fatal("Expected saved user, got nil")
 		}
 
 		if savedUser.Name != "Test User" {
@@ -145,5 +164,165 @@ func TestUserRepository_Interface(t *testing.T) {
 		}
 
 		mockRepo.SetError(nil) // Reset for subsequent tests
+	})
+}
+
+func TestUserRepository_UpdateAndPagination(t *testing.T) {
+	mockRepo := NewMockUserRepository()
+
+	// Create several test users
+	for i := 1; i <= 10; i++ {
+		user := &models.User{
+			Name:     fmt.Sprintf("User %d", i),
+			Email:    fmt.Sprintf("user%d@example.com", i),
+			Password: "password",
+			Role:     "User",
+			Bio:      "", // Initialize with empty bio
+		}
+		if err := mockRepo.CreateUser(user); err != nil {
+			t.Fatalf("Failed to create user %d: %v", i, err)
+		}
+	}
+
+	// Add an UpdateUser method to the mock repository for testing
+	mockRepo.UpdateUser = func(user *models.User) error {
+		// Find the user by email
+		existingUser, exists := mockRepo.users[user.Email]
+		if !exists {
+			return errors.New("user not found")
+		}
+
+		// Update fields
+		if user.Name != "" {
+			existingUser.Name = user.Name
+		}
+		if user.Bio != "" {
+			existingUser.Bio = user.Bio // Make sure this is copying correctly
+		}
+		if user.Role != "" && user.Role != existingUser.Role {
+			existingUser.Role = user.Role
+		}
+
+		// Store updated user back in the map
+		mockRepo.users[user.Email] = existingUser
+		return nil
+	}
+
+	// Add a GetUsersWithPagination method to the mock repository
+	mockRepo.GetUsersWithPagination = func(limit, offset int) ([]*models.User, int, error) {
+		// Get all users
+		users := make([]*models.User, 0, len(mockRepo.users))
+		for _, user := range mockRepo.users {
+			users = append(users, user)
+		}
+
+		totalCount := len(users)
+
+		// Apply pagination
+		if offset >= totalCount {
+			return []*models.User{}, totalCount, nil
+		}
+
+		end := offset + limit
+		if end > totalCount {
+			end = totalCount
+		}
+
+		return users[offset:end], totalCount, nil
+	}
+
+	// Test updating a user's profile
+	t.Run("Update User Profile", func(t *testing.T) {
+		// Get the first user
+		firstUserEmail := "user1@example.com"
+		user, err := mockRepo.GetUserByEmail(firstUserEmail)
+		if err != nil {
+			t.Fatalf("Failed to get user: %v", err)
+		}
+
+		// Update profile
+		user.Name = "Updated Name"
+		user.Bio = "This is my updated bio"
+		err = mockRepo.UpdateUser(user)
+		if err != nil {
+			t.Errorf("UpdateUser returned error: %v", err)
+		}
+
+		// Verify update
+		updated, err := mockRepo.GetUserByEmail(firstUserEmail)
+		if err != nil {
+			t.Fatalf("Failed to get updated user: %v", err)
+		}
+
+		if updated.Name != "Updated Name" {
+			t.Errorf("Expected name to be 'Updated Name', got '%s'", updated.Name)
+		}
+		if updated.Bio != "This is my updated bio" {
+			t.Errorf("Expected bio update, got: '%s'", updated.Bio)
+		}
+	})
+
+	// Test updating user's role
+	t.Run("Update User Role", func(t *testing.T) {
+		// Get the second user
+		secondUserEmail := "user2@example.com"
+		user, err := mockRepo.GetUserByEmail(secondUserEmail)
+		if err != nil {
+			t.Fatalf("Failed to get user: %v", err)
+		}
+
+		// Update to admin
+		user.Role = "Admin"
+		err = mockRepo.UpdateUser(user)
+		if err != nil {
+			t.Errorf("UpdateUser returned error: %v", err)
+		}
+
+		// Verify role update
+		updated, err := mockRepo.GetUserByEmail(secondUserEmail)
+		if err != nil {
+			t.Fatalf("Failed to get updated user: %v", err)
+		}
+
+		if updated.Role != "Admin" {
+			t.Errorf("Expected role to be 'Admin', got '%s'", updated.Role)
+		}
+	})
+
+	// Test getting users with pagination
+	t.Run("Get Users With Pagination", func(t *testing.T) {
+		// Get first page (3 users)
+		users, total, err := mockRepo.GetUsersWithPagination(3, 0)
+		if err != nil {
+			t.Errorf("GetUsersWithPagination returned error: %v", err)
+		}
+
+		if total != 10 {
+			t.Errorf("Expected total 10 users, got %d", total)
+		}
+
+		if len(users) != 3 {
+			t.Errorf("Expected 3 users in first page, got %d", len(users))
+		}
+
+		// Get second page (3 users)
+		users, total, err = mockRepo.GetUsersWithPagination(3, 3)
+		if err != nil {
+			t.Errorf("GetUsersWithPagination returned error: %v", err)
+		}
+
+		if len(users) != 3 {
+			t.Errorf("Expected 3 users in second page, got %d", len(users))
+		}
+
+		// Get last page (1 user)
+		users, total, err = mockRepo.GetUsersWithPagination(3, 9)
+		if err != nil {
+			t.Errorf("GetUsersWithPagination returned error: %v", err)
+		}
+
+		if len(users) != 1 {
+			t.Errorf("Expected 1 user in last page, got %d", len(users))
+		}
 	})
 }

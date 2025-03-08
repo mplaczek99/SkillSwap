@@ -200,3 +200,189 @@ func TestGetSchedules(t *testing.T) {
 		}
 	})
 }
+
+func TestScheduleOverlapAndEdgeCases(t *testing.T) {
+	// Use test mode
+	gin.SetMode(gin.TestMode)
+
+	// Set up router with the controller
+	router := gin.New()
+
+	// To test overlap, we need to track existing schedules
+	var existingSchedules []models.Schedule
+
+	// Create a custom handler with overlap detection
+	mockCreateSchedule := func(c *gin.Context) {
+		var schedule models.Schedule
+		if err := c.ShouldBindJSON(&schedule); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid schedule data"})
+			return
+		}
+
+		// Basic validation
+		now := time.Now()
+		if schedule.StartTime.Before(now) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Schedule start time must be in the future"})
+			return
+		}
+		if !schedule.EndTime.After(schedule.StartTime) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Schedule end time must be after start time"})
+			return
+		}
+
+		// Check for schedule with exactly same start/end time (edge case)
+		if schedule.StartTime.Equal(schedule.EndTime) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Start time cannot equal end time"})
+			return
+		}
+
+		// Check minimum duration
+		minDuration := 30 * time.Minute
+		if schedule.EndTime.Sub(schedule.StartTime) < minDuration {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Schedule must be at least 30 minutes"})
+			return
+		}
+
+		// Check for overlaps with existing schedules
+		for _, existing := range existingSchedules {
+			// Only check schedules for the same user
+			if existing.UserID == schedule.UserID {
+				// Check for overlap: new start time is within existing schedule
+				if (schedule.StartTime.After(existing.StartTime) && schedule.StartTime.Before(existing.EndTime)) ||
+					// Check for overlap: new end time is within existing schedule
+					(schedule.EndTime.After(existing.StartTime) && schedule.EndTime.Before(existing.EndTime)) ||
+					// Check for overlap: new schedule encompasses existing schedule
+					(schedule.StartTime.Before(existing.StartTime) && schedule.EndTime.After(existing.EndTime)) {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Schedule overlaps with an existing session"})
+					return
+				}
+			}
+		}
+
+		// Add the schedule to our existing schedules
+		schedule.ID = uint(len(existingSchedules) + 1)
+		schedule.CreatedAt = time.Now()
+		existingSchedules = append(existingSchedules, schedule)
+
+		c.JSON(http.StatusCreated, schedule)
+	}
+
+	router.POST("/schedule", mockCreateSchedule)
+
+	t.Run("Create Initial Schedule", func(t *testing.T) {
+		startTime := time.Now().Add(24 * time.Hour)
+		endTime := startTime.Add(2 * time.Hour)
+
+		schedule := models.Schedule{
+			UserID:    1,
+			SkillID:   2,
+			StartTime: startTime,
+			EndTime:   endTime,
+		}
+
+		reqBody, _ := json.Marshal(schedule)
+		req, _ := http.NewRequest("POST", "/schedule", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status 201 for first schedule, got %d", w.Code)
+		}
+	})
+
+	t.Run("Create Overlapping Schedule", func(t *testing.T) {
+		existingSchedule := existingSchedules[0]
+
+		// Create a schedule that starts during the existing one
+		startTime := existingSchedule.StartTime.Add(1 * time.Hour)
+		endTime := existingSchedule.EndTime.Add(1 * time.Hour)
+
+		schedule := models.Schedule{
+			UserID:    1, // Same user
+			SkillID:   2,
+			StartTime: startTime,
+			EndTime:   endTime,
+		}
+
+		reqBody, _ := json.Marshal(schedule)
+		req, _ := http.NewRequest("POST", "/schedule", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status 400 for overlapping schedule, got %d", w.Code)
+		}
+	})
+
+	t.Run("Same Time Different User", func(t *testing.T) {
+		existingSchedule := existingSchedules[0]
+
+		// Create a schedule with the same time but for a different user
+		schedule := models.Schedule{
+			UserID:    2, // Different user
+			SkillID:   2,
+			StartTime: existingSchedule.StartTime,
+			EndTime:   existingSchedule.EndTime,
+		}
+
+		reqBody, _ := json.Marshal(schedule)
+		req, _ := http.NewRequest("POST", "/schedule", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status 201 for non-conflicting schedule, got %d", w.Code)
+		}
+	})
+
+	t.Run("Schedule With Duration Less Than 30 Minutes", func(t *testing.T) {
+		startTime := time.Now().Add(48 * time.Hour)
+		endTime := startTime.Add(15 * time.Minute) // Too short
+
+		schedule := models.Schedule{
+			UserID:    1,
+			SkillID:   2,
+			StartTime: startTime,
+			EndTime:   endTime,
+		}
+
+		reqBody, _ := json.Marshal(schedule)
+		req, _ := http.NewRequest("POST", "/schedule", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status 400 for too short schedule, got %d", w.Code)
+		}
+	})
+
+	t.Run("Schedule With Equal Start and End Times", func(t *testing.T) {
+		exactTime := time.Now().Add(72 * time.Hour)
+
+		schedule := models.Schedule{
+			UserID:    1,
+			SkillID:   2,
+			StartTime: exactTime,
+			EndTime:   exactTime, // Same as start time
+		}
+
+		reqBody, _ := json.Marshal(schedule)
+		req, _ := http.NewRequest("POST", "/schedule", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status 400 for equal start/end times, got %d", w.Code)
+		}
+	})
+}
