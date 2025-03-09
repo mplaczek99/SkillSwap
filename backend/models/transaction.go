@@ -8,5 +8,7 @@ type Transaction struct {
 	SenderID   uint      `json:"sender_id"`
 	ReceiverID uint      `json:"receiver_id"`
 	Amount     int       `json:"amount"`
+	Note       string    `json:"note,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at,omitempty"`
 }

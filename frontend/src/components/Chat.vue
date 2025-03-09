@@ -444,7 +444,10 @@ export default {
     },
 
     refreshConversations() {
-      this.loadConversations();
+      this.loadingConversations = true;
+      this.loadConversations().then(() => {
+        this.loadingConversations = false;
+      });
     },
 
     performSearch() {

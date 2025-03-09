@@ -160,12 +160,13 @@ axios.interceptors.response.use(
       router.push("/login");
 
       // Show notification to the user
-      const app = createApp(App);
-      app.config.globalProperties.$root.$emit("show-notification", {
-        type: "warning",
-        title: "Session Expired",
-        message: "Your session has expired. Please log in again.",
-        duration: 5000,
+      import("./utils/eventBus").then(({ default: eventBus }) => {
+        eventBus.emit("show-notification", {
+          type: "warning",
+          title: "Session Expired",
+          message: "Your session has expired. Please log in again.",
+          duration: 5000,
+        });
       });
     }
     return Promise.reject(error);
