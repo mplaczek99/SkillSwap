@@ -43,28 +43,37 @@ func main() {
 	// 3) Run migrations
 	config.Migrate(db)
 
-	// 3.1) Seed a default test user if not already present (for development/testing)
-	testEmail := "test@example.com"
-	testPassword := "somepassword" // Plain text; will be hashed by the BeforeSave hook
+	// 3.1) Seed test users if not already present (for development/testing)
+	testUsers := []struct {
+		name     string
+		email    string
+		password string
+	}{
+		{"Test User", "test@example.com", "somepassword"},
+		{"Test User 2", "test2@example.com", "somepassword2"},
+	}
 
-	var user models.User
-	if err := db.Where("email = ?", testEmail).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			newUser := models.User{
-				Name:     "Test User",
-				Email:    testEmail,
-				Password: testPassword,
-			}
-			if err := db.Create(&newUser).Error; err != nil {
-				log.Printf("Failed to create test user: %v", err)
+	// Create each test user if they don't exist
+	for _, testUser := range testUsers {
+		var user models.User
+		if err := db.Where("email = ?", testUser.email).First(&user).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				newUser := models.User{
+					Name:     testUser.name,
+					Email:    testUser.email,
+					Password: testUser.password,
+				}
+				if err := db.Create(&newUser).Error; err != nil {
+					log.Printf("Failed to create test user: %v", err)
+				} else {
+					log.Printf("Test user created: %s / %s", testUser.email, testUser.password)
+				}
 			} else {
-				log.Printf("Test user created: %s / %s", testEmail, testPassword)
+				log.Printf("Error checking for test user: %v", err)
 			}
 		} else {
-			log.Printf("Error checking for test user: %v", err)
+			log.Printf("Test user already exists: %s", testUser.email)
 		}
-	} else {
-		log.Printf("Test user already exists: %s", testEmail)
 	}
 
 	// 4) Initialize repositories, services, and controllers
@@ -95,6 +104,12 @@ func main() {
 	corsConfig.ExposeHeaders = []string{"Content-Length"}
 
 	router.Use(cors.New(corsConfig))
+
+	// Add database to the gin context so it can be used in controllers
+	router.Use(func(c *gin.Context) {
+		c.Set("db", db)
+		c.Next()
+	})
 
 	// 6) Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

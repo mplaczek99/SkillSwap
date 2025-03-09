@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mplaczek99/SkillSwap/models"
 	"github.com/mplaczek99/SkillSwap/repositories"
 	"github.com/mplaczek99/SkillSwap/utils"
+	"gorm.io/gorm"
 )
 
 // Search handles GET requests to search for skills and users.
@@ -22,32 +22,42 @@ func Search(c *gin.Context) {
 	searchTerm := strings.ToLower(q)
 	var results []interface{}
 
-	// Search skills from the repository.
-	skills, err := repositories.GetAllSkills()
-	if err != nil {
-		utils.Error("Failed to fetch skills: " + err.Error())
-		utils.JSONError(c, http.StatusInternalServerError, "Failed to fetch skills")
+	// Initialize user repository to search users from the database
+	db, exists := c.Get("db")
+	if !exists {
+		// If db isn't in the context, we can fallback to the database connection
+		// or report an error
+		utils.Error("Database connection not found in context")
+		utils.JSONError(c, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
-	// Filter skills by name or description.
-	for _, skill := range skills {
-		if strings.Contains(strings.ToLower(skill.Name), searchTerm) ||
-			strings.Contains(strings.ToLower(skill.Description), searchTerm) {
-			results = append(results, skill)
-		}
+	userRepo := repositories.NewUserRepository(db.(*gorm.DB))
+
+	// Search users from the database
+	users, err := userRepo.SearchUsers(searchTerm)
+	if err != nil {
+		utils.Error("Failed to search users: " + err.Error())
+		utils.JSONError(c, http.StatusInternalServerError, "Failed to search users")
+		return
 	}
 
-	// Also include a dummy user if the query matches.
-	dummyUser := models.User{
-		ID:    1,
-		Name:  "Test User",
-		Email: "test@example.com",
-		Bio:   "This is a dummy user",
+	// Add users to results
+	for _, user := range users {
+		results = append(results, user)
 	}
-	if strings.Contains(strings.ToLower(dummyUser.Name), searchTerm) ||
-		strings.Contains(strings.ToLower(dummyUser.Email), searchTerm) {
-		results = append(results, dummyUser)
+
+	// Search skills from the repository
+	skills, err := repositories.SearchSkills(searchTerm)
+	if err != nil {
+		utils.Error("Failed to search skills: " + err.Error())
+		utils.JSONError(c, http.StatusInternalServerError, "Failed to search skills")
+		return
+	}
+
+	// Add skills to results
+	for _, skill := range skills {
+		results = append(results, skill)
 	}
 
 	c.JSON(http.StatusOK, results)
