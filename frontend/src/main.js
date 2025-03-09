@@ -156,8 +156,17 @@ axios.interceptors.response.use(
     ) {
       console.log("Session expired, redirecting to login");
       // Token is expired or invalid
-      store.commit("logout");
+      store.dispatch("logout"); // Use dispatch instead of commit for actions
       router.push("/login");
+
+      // Show notification to the user
+      const app = createApp(App);
+      app.config.globalProperties.$root.$emit("show-notification", {
+        type: "warning",
+        title: "Session Expired",
+        message: "Your session has expired. Please log in again.",
+        duration: 5000,
+      });
     }
     return Promise.reject(error);
   },
@@ -178,6 +187,8 @@ store.dispatch("initializeStore");
 // Set base URL from env
 const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
 axios.defaults.baseURL = apiUrl;
+
+console.log("API URL:", apiUrl);
 
 // Mount the app
 app.use(store).use(router).mount("#app");

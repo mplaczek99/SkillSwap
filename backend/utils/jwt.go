@@ -57,6 +57,7 @@ func GenerateToken(userID uint, role, email string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Token valid for 24 hours.
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	})
 	return token.SignedString(secret)
@@ -66,6 +67,10 @@ func GenerateToken(userID uint, role, email string) (string, error) {
 func ValidateToken(tokenString string) (*Claims, error) {
 	secret := getJWTSecret()
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		// Validate signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
 		return secret, nil
 	})
 	if err != nil {
@@ -74,7 +79,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
-		return nil, err
+		return nil, jwt.ErrTokenInvalidClaims
 	}
 
 	return claims, nil

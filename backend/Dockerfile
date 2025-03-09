@@ -15,7 +15,7 @@ FROM debian:bookworm-slim
 WORKDIR /root/
 COPY --from=builder /app/SkillSwap .
 
-# Create uploads directory
+# Create uploads directory with proper permissions
 RUN mkdir -p /root/uploads && chmod 777 /root/uploads
 
 # Install FFmpeg for video processing
@@ -25,7 +25,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Configure environment variables
-ENV CORS_ALLOW_ALL=true
+ENV CORS_ALLOW_ALL=false
 
 EXPOSE 8080
 CMD ["./SkillSwap"]

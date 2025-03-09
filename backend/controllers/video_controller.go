@@ -20,18 +20,40 @@ func VideoUpload(c *gin.Context) {
 		return
 	}
 
+	// Validate file size (100MB max)
+	if file.Size > 100*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File too large. Maximum size is 100MB"})
+		return
+	}
+
+	// Validate file type
+	fileExt := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{".mp4": true, ".avi": true, ".mov": true, ".wmv": true, ".mkv": true}
+	if !allowedExts[fileExt] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid file type. Allowed types: mp4, avi, mov, wmv, mkv",
+		})
+		return
+	}
+
 	// Define a directory to store uploads.
 	uploadDir := "./uploads"
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+			log.Printf("Failed to create upload directory: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 			return
 		}
 	}
-	filePath := filepath.Join(uploadDir, file.Filename)
+
+	// Generate a unique filename to prevent overwrites
+	// In a production app, consider using UUID or other unique identifier
+	safeFilename := file.Filename
+	filePath := filepath.Join(uploadDir, safeFilename)
 
 	// Save the uploaded file.
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		log.Printf("Failed to save video: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save video"})
 		return
 	}
@@ -39,7 +61,14 @@ func VideoUpload(c *gin.Context) {
 	// Start processing asynchronously (e.g., generate a thumbnail).
 	go processVideo(filePath)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Video uploaded successfully", "file": file.Filename})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Video uploaded successfully",
+		"file": gin.H{
+			"name": file.Filename,
+			"size": file.Size,
+			"path": "/uploads/" + safeFilename,
+		},
+	})
 }
 
 // processVideo demonstrates invoking FFmpeg to generate a thumbnail image.

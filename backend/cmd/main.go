@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -92,16 +93,19 @@ func main() {
 
 	// Check if we should allow all origins
 	if os.Getenv("CORS_ALLOW_ALL") == "true" {
+		log.Println("CORS: Allowing all origins")
 		corsConfig.AllowAllOrigins = true
 	} else {
 		// Only set specific origins if we're not allowing all
 		corsConfig.AllowOrigins = strings.Split(allowedOrigins, ",")
+		log.Printf("CORS: Allowing specific origins: %v", corsConfig.AllowOrigins)
 	}
 
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	corsConfig.AllowHeaders = []string{"Authorization", "Content-Type", "Origin"}
+	corsConfig.AllowHeaders = []string{"Authorization", "Content-Type", "Origin", "Accept", "X-Requested-With"}
 	corsConfig.AllowCredentials = true
-	corsConfig.ExposeHeaders = []string{"Content-Length"}
+	corsConfig.ExposeHeaders = []string{"Content-Length", "Content-Type"}
+	corsConfig.MaxAge = 12 * time.Hour
 
 	router.Use(cors.New(corsConfig))
 
