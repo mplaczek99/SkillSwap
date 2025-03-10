@@ -96,6 +96,13 @@
               you.
             </p>
           </div>
+
+          <!-- Error message -->
+          <div v-if="error" class="error-message">
+            <font-awesome-icon icon="exclamation-circle" />
+            {{ error }}
+            <button class="btn-link" @click="loadConversations">Retry</button>
+          </div>
         </div>
 
         <!-- Main chat area -->
@@ -130,7 +137,18 @@
             </div>
 
             <!-- Messages -->
-            <div class="messages-container" ref="messagesContainer">
+            <div class="messages-container" ref="messagesContainer" @scroll="handleMessagesScroll">
+              <div v-if="hasMoreMessages" class="load-more-container">
+                <button 
+                  class="btn btn-sm btn-outline" 
+                  @click="loadMoreMessages" 
+                  :disabled="loadingMoreMessages"
+                >
+                  <font-awesome-icon v-if="loadingMoreMessages" icon="spinner" class="spin" />
+                  <span v-else>Load earlier messages</span>
+                </button>
+              </div>
+
               <div
                 class="messages-date-divider"
                 v-if="activeConversation.messages.length > 0"
@@ -162,20 +180,34 @@
                   }"
                 >
                   <div class="message-content">
-                    <p>{{ message.text }}</p>
+                    <p v-html="formatMessageText(message.text)"></p>
                   </div>
                   <div class="message-time">
                     {{ formatMessageTime(message.timestamp) }}
                   </div>
                 </div>
+
+                <!-- Read receipt -->
+                <div 
+                  v-if="message.isOutgoing && isLastMessage(index) && isMessageRead(message)"
+                  class="message-read-status"
+                >
+                  <font-awesome-icon icon="check-circle" size="xs" />
+                  <span>Read</span>
+                </div>
               </div>
 
-              <div v-if="sending" class="message-sending">
+              <!-- Typing indicator -->
+              <div 
+                v-if="activeConversation && typingUsers[activeConversation.id]" 
+                class="message-typing"
+              >
                 <div class="typing-indicator">
                   <span></span>
                   <span></span>
                   <span></span>
                 </div>
+                <span class="typing-text">{{ activeConversation.recipient.name }} is typing...</span>
               </div>
             </div>
 
@@ -197,6 +229,13 @@
                 <font-awesome-icon icon="paper-plane" />
               </button>
             </form>
+
+            <!-- Conversation error -->
+            <div v-if="conversationError" class="error-message conversation-error">
+              <font-awesome-icon icon="exclamation-circle" />
+              {{ conversationError }}
+              <button class="btn-link" @click="loadConversation(activeConversation.id)">Retry</button>
+            </div>
           </template>
 
           <!-- No conversation selected state -->
@@ -254,11 +293,24 @@ export default {
           avatar: null,
         },
       ],
+      mockMessageInterval: null,
+      error: null,
+      conversationError: null,
+      typingUsers: {}, // Map of conversation ID to typing status
+      lastReadMessage: {}, // Map of conversation ID to last read message ID
+      searchCounter: 0,
+      messagePage: 1,
+      messagesPerPage: 20,
+      loadingMoreMessages: false,
+      hasMoreMessages: true,
     };
   },
   created() {
     this.loadConversations();
     this.searchUsers = debounce(this.performSearch, 300);
+  },
+  mounted() {
+    document.addEventListener("click", this.handleOutsideClick);
     this.setupMockMessageReceiver();
 
     // Check for route params
@@ -271,29 +323,37 @@ export default {
       });
     }
   },
-  mounted() {
-    document.addEventListener("click", this.handleOutsideClick);
-  },
   beforeUnmount() {
     document.removeEventListener("click", this.handleOutsideClick);
-    clearInterval(this.mockMessageInterval);
+    this.clearMockMessageInterval();
   },
   methods: {
     async loadConversations() {
       this.loadingConversations = true;
+      this.error = null;
       try {
         this.conversations = await ChatService.getConversations();
       } catch (error) {
         console.error("Failed to load conversations:", error);
+        this.error = "Failed to load conversations. Please try again.";
       } finally {
         this.loadingConversations = false;
       }
     },
 
     async loadConversation(conversationId) {
+      this.conversationError = null;
       try {
-        this.activeConversation =
-          await ChatService.getConversation(conversationId);
+        // Reset pagination
+        this.messagePage = 1;
+        this.hasMoreMessages = true;
+        
+        // Modify to load only the first page
+        this.activeConversation = await ChatService.getConversation(
+          conversationId, 
+          this.messagePage, 
+          this.messagesPerPage
+        );
 
         // Update route query parameter
         this.$router.replace({
@@ -314,6 +374,7 @@ export default {
         this.$nextTick(this.scrollToBottom);
       } catch (error) {
         console.error("Failed to load conversation:", error);
+        this.conversationError = "Failed to load messages. Please try again.";
       }
     },
 
@@ -347,6 +408,16 @@ export default {
         this.newMessage = "";
         this.$refs.messageInput.style.height = "auto";
         this.$nextTick(this.scrollToBottom);
+
+        // After successful send, simulate the recipient typing
+        // This would use WebSockets in a real application
+        this.simulateTypingIndicator(this.activeConversation.id);
+        
+        // After typing, simulate read receipt
+        this.simulateReadReceipt(
+          message.id,
+          this.activeConversation.id
+        );
       } catch (error) {
         console.error("Failed to send message:", error);
       } finally {
@@ -362,8 +433,19 @@ export default {
     },
 
     autoGrow(e) {
+      const MAX_HEIGHT = 150; // Maximum height in pixels
+      
+      // Reset height to auto to get the correct scrollHeight
       e.target.style.height = "auto";
-      e.target.style.height = e.target.scrollHeight + "px";
+      
+      // Calculate the new height
+      const newHeight = Math.min(e.target.scrollHeight, MAX_HEIGHT);
+      
+      // Set the new height
+      e.target.style.height = newHeight + "px";
+      
+      // Add scrollbar if content exceeds max height
+      e.target.style.overflowY = e.target.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
     },
 
     handleKeyDown(e) {
@@ -435,12 +517,13 @@ export default {
     shouldShowDateDivider(message, index) {
       if (index === 0) return false;
 
-      const currentDate = new Date(message.timestamp).toDateString();
-      const prevDate = new Date(
-        this.activeConversation.messages[index - 1].timestamp,
-      ).toDateString();
-
-      return currentDate !== prevDate;
+      const currentDate = new Date(message.timestamp);
+      const prevDate = new Date(this.activeConversation.messages[index - 1].timestamp);
+      
+      // Compare year, month, and day without string conversion
+      return currentDate.getFullYear() !== prevDate.getFullYear() ||
+             currentDate.getMonth() !== prevDate.getMonth() ||
+             currentDate.getDate() !== prevDate.getDate();
     },
 
     refreshConversations() {
@@ -457,15 +540,24 @@ export default {
         return;
       }
 
+      // Create a unique search ID to prevent race conditions
+      const currentSearchId = ++this.searchCounter;
+      
       // Simple client-side search
       const query = this.searchQuery.toLowerCase();
-      this.searchResults = this.mockUsers.filter(
-        (user) =>
-          user.name.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query),
-      );
-
-      this.showSearchResults = true;
+      
+      // Simulate a slight delay to mimic API call
+      setTimeout(() => {
+        // Only update if this is still the most recent search
+        if (currentSearchId === this.searchCounter) {
+          this.searchResults = this.mockUsers.filter(
+            (user) =>
+              user.name.toLowerCase().includes(query) ||
+              user.email.toLowerCase().includes(query)
+          );
+          this.showSearchResults = true;
+        }
+      }, 100);
     },
 
     async startNewConversation(user) {
@@ -502,7 +594,18 @@ export default {
       }
     },
 
+    clearMockMessageInterval() {
+      if (this.mockMessageInterval) {
+        clearInterval(this.mockMessageInterval);
+        this.mockMessageInterval = null;
+      }
+    },
+
     setupMockMessageReceiver() {
+      // Clear any existing interval first
+      this.clearMockMessageInterval();
+      
+      // Set a new interval with a more reasonable timing
       this.mockMessageInterval = setInterval(
         async () => {
           if (!this.conversations.length) return;
@@ -532,7 +635,7 @@ export default {
 
           this.handleIncomingMessage(message);
         },
-        Math.floor(Math.random() * 45000) + 45000, // Random 45-90 seconds
+        30000 // Fixed interval of 30 seconds
       );
     },
 
@@ -576,6 +679,104 @@ export default {
             duration: 5000,
           });
         }
+      }
+    },
+
+    formatMessageText(text) {
+      if (!text) return '';
+      
+      // Convert URLs to clickable links
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      let formattedText = text.replace(urlRegex, url => 
+        `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+      );
+      
+      // Sanitize text to prevent XSS (in a real app, use a library like DOMPurify)
+      // This is a simplified example
+      formattedText = formattedText
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/<a /g, '<a '); // Preserve our links
+      
+      // Handle newlines
+      formattedText = formattedText.replace(/\n/g, '<br>');
+      
+      return formattedText;
+    },
+
+    isLastMessage(index) {
+      return index === this.activeConversation.messages.length - 1;
+    },
+    
+    isMessageRead(message) {
+      const conversationId = this.activeConversation.id;
+      return this.lastReadMessage[conversationId] === message.id;
+    },
+    
+    simulateReadReceipt(messageId, conversationId) {
+      // In a real app, this would be triggered by a server event
+      setTimeout(() => {
+        this.lastReadMessage[conversationId] = messageId;
+      }, 2000); // Simulate 2-second delay for read receipt
+    },
+    
+    simulateTypingIndicator(conversationId) {
+      // In a real app, this would be triggered by a server event
+      this.typingUsers[conversationId] = true;
+      
+      // Simulate typing for 3 seconds
+      setTimeout(() => {
+        this.$set(this.typingUsers, conversationId, false);
+      }, 3000);
+    },
+
+    async loadMoreMessages() {
+      if (this.loadingMoreMessages || !this.hasMoreMessages) return;
+      
+      this.loadingMoreMessages = true;
+      
+      try {
+        const scrollPosition = this.$refs.messagesContainer.scrollHeight;
+        
+        // Load the next page of messages
+        this.messagePage++;
+        
+        const olderMessages = await ChatService.getConversationMessages(
+          this.activeConversation.id,
+          this.messagePage,
+          this.messagesPerPage
+        );
+        
+        if (olderMessages.length < this.messagesPerPage) {
+          this.hasMoreMessages = false;
+        }
+        
+        if (olderMessages.length > 0) {
+          // Prepend older messages to the conversation
+          this.activeConversation.messages = [
+            ...olderMessages,
+            ...this.activeConversation.messages
+          ];
+          
+          // Maintain scroll position
+          this.$nextTick(() => {
+            const newScrollHeight = this.$refs.messagesContainer.scrollHeight;
+            this.$refs.messagesContainer.scrollTop = 
+              newScrollHeight - scrollPosition;
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load more messages:", error);
+        // Show error to user
+      } finally {
+        this.loadingMoreMessages = false;
+      }
+    },
+    
+    handleMessagesScroll(e) {
+      // Optional: Auto-load more messages when scrolling to top
+      if (e.target.scrollTop < 50 && !this.loadingMoreMessages && this.hasMoreMessages) {
+        this.loadMoreMessages();
       }
     },
   },
@@ -888,6 +1089,14 @@ export default {
   border-bottom-left-radius: var(--radius-sm);
 }
 
+.message-content {
+  max-width: 80%;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  position: relative;
+  margin-bottom: var(--space-1);
+}
+
 .message-content p {
   margin: 0;
   white-space: pre-wrap;
@@ -1014,5 +1223,59 @@ export default {
   .chat-main {
     height: calc(100vh - 500px);
   }
+}
+
+.error-message {
+  background-color: var(--error-light);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  margin: var(--space-3);
+  color: var(--error-color);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.conversation-error {
+  margin-top: auto;
+  margin-bottom: var(--space-2);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.message-read-status {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 3px;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.message-typing {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  gap: var(--space-2);
+}
+
+.typing-text {
+  font-size: var(--font-size-xs);
+  color: var(--medium);
+}
+
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3);
 }
 </style>
