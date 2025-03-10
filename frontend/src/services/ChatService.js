@@ -94,9 +94,9 @@ class ChatService {
   }
 
   /**
-   * Get a specific conversation by ID
+   * Get a specific conversation by ID with pagination support
    */
-  async getConversation(conversationId) {
+  async getConversation(conversationId, page = 1, messagesPerPage = 20) {
     // Simulate API call
     await this.simulateNetworkDelay(200);
 
@@ -115,14 +115,74 @@ class ChatService {
       (p) => p.id !== currentUserId,
     ) || { id: 0, name: "Unknown User", avatar: null };
 
+    // Apply pagination to messages
+    const allMessages = conversation.messages;
+
+    // Sort messages in descending order (newest first)
+    const sortedMessages = [...allMessages].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+    );
+
+    // Get paginated messages
+    const startIndex = (page - 1) * messagesPerPage;
+    const endIndex = startIndex + messagesPerPage;
+    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
+
+    // Sort back to ascending order for display
+    const displayMessages = paginatedMessages.sort(
+      (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+    );
+
     return {
       id: conversation.id,
       recipient: otherParticipant,
-      messages: conversation.messages.map((msg) => ({
+      messages: displayMessages.map((msg) => ({
         ...msg,
         isOutgoing: msg.senderId === currentUserId,
       })),
     };
+  }
+
+  /**
+   * Get conversation messages with pagination
+   */
+  async getConversationMessages(
+    conversationId,
+    page = 1,
+    messagesPerPage = 20,
+  ) {
+    // Simulate API call
+    await this.simulateNetworkDelay(200);
+
+    const currentUserId = store.state.user ? store.state.user.id : 1;
+    const conversation = conversations.find((c) => c.id == conversationId);
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    // All messages
+    const allMessages = conversation.messages;
+
+    // Sort messages in descending order (newest first)
+    const sortedMessages = [...allMessages].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+    );
+
+    // Get paginated messages
+    const startIndex = (page - 1) * messagesPerPage;
+    const endIndex = startIndex + messagesPerPage;
+    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
+
+    // Sort back to ascending order for display
+    const displayMessages = paginatedMessages.sort(
+      (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+    );
+
+    return displayMessages.map((msg) => ({
+      ...msg,
+      isOutgoing: msg.senderId === currentUserId,
+    }));
   }
 
   /**

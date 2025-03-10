@@ -137,14 +137,22 @@
             </div>
 
             <!-- Messages -->
-            <div class="messages-container" ref="messagesContainer" @scroll="handleMessagesScroll">
+            <div
+              class="messages-container"
+              ref="messagesContainer"
+              @scroll="handleMessagesScroll"
+            >
               <div v-if="hasMoreMessages" class="load-more-container">
-                <button 
-                  class="btn btn-sm btn-outline" 
-                  @click="loadMoreMessages" 
+                <button
+                  class="btn btn-sm btn-outline"
+                  @click="loadMoreMessages"
                   :disabled="loadingMoreMessages"
                 >
-                  <font-awesome-icon v-if="loadingMoreMessages" icon="spinner" class="spin" />
+                  <font-awesome-icon
+                    v-if="loadingMoreMessages"
+                    icon="spinner"
+                    class="spin"
+                  />
                   <span v-else>Load earlier messages</span>
                 </button>
               </div>
@@ -188,8 +196,12 @@
                 </div>
 
                 <!-- Read receipt -->
-                <div 
-                  v-if="message.isOutgoing && isLastMessage(index) && isMessageRead(message)"
+                <div
+                  v-if="
+                    message.isOutgoing &&
+                    isLastMessage(index) &&
+                    isMessageRead(message)
+                  "
                   class="message-read-status"
                 >
                   <font-awesome-icon icon="check-circle" size="xs" />
@@ -198,8 +210,8 @@
               </div>
 
               <!-- Typing indicator -->
-              <div 
-                v-if="activeConversation && typingUsers[activeConversation.id]" 
+              <div
+                v-if="activeConversation && typingUsers[activeConversation.id]"
                 class="message-typing"
               >
                 <div class="typing-indicator">
@@ -207,7 +219,9 @@
                   <span></span>
                   <span></span>
                 </div>
-                <span class="typing-text">{{ activeConversation.recipient.name }} is typing...</span>
+                <span class="typing-text"
+                  >{{ activeConversation.recipient.name }} is typing...</span
+                >
               </div>
             </div>
 
@@ -231,10 +245,18 @@
             </form>
 
             <!-- Conversation error -->
-            <div v-if="conversationError" class="error-message conversation-error">
+            <div
+              v-if="conversationError"
+              class="error-message conversation-error"
+            >
               <font-awesome-icon icon="exclamation-circle" />
               {{ conversationError }}
-              <button class="btn-link" @click="loadConversation(activeConversation.id)">Retry</button>
+              <button
+                class="btn-link"
+                @click="loadConversation(activeConversation.id)"
+              >
+                Retry
+              </button>
             </div>
           </template>
 
@@ -347,12 +369,12 @@ export default {
         // Reset pagination
         this.messagePage = 1;
         this.hasMoreMessages = true;
-        
+
         // Modify to load only the first page
         this.activeConversation = await ChatService.getConversation(
-          conversationId, 
-          this.messagePage, 
-          this.messagesPerPage
+          conversationId,
+          this.messagePage,
+          this.messagesPerPage,
         );
 
         // Update route query parameter
@@ -412,12 +434,9 @@ export default {
         // After successful send, simulate the recipient typing
         // This would use WebSockets in a real application
         this.simulateTypingIndicator(this.activeConversation.id);
-        
+
         // After typing, simulate read receipt
-        this.simulateReadReceipt(
-          message.id,
-          this.activeConversation.id
-        );
+        this.simulateReadReceipt(message.id, this.activeConversation.id);
       } catch (error) {
         console.error("Failed to send message:", error);
       } finally {
@@ -434,18 +453,19 @@ export default {
 
     autoGrow(e) {
       const MAX_HEIGHT = 150; // Maximum height in pixels
-      
+
       // Reset height to auto to get the correct scrollHeight
       e.target.style.height = "auto";
-      
+
       // Calculate the new height
       const newHeight = Math.min(e.target.scrollHeight, MAX_HEIGHT);
-      
+
       // Set the new height
       e.target.style.height = newHeight + "px";
-      
+
       // Add scrollbar if content exceeds max height
-      e.target.style.overflowY = e.target.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
+      e.target.style.overflowY =
+        e.target.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
     },
 
     handleKeyDown(e) {
@@ -518,12 +538,16 @@ export default {
       if (index === 0) return false;
 
       const currentDate = new Date(message.timestamp);
-      const prevDate = new Date(this.activeConversation.messages[index - 1].timestamp);
-      
+      const prevDate = new Date(
+        this.activeConversation.messages[index - 1].timestamp,
+      );
+
       // Compare year, month, and day without string conversion
-      return currentDate.getFullYear() !== prevDate.getFullYear() ||
-             currentDate.getMonth() !== prevDate.getMonth() ||
-             currentDate.getDate() !== prevDate.getDate();
+      return (
+        currentDate.getFullYear() !== prevDate.getFullYear() ||
+        currentDate.getMonth() !== prevDate.getMonth() ||
+        currentDate.getDate() !== prevDate.getDate()
+      );
     },
 
     refreshConversations() {
@@ -542,10 +566,13 @@ export default {
 
       // Create a unique search ID to prevent race conditions
       const currentSearchId = ++this.searchCounter;
-      
+
       // Simple client-side search
       const query = this.searchQuery.toLowerCase();
-      
+
+      // Ensure searchResults is initialized as an array
+      this.searchResults = [];
+
       // Simulate a slight delay to mimic API call
       setTimeout(() => {
         // Only update if this is still the most recent search
@@ -553,9 +580,10 @@ export default {
           this.searchResults = this.mockUsers.filter(
             (user) =>
               user.name.toLowerCase().includes(query) ||
-              user.email.toLowerCase().includes(query)
+              user.email.toLowerCase().includes(query),
           );
-          this.showSearchResults = true;
+          // Make sure to set this to true
+          this.showSearchResults = this.searchResults.length > 0;
         }
       }, 100);
     },
@@ -604,7 +632,7 @@ export default {
     setupMockMessageReceiver() {
       // Clear any existing interval first
       this.clearMockMessageInterval();
-      
+
       // Set a new interval with a more reasonable timing
       this.mockMessageInterval = setInterval(
         async () => {
@@ -635,7 +663,7 @@ export default {
 
           this.handleIncomingMessage(message);
         },
-        30000 // Fixed interval of 30 seconds
+        30000, // Fixed interval of 30 seconds
       );
     },
 
@@ -683,47 +711,49 @@ export default {
     },
 
     formatMessageText(text) {
-      if (!text) return '';
-      
+      if (!text) return "";
+
       // Convert URLs to clickable links
       const urlRegex = /(https?:\/\/[^\s]+)/g;
-      let formattedText = text.replace(urlRegex, url => 
-        `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+      let formattedText = text.replace(
+        urlRegex,
+        (url) =>
+          `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`,
       );
-      
+
       // Sanitize text to prevent XSS (in a real app, use a library like DOMPurify)
       // This is a simplified example
       formattedText = formattedText
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/<a /g, '<a '); // Preserve our links
-      
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/<a /g, "<a "); // Preserve our links
+
       // Handle newlines
-      formattedText = formattedText.replace(/\n/g, '<br>');
-      
+      formattedText = formattedText.replace(/\n/g, "<br>");
+
       return formattedText;
     },
 
     isLastMessage(index) {
       return index === this.activeConversation.messages.length - 1;
     },
-    
+
     isMessageRead(message) {
       const conversationId = this.activeConversation.id;
       return this.lastReadMessage[conversationId] === message.id;
     },
-    
+
     simulateReadReceipt(messageId, conversationId) {
       // In a real app, this would be triggered by a server event
       setTimeout(() => {
         this.lastReadMessage[conversationId] = messageId;
       }, 2000); // Simulate 2-second delay for read receipt
     },
-    
+
     simulateTypingIndicator(conversationId) {
       // In a real app, this would be triggered by a server event
       this.typingUsers[conversationId] = true;
-      
+
       // Simulate typing for 3 seconds
       setTimeout(() => {
         this.$set(this.typingUsers, conversationId, false);
@@ -732,36 +762,36 @@ export default {
 
     async loadMoreMessages() {
       if (this.loadingMoreMessages || !this.hasMoreMessages) return;
-      
+
       this.loadingMoreMessages = true;
-      
+
       try {
         const scrollPosition = this.$refs.messagesContainer.scrollHeight;
-        
+
         // Load the next page of messages
         this.messagePage++;
-        
+
         const olderMessages = await ChatService.getConversationMessages(
           this.activeConversation.id,
           this.messagePage,
-          this.messagesPerPage
+          this.messagesPerPage,
         );
-        
+
         if (olderMessages.length < this.messagesPerPage) {
           this.hasMoreMessages = false;
         }
-        
+
         if (olderMessages.length > 0) {
           // Prepend older messages to the conversation
           this.activeConversation.messages = [
             ...olderMessages,
-            ...this.activeConversation.messages
+            ...this.activeConversation.messages,
           ];
-          
+
           // Maintain scroll position
           this.$nextTick(() => {
             const newScrollHeight = this.$refs.messagesContainer.scrollHeight;
-            this.$refs.messagesContainer.scrollTop = 
+            this.$refs.messagesContainer.scrollTop =
               newScrollHeight - scrollPosition;
           });
         }
@@ -772,10 +802,14 @@ export default {
         this.loadingMoreMessages = false;
       }
     },
-    
+
     handleMessagesScroll(e) {
       // Optional: Auto-load more messages when scrolling to top
-      if (e.target.scrollTop < 50 && !this.loadingMoreMessages && this.hasMoreMessages) {
+      if (
+        e.target.scrollTop < 50 &&
+        !this.loadingMoreMessages &&
+        this.hasMoreMessages
+      ) {
         this.loadMoreMessages();
       }
     },

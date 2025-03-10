@@ -174,15 +174,18 @@ export default {
 }
 
 .stars-display .filled {
-  color: #ffd700; /* Gold color for filled stars */
+  color: #ffd700;
+  /* Gold color for filled stars */
 }
 
 .stars-display .half-filled {
-  color: #ffd700; /* Gold color for half-filled stars */
+  color: #ffd700;
+  /* Gold color for half-filled stars */
 }
 
 .stars-display .empty {
-  color: #e0e0e0; /* Light gray for empty stars */
+  color: #e0e0e0;
+  /* Light gray for empty stars */
 }
 
 .rating-count {
