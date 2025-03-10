@@ -49,7 +49,7 @@ const router = createRouter({
 
 const publicPages = ["/login", "/register"];
 router.beforeEach((to, from, next) => {
-  const authRequired = !publicPages.includes(to.path);
+  const authRequired = !publicPages.some((page) => to.path.startsWith(page));
   const loggedIn = localStorage.getItem("token");
   if (authRequired && !loggedIn) {
     next("/login");
