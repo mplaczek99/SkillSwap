@@ -62,12 +62,8 @@
         </div>
 
         <div v-else class="transactions-list">
-          <div
-            v-for="(transaction, index) in transactions"
-            :key="index"
-            class="transaction-item"
-            :class="getTransactionClass(transaction)"
-          >
+          <div v-for="(transaction, index) in transactions" :key="index" class="transaction-item"
+            :class="getTransactionClass(transaction)">
             <div class="transaction-icon">
               <font-awesome-icon :icon="getTransactionIcon(transaction)" />
             </div>
@@ -79,10 +75,7 @@
                 {{ formatDate(transaction.createdAt) }}
               </p>
             </div>
-            <div
-              class="transaction-amount"
-              :class="getAmountClass(transaction)"
-            >
+            <div class="transaction-amount" :class="getAmountClass(transaction)">
               {{ getAmountPrefix(transaction) }}{{ transaction.amount }} SP
             </div>
           </div>
@@ -103,50 +96,25 @@
           <form @submit.prevent="sendPoints">
             <div class="form-group">
               <label for="recipient">Recipient Email</label>
-              <input
-                id="recipient"
-                v-model="sendForm.recipientEmail"
-                type="email"
-                placeholder="Enter recipient's email"
-                required
-              />
+              <input id="recipient" v-model="sendForm.recipientEmail" type="email" placeholder="Enter recipient's email"
+                required />
             </div>
             <div class="form-group">
               <label for="amount">Amount</label>
-              <input
-                id="amount"
-                v-model.number="sendForm.amount"
-                type="number"
-                min="1"
-                :max="user.skillPoints || 0"
-                placeholder="Enter amount to send"
-                required
-              />
+              <input id="amount" v-model.number="sendForm.amount" type="number" min="1" :max="user.skillPoints || 0"
+                placeholder="Enter amount to send" required />
             </div>
             <div class="form-group">
               <label for="note">Note (Optional)</label>
-              <textarea
-                id="note"
-                v-model="sendForm.note"
-                placeholder="What are these points for?"
-              ></textarea>
+              <textarea id="note" v-model="sendForm.note" placeholder="What are these points for?"></textarea>
             </div>
             <div class="form-actions">
-              <button
-                type="button"
-                class="btn btn-outline"
-                @click="showSendModal = false"
-              >
+              <button type="button" class="btn btn-outline" @click="showSendModal = false">
                 Cancel
               </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                :disabled="
-                  sendForm.amount <= 0 ||
-                  sendForm.amount > (user.skillPoints || 0)
-                "
-              >
+              <button type="submit" class="btn btn-primary" :disabled="sendForm.amount <= 0 ||
+                sendForm.amount > (user.skillPoints || 0)
+                ">
                 Send
               </button>
             </div>
@@ -159,6 +127,7 @@
 
 <script>
 import { mapGetters } from "vuex";
+import axios from "axios";
 
 export default {
   name: "Transactions",
@@ -189,50 +158,10 @@ export default {
       this.error = null;
 
       try {
-        // In a real app, fetch from API
-        // For now use dummy data
-        setTimeout(() => {
-          this.transactions = [
-            {
-              id: 1,
-              senderId: 2,
-              receiverId: this.user ? this.user.id : 1,
-              amount: 15,
-              createdAt: new Date(Date.now() - 86400000), // 1 day ago
-              senderName: "Alice Smith",
-              receiverName: this.user ? this.user.name : "You",
-              note: "For JavaScript tutoring",
-            },
-            {
-              id: 2,
-              senderId: this.user ? this.user.id : 1,
-              receiverId: 3,
-              amount: 5,
-              createdAt: new Date(Date.now() - 172800000), // 2 days ago
-              senderName: this.user ? this.user.name : "You",
-              receiverName: "Bob Johnson",
-              note: "For cooking lessons",
-            },
-            {
-              id: 3,
-              senderId: 4,
-              receiverId: this.user ? this.user.id : 1,
-              amount: 10,
-              createdAt: new Date(Date.now() - 259200000), // 3 days ago
-              senderName: "Carol Williams",
-              receiverName: this.user ? this.user.name : "You",
-              note: "For guitar lessons",
-            },
-          ];
-
-          this.calculateTotals();
-          this.loading = false;
-        }, 800);
-
-        // In a real app:
-        // const response = await axios.get('/api/transactions');
-        // this.transactions = response.data;
-        // this.calculateTotals();
+        // Call the real API endpoint
+        const response = await axios.get("/api/transactions");
+        this.transactions = response.data;
+        this.calculateTotals();
       } catch (error) {
         console.error("Error fetching transactions:", error);
         this.error = "Failed to load transactions. Please try again.";
@@ -241,6 +170,7 @@ export default {
       }
     },
 
+    // Rest of the methods stay the same
     calculateTotals() {
       const userId = this.user ? this.user.id : 1;
 
@@ -457,6 +387,7 @@ h2 {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }

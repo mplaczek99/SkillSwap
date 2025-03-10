@@ -1,10 +1,11 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/mplaczek99/SkillSwap/controllers"
 	"github.com/mplaczek99/SkillSwap/middleware"
-	"net/http"
 )
 
 func SetupRoutes(router *gin.Engine, authController *controllers.AuthController) {
@@ -34,11 +35,14 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 
 			// Video upload endpoint.
 			protected.POST("/videos/upload", controllers.VideoUpload)
-			protected.GET("/videos", controllers.GetVideosList) // Add this new endpoint
+			protected.GET("/videos", controllers.GetVideosList)
 
 			// New schedule endpoints.
 			protected.POST("/schedule", controllers.CreateSchedule)
 			protected.GET("/schedule", controllers.GetSchedules)
+
+			// Transactions endpoint
+			protected.GET("/transactions", controllers.GetTransactions)
 		}
 
 		// Admin endpoints.

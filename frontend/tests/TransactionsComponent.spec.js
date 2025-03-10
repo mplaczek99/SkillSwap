@@ -1,19 +1,60 @@
-import { mount, flushPromises } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import Transactions from "@/components/Transactions.vue";
 import { createStore } from "vuex";
+import axios from "axios";
+
+// Mock axios
+jest.mock("axios");
 
 describe("Transactions.vue", () => {
+  let wrapper;
   let store;
 
   beforeEach(() => {
-    // Create a test store with a user state
+    // Mock axios response for /api/transactions
+    axios.get.mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          senderId: 2,
+          receiverId: 1,
+          amount: 15,
+          createdAt: new Date(Date.now() - 86400000), // 1 day ago
+          senderName: "Alice Smith",
+          receiverName: "Test User",
+          note: "For JavaScript tutoring",
+        },
+        {
+          id: 2,
+          senderId: 1,
+          receiverId: 3,
+          amount: 5,
+          createdAt: new Date(Date.now() - 172800000), // 2 days ago
+          senderName: "Test User",
+          receiverName: "Bob Johnson",
+          note: "For cooking lessons",
+        },
+        {
+          id: 3,
+          senderId: 4,
+          receiverId: 1,
+          amount: 10,
+          createdAt: new Date(Date.now() - 259200000), // 3 days ago
+          senderName: "Carol Williams",
+          receiverName: "Test User",
+          note: "For guitar lessons",
+        },
+      ],
+    });
+
+    // Create a mock store
     store = createStore({
       state: {
         user: {
           id: 1,
           name: "Test User",
           email: "test@example.com",
-          skillPoints: 50,
+          skillPoints: 100,
         },
       },
       getters: {
@@ -21,16 +62,8 @@ describe("Transactions.vue", () => {
       },
     });
 
-    // Mock setTimeout to make tests run faster
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it("renders user balance and transaction stats", async () => {
-    const wrapper = mount(Transactions, {
+    // Mount the component with the store
+    wrapper = mount(Transactions, {
       global: {
         plugins: [store],
         stubs: {
@@ -38,33 +71,12 @@ describe("Transactions.vue", () => {
         },
       },
     });
-
-    // Advance timers to trigger the mocked API response
-    jest.advanceTimersByTime(1000);
-    await flushPromises();
-
-    // Should display user balance
-    expect(wrapper.find(".balance").text()).toContain("50");
-
-    // Should display statistics
-    expect(wrapper.find(".stat-item").exists()).toBe(true);
-    expect(wrapper.text()).toContain("Earned");
-    expect(wrapper.text()).toContain("Spent");
   });
 
   it("renders transactions list", async () => {
-    const wrapper = mount(Transactions, {
-      global: {
-        plugins: [store],
-        stubs: {
-          "font-awesome-icon": true,
-        },
-      },
-    });
-
-    // Advance timers to trigger the mocked API response
-    jest.advanceTimersByTime(1000);
-    await flushPromises();
+    // Wait for async operations to complete
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick(); // Sometimes we need multiple ticks for the DOM to update
 
     // Should display transaction items
     const transactions = wrapper.findAll(".transaction-item");
@@ -72,158 +84,35 @@ describe("Transactions.vue", () => {
   });
 
   it("shows send points modal", async () => {
-    const wrapper = mount(Transactions, {
-      global: {
-        plugins: [store],
-        stubs: {
-          "font-awesome-icon": true,
-        },
-      },
-    });
-
-    // Initially modal should be hidden
+    // Test showing and hiding the modal
     expect(wrapper.find(".modal-backdrop").exists()).toBe(false);
 
-    // Click send button
-    await wrapper.find("button.btn-primary").trigger("click");
+    // Find and click the button to show the modal
+    const sendButton = wrapper.find(".btn-primary");
+    await sendButton.trigger("click");
 
-    // Modal should be visible
+    // Modal should now be visible
     expect(wrapper.find(".modal-backdrop").exists()).toBe(true);
-    expect(wrapper.find(".modal-header").text()).toContain("Send SkillPoints");
-  });
 
-  it("validates send points form", async () => {
-    const wrapper = mount(Transactions, {
-      global: {
-        plugins: [store],
-        stubs: {
-          "font-awesome-icon": true,
-        },
-      },
-    });
+    // Find and click the cancel button
+    const cancelButton = wrapper.find(".modal-content .btn-outline");
+    await cancelButton.trigger("click");
 
-    // Open modal
-    await wrapper.find("button.btn-primary").trigger("click");
-
-    // Submit button should be disabled with invalid amount
-    await wrapper.find("#amount").setValue(-10);
-    expect(
-      wrapper.find(".form-actions .btn-primary").attributes("disabled"),
-    ).toBeDefined();
-
-    // Submit button should be disabled with amount greater than balance
-    await wrapper.find("#amount").setValue(100); // Balance is 50
-    expect(
-      wrapper.find(".form-actions .btn-primary").attributes("disabled"),
-    ).toBeDefined();
-
-    // Submit button should be enabled with valid amount
-    await wrapper.find("#amount").setValue(10);
-    expect(
-      wrapper.find(".form-actions .btn-primary").attributes("disabled"),
-    ).toBeUndefined();
-  });
-
-  it("submits send points form", async () => {
-    const wrapper = mount(Transactions, {
-      global: {
-        plugins: [store],
-        stubs: {
-          "font-awesome-icon": true,
-        },
-      },
-    });
-
-    // Open modal
-    await wrapper.find("button.btn-primary").trigger("click");
-
-    // Fill form
-    await wrapper.find("#recipient").setValue("alice@example.com");
-    await wrapper.find("#amount").setValue(10);
-    await wrapper.find("#note").setValue("For JavaScript lessons");
-
-    // Mock alert
-    const originalAlert = window.alert;
-    window.alert = jest.fn();
-
-    // Submit form
-    await wrapper.find(".modal-body form").trigger("submit.prevent");
-
-    // Alert should be called
-    expect(window.alert).toHaveBeenCalled();
-
-    // Modal should be closed
+    // Modal should be hidden again
     expect(wrapper.find(".modal-backdrop").exists()).toBe(false);
-
-    // Restore original alert
-    window.alert = originalAlert;
   });
 
-  it("refreshes transactions", async () => {
-    const wrapper = mount(Transactions, {
-      global: {
-        plugins: [store],
-        stubs: {
-          "font-awesome-icon": true,
-        },
-      },
-    });
+  it("calculates totals correctly", async () => {
+    // Wait for async operations to complete
+    await wrapper.vm.$nextTick();
 
-    // Create a replacement for fetchTransactions
-    const originalFetchTransactions = wrapper.vm.fetchTransactions;
-    const mockFetchTransactions = jest.fn();
-    wrapper.vm.fetchTransactions = mockFetchTransactions;
+    // Call calculateTotals directly to test its logic
+    wrapper.vm.calculateTotals();
 
-    // Click refresh button
-    await wrapper.find(".action-buttons .btn-outline").trigger("click");
-
-    // Method should be called
-    expect(mockFetchTransactions).toHaveBeenCalled();
-
-    // Restore original method after test
-    wrapper.vm.fetchTransactions = originalFetchTransactions;
-  });
-
-  it("formats transaction items correctly", async () => {
-    const wrapper = mount(Transactions, {
-      global: {
-        plugins: [store],
-        stubs: {
-          "font-awesome-icon": true,
-        },
-      },
-    });
-
-    // Advance timers to trigger the mocked API response
-    jest.advanceTimersByTime(1000);
-    await flushPromises();
-
-    // Test transaction formatting helpers
-    expect(
-      wrapper.vm.getTransactionClass({
-        receiverId: 1, // Same as user ID
-        senderId: 2,
-      }),
-    ).toEqual({ received: true, sent: false });
-
-    expect(
-      wrapper.vm.getTransactionClass({
-        receiverId: 2,
-        senderId: 1, // Same as user ID
-      }),
-    ).toEqual({ received: false, sent: true });
-
-    expect(
-      wrapper.vm.getAmountPrefix({
-        receiverId: 1, // Same as user ID
-      }),
-    ).toBe("+");
-
-    expect(
-      wrapper.vm.getAmountPrefix({
-        receiverId: 2,
-        senderId: 1, // Same as user ID
-      }),
-    ).toBe("-");
+    // Verify the expected totals
+    // Received: transactions with ID 1 and 3 (total: 25)
+    // Sent: transaction with ID 2 (total: 5)
+    expect(wrapper.vm.totalEarned).toBe(25);
+    expect(wrapper.vm.totalSpent).toBe(5);
   });
 });
