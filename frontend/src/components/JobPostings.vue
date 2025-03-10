@@ -113,7 +113,7 @@
         </div>
 
         <div v-else class="jobs-grid">
-          <div v-for="job in filteredJobs" :key="job.id" class="job-card">
+          <div v-for="job in paginatedJobs" :key="job.id" class="job-card">
             <div class="job-card-header">
               <h3 class="job-title">{{ job.title }}</h3>
               <span class="job-company">{{ job.company }}</span>
@@ -830,6 +830,7 @@ export default {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
