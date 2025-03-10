@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -19,6 +20,18 @@ import (
 // This test file contains integration tests that test the interaction between
 // different components of the system. These tests focus on API endpoints
 // that require multiple layers to work together.
+
+// TestMain sets up environment for tests in the main package
+func TestMain(m *testing.M) {
+	// Set JWT_SECRET for tests
+	os.Setenv("JWT_SECRET", "test-secret-for-integration-tests")
+
+	// Run the tests
+	code := m.Run()
+
+	// Exit with the appropriate code
+	os.Exit(code)
+}
 
 // Helper function to set up test router
 func setupTestRouter() *gin.Engine {

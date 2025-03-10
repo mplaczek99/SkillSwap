@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"log"
 	"os"
 	"sync"
@@ -17,22 +15,13 @@ var (
 	once      sync.Once
 )
 
-// getJWTSecret reads the JWT secret from the environment or generates a random one if not set.
-// Uses sync.Once to ensure the secret is only generated once during the application lifecycle.
+// getJWTSecret reads the JWT secret from the environment.
+// Uses sync.Once to ensure the check is only performed once during the application lifecycle.
 func getJWTSecret() []byte {
 	once.Do(func() {
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
-			log.Println("WARNING: JWT_SECRET not set! Using a randomly generated secret which will remain consistent until restart.")
-			// Generate a random 32-byte secret
-			randomBytes := make([]byte, 32)
-			if _, err := rand.Read(randomBytes); err != nil {
-				log.Println("Failed to generate random secret, using fallback secret")
-				secretKey = []byte("temporary_fallback_secret_key_please_set_JWT_SECRET")
-				return
-			}
-			secretKey = []byte(base64.StdEncoding.EncodeToString(randomBytes))
-			return
+			log.Fatal("JWT_SECRET environment variable is required. Server will exit.")
 		}
 		secretKey = []byte(secret)
 	})
