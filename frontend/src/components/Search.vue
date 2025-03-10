@@ -259,6 +259,7 @@ export default {
     const queryParam = this.$route.query.q;
     if (queryParam) {
       this.query = queryParam;
+      this.search(); // Auto-search when query is in URL
     }
   },
   methods: {
@@ -268,7 +269,6 @@ export default {
         this.error = null;
         this.loading = false;
         this.searched = false;
-        this.showSearchResults = false;
         return;
       }
 

@@ -359,40 +359,39 @@ export default {
     }
   },
   methods: {
-    async fetchJobData(jobId) {
-      try {
-        // In a real implementation, this would call the API
-        // For now, use mock data
-        setTimeout(() => {
-          const allJobs = this.getMockJobs();
-          const job = allJobs.find((j) => j.id === parseInt(jobId));
+    fetchJobData(jobId) {
+      return new Promise((resolve, reject) => {
+        try {
+          // In a real implementation, this would call the API
+          // For now, use mock data
+          setTimeout(() => {
+            const allJobs = this.getMockJobs();
+            const job = allJobs.find((j) => j.id === parseInt(jobId));
 
-          if (job) {
-            this.formData = {
-              title: job.title,
-              company: job.company,
-              location: job.location,
-              description: job.description,
-              skillsRequired: Array.isArray(job.skillsRequired)
-                ? job.skillsRequired
-                : job.skillsRequired.split(",").map((s) => s.trim()),
-              experienceLevel: job.experienceLevel,
-              jobType: job.jobType,
-              salaryRange: job.salaryRange,
-              contactEmail: job.contactEmail,
-            };
-          } else {
-            this.$router.push("/jobs");
-          }
-        }, 500);
-
-        // Real implementation would be:
-        // const response = await axios.get(`/api/jobs/${jobId}`);
-        // const job = response.data;
-        // this.formData = { ... };
-      } catch (error) {
-        console.error("Error fetching job data:", error);
-      }
+            if (job) {
+              this.formData = {
+                title: job.title,
+                company: job.company,
+                location: job.location,
+                description: job.description,
+                skillsRequired: Array.isArray(job.skillsRequired)
+                  ? job.skillsRequired
+                  : job.skillsRequired.split(",").map((s) => s.trim()),
+                experienceLevel: job.experienceLevel,
+                jobType: job.jobType,
+                salaryRange: job.salaryRange,
+                contactEmail: job.contactEmail,
+              };
+              resolve();
+            } else {
+              this.$router.push("/jobs");
+              reject(new Error("Job not found"));
+            }
+          }, 500);
+        } catch (error) {
+          reject(error);
+        }
+      });
     },
 
     validateStep() {
