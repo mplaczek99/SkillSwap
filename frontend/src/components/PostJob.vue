@@ -513,41 +513,30 @@ export default {
       this.isSubmitting = true;
 
       try {
-        // Prepare data
-        // Note: We're not using this in our mock implementation, but will need it for API integration
-        // const jobData = {
-        //   ...this.formData,
-        //   postedByUserID: this.$store.state.user ? this.$store.state.user.id : 1,
-        //   postedByName: this.$store.state.user ? this.$store.state.user.name : 'Test User'
-        // };
+        // Use a promise-based approach to handle errors in the timeout
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            try {
+              // Show success message
+              eventBus.emit("show-notification", {
+                type: "success",
+                title: this.isEditing ? "Job Updated" : "Job Posted",
+                message: this.isEditing
+                  ? "Your job posting has been successfully updated."
+                  : "Your job posting has been successfully published.",
+                duration: 5000,
+              });
 
-        // In a real implementation, this would call the API
-        setTimeout(() => {
-          this.isSubmitting = false;
-
-          // Show success message
-          eventBus.emit("show-notification", {
-            type: "success",
-            title: this.isEditing ? "Job Updated" : "Job Posted",
-            message: this.isEditing
-              ? "Your job posting has been successfully updated."
-              : "Your job posting has been successfully published.",
-            duration: 5000,
-          });
-
-          // Redirect to jobs page
-          this.$router.push("/jobs");
-        }, 1500);
-
-        // Real implementation would be:
-        // if (this.isEditing) {
-        //   await axios.put(`/api/jobs/${this.$route.params.id}`, jobData);
-        // } else {
-        //   await axios.post('/api/jobs', jobData);
-        // }
+              // Redirect to jobs page
+              this.$router.push("/jobs");
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          }, 1500);
+        });
       } catch (error) {
         console.error("Error submitting job:", error);
-        this.isSubmitting = false;
 
         // Show error message
         eventBus.emit("show-notification", {
@@ -557,6 +546,8 @@ export default {
             "There was a problem submitting your job posting. Please try again.",
           duration: 5000,
         });
+      } finally {
+        this.isSubmitting = false;
       }
     },
 
