@@ -253,8 +253,8 @@ export default {
     },
     viewSkill(skill) {
       this.$router.push({
-        name: "SkillDetails",
-        params: { skillName: skill.name },
+        name: "Search",
+        query: { q: skill.name },
       });
     },
     async createSchedule() {
