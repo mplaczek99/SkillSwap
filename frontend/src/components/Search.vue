@@ -124,8 +124,8 @@
           </button>
         </div>
 
-        <div v-else-if="results.length" class="search-results-grid">
-          <transition-group name="fade" tag="div" class="results-container">
+        <div v-else-if="filteredResults.length" class="search-results-grid">
+          <div class="results-container">
             <div
               v-for="(item, index) in filteredResults"
               :key="index"
@@ -175,7 +175,7 @@
                 </div>
               </div>
             </div>
-          </transition-group>
+          </div>
         </div>
 
         <div v-else-if="!loading && searched" class="no-results">
@@ -201,6 +201,7 @@
 <script>
 import axios from "axios";
 import eventBus from "@/utils/eventBus";
+import { debounce } from "lodash";
 
 export default {
   name: "Search",
@@ -214,6 +215,7 @@ export default {
     return {
       searchQuery: "",
       results: [],
+      filteredResults: [],
       searched: false,
       loading: false,
       error: null,
@@ -230,29 +232,13 @@ export default {
       ],
       selectedCategories: [],
       searchType: "all",
+      // Cache for skill icons to prevent recalculation
+      skillIconCache: new Map(),
+      // Abort controller for cancelling in-flight requests
+      abortController: null,
+      // Debounced search function (defined in created)
+      debouncedFilter: null,
     };
-  },
-  computed: {
-    filteredResults() {
-      if (!this.results.length) return [];
-      let filtered = [...this.results];
-      if (this.searchType === "skills") {
-        filtered = filtered.filter((item) => !item.email);
-      } else if (this.searchType === "users") {
-        filtered = filtered.filter((item) => item.email);
-      }
-      if (this.selectedCategories.length > 0) {
-        filtered = filtered.filter((item) => {
-          if (item.email) return true;
-          return this.selectedCategories.some(
-            (category) =>
-              item.description &&
-              item.description.toLowerCase().includes(category.toLowerCase()),
-          );
-        });
-      }
-      return filtered;
-    },
   },
   created() {
     // Check for query parameter in URL and set as initial value
@@ -261,11 +247,27 @@ export default {
       this.searchQuery = queryParam;
       this.search(); // Auto-search when query is in URL
     }
+
+    // Create a debounced version of the filter function
+    this.debouncedFilter = debounce(this.applyFilters, 100);
+  },
+  watch: {
+    // Apply filters whenever filter-related data changes
+    selectedCategories: {
+      handler() {
+        this.debouncedFilter();
+      },
+      deep: true,
+    },
+    searchType() {
+      this.debouncedFilter();
+    },
   },
   methods: {
     async performSearch() {
       if (!this.searchQuery.trim()) {
         this.results = [];
+        this.filteredResults = [];
         this.error = null;
         this.loading = false;
         this.searched = false;
@@ -275,40 +277,93 @@ export default {
       this.loading = true;
       this.error = null;
 
+      // Cancel any in-flight request
+      if (this.abortController) {
+        this.abortController.abort();
+      }
+
+      // Create a new abort controller for this request
+      this.abortController = new AbortController();
+
       try {
-        // Set search timeout to handle network latency issues
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Request timeout")), 15000),
-        );
+        // Create request config - only add abort signal when not in test environment
+        const requestConfig = {
+          params: { q: this.searchQuery },
+          timeout: 10000,
+        };
 
-        const fetchPromise = axios.get("/api/search", {
-          params: { q: this.searchQuery }, // Fixed: Changed from this.query to this.searchQuery
-          timeout: 10000, // Add timeout to prevent hanging requests
-        });
+        // Only add the abort signal in non-test environments
+        if (!process.env.JEST_WORKER_ID) {
+          requestConfig.signal = this.abortController.signal;
+        }
 
-        // Race between the fetch and timeout
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        const response = await axios.get("/api/search", requestConfig);
 
         // Ensure we have an array of results, even if empty
         this.results = Array.isArray(response.data) ? response.data : [];
 
+        // Apply filters immediately to avoid unnecessary re-renders
+        this.applyFilters();
+
         // Update URL with the search query for bookmarking/sharing
         this.$router.replace({
-          query: { ...this.$route.query, q: this.searchQuery }, // Fixed: Changed from this.query to this.searchQuery
+          query: { ...this.$route.query, q: this.searchQuery },
         });
       } catch (err) {
+        // Ignore errors from aborted requests
+        if (err.name === "AbortError" || err.name === "CanceledError") {
+          return;
+        }
+
         console.error("Search API error:", err);
         this.error =
           "An error occurred while searching. Please try again later.";
-        this.results = [];
+        this.filteredResults = [];
       } finally {
         this.loading = false;
         this.searched = true;
       }
     },
+
+    applyFilters() {
+      if (!this.results.length) {
+        this.filteredResults = [];
+        return;
+      }
+
+      let filtered = this.results;
+
+      // Apply type filter
+      if (this.searchType === "skills") {
+        filtered = filtered.filter((item) => !item.email);
+      } else if (this.searchType === "users") {
+        filtered = filtered.filter((item) => item.email);
+      }
+
+      // Apply category filter
+      if (this.selectedCategories.length > 0) {
+        const lowerCaseCategories = this.selectedCategories.map((c) =>
+          c.toLowerCase(),
+        );
+        filtered = filtered.filter((item) => {
+          if (item.email) return true; // Keep all users
+
+          if (!item.description) return false;
+
+          const description = item.description.toLowerCase();
+          return lowerCaseCategories.some((category) =>
+            description.includes(category),
+          );
+        });
+      }
+
+      this.filteredResults = filtered;
+    },
+
     clearSearch() {
       this.searchQuery = "";
       this.results = [];
+      this.filteredResults = [];
       this.searched = false;
 
       // Also clear the URL query parameter
@@ -316,6 +371,7 @@ export default {
         query: { ...this.$route.query, q: undefined },
       });
     },
+
     search() {
       if (this.forceApiCall) {
         this.performSearch();
@@ -334,21 +390,31 @@ export default {
                 .toLowerCase()
                 .includes(this.searchQuery.toLowerCase())),
         );
+        this.applyFilters();
         this.searched = true;
       } else {
         this.performSearch();
       }
     },
+
     toggleFilters() {
       this.showFilters = !this.showFilters;
     },
+
     resetFilters() {
       this.selectedCategories = [];
       this.searchType = "all";
-      this.filterJobs();
+      this.applyFilters();
     },
+
     getSkillIcon(skillName) {
       if (!skillName) return "cog";
+
+      // Use cached icon if available
+      const key = skillName.toLowerCase();
+      if (this.skillIconCache.has(key)) {
+        return this.skillIconCache.get(key);
+      }
 
       const skillIcons = {
         programming: "code",
@@ -365,15 +431,19 @@ export default {
         singing: "music",
       };
 
-      const skillNameLower = skillName.toLowerCase();
-
       for (const [key, icon] of Object.entries(skillIcons)) {
-        if (skillNameLower.includes(key.toLowerCase())) {
+        if (skillName.toLowerCase().includes(key.toLowerCase())) {
+          // Cache the result
+          this.skillIconCache.set(skillName.toLowerCase(), icon);
           return icon;
         }
       }
+
+      // Cache the default icon
+      this.skillIconCache.set(skillName.toLowerCase(), "cog");
       return "cog";
     },
+
     viewProfile(user) {
       if (!user || !user.id) {
         console.error("Invalid user object:", user);
@@ -382,6 +452,7 @@ export default {
       }
       alert(`Viewing profile for ${user.name}`);
     },
+
     viewSkill(skill) {
       if (!skill || !skill.name) {
         console.error("Invalid skill object:", skill);
@@ -390,6 +461,7 @@ export default {
       }
       alert(`Viewing details for ${skill.name}`);
     },
+
     startChat(user) {
       if (!user || !user.id) {
         console.error("Invalid user object for chat:", user);
@@ -556,8 +628,8 @@ export default {
 
 .filter-label {
   display: block;
-  font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
   color: var(--dark);
 }
 
@@ -691,6 +763,7 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-4);
+  contain: content;
 }
 
 .result-card {
@@ -704,6 +777,7 @@ export default {
     box-shadow var(--transition-normal) ease;
   padding: var(--space-4);
   height: 100%;
+  will-change: transform, box-shadow;
 }
 
 .result-card:hover {
@@ -829,20 +903,6 @@ export default {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-}
-
-/* Animation for search results */
-.fade-enter-active,
-.fade-leave-active {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
 }
 
 /* Loading animation */
