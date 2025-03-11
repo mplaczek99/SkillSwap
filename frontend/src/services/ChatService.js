@@ -115,28 +115,27 @@ class ChatService {
       (p) => p.id !== currentUserId,
     ) || { id: 0, name: "Unknown User", avatar: null };
 
-    // Apply pagination to messages
-    const allMessages = conversation.messages;
+    // Apply pagination to messages - more efficient approach
+    const allMessages = [...conversation.messages];
 
-    // Sort messages in descending order (newest first)
-    const sortedMessages = [...allMessages].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
-    );
+    // Sort once in ascending order (oldest to newest)
+    allMessages.sort((a, b) => {
+      const dateA = new Date(a.timestamp);
+      const dateB = new Date(b.timestamp);
+      return dateA - dateB;
+    });
 
-    // Get paginated messages
+    // Get the correct slice of messages based on page number
+    const totalMessages = allMessages.length;
+    // This maintains chronological order (oldest to newest)
     const startIndex = (page - 1) * messagesPerPage;
-    const endIndex = startIndex + messagesPerPage;
-    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
-
-    // Sort back to ascending order for display
-    const displayMessages = paginatedMessages.sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
-    );
+    const endIndex = Math.min(startIndex + messagesPerPage, totalMessages);
+    const paginatedMessages = allMessages.slice(startIndex, endIndex);
 
     return {
       id: conversation.id,
       recipient: otherParticipant,
-      messages: displayMessages.map((msg) => ({
+      messages: paginatedMessages.map((msg) => ({
         ...msg,
         isOutgoing: msg.senderId === currentUserId,
       })),
