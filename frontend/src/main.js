@@ -7,129 +7,8 @@ import axios from "axios";
 // Import event bus compatibility layer
 import { setupRootCompatibility } from "./utils/eventBus";
 
-// Import Font Awesome core and icons
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-
-// Import solid icons
-import {
-  faUser,
-  faSignOutAlt,
-  faHome,
-  faSearch,
-  faComments,
-  faEnvelope,
-  faEye,
-  faEyeSlash,
-  faCode,
-  faFilter,
-  faChevronUp,
-  faChevronDown,
-  faExclamationCircle,
-  faTimes,
-  faHistory,
-  faStar,
-  faStarHalfAlt,
-  faArrowRight,
-  faBellSlash,
-  faMusic,
-  faUtensils,
-  faPalette,
-  faPenFancy,
-  faGuitar,
-  faLanguage,
-  faCog,
-  faVideo,
-  faUpload,
-  faFilm,
-  faSpinner,
-  faCheckCircle,
-  faPlay,
-  faPlayCircle,
-  faDownload,
-  faCoins,
-  faCalendarAlt,
-  faGraduationCap,
-  faExchangeAlt,
-  faComment,
-  faCommentAlt,
-  faPaperPlane,
-  faSync,
-  faArrowUp,
-  faArrowDown,
-  // New icons for job posting features
-  faBriefcase,
-  faBuilding,
-  faMapMarkerAlt,
-  faExternalLinkAlt,
-  faBookmark,
-  faMoneyBillAlt,
-  faPlus,
-  faPlusCircle,
-  faCheck,
-  faArrowLeft,
-  faUndo,
-} from "@fortawesome/free-solid-svg-icons";
-
-// Add all solid icons to the library
-library.add(
-  faUser,
-  faSignOutAlt,
-  faHome,
-  faSearch,
-  faComments,
-  faEnvelope,
-  faEye,
-  faEyeSlash,
-  faCode,
-  faFilter,
-  faChevronUp,
-  faChevronDown,
-  faExclamationCircle,
-  faTimes,
-  faHistory,
-  faStar,
-  faStarHalfAlt,
-  faArrowRight,
-  faBellSlash,
-  faMusic,
-  faUtensils,
-  faPalette,
-  faPenFancy,
-  faGuitar,
-  faLanguage,
-  faCog,
-  faVideo,
-  faUpload,
-  faFilm,
-  faSpinner,
-  faCheckCircle,
-  faPlay,
-  faPlayCircle,
-  faDownload,
-  faCoins,
-  faCalendarAlt,
-  faGraduationCap,
-  faExchangeAlt,
-  faComment,
-  faCommentAlt,
-  faPaperPlane,
-  faSync,
-  faArrowUp,
-  faArrowDown,
-  // New icons
-  faBriefcase,
-  faBuilding,
-  faMapMarkerAlt,
-  faExternalLinkAlt,
-  faBookmark,
-  faMoneyBillAlt,
-  faPlus,
-  faPlusCircle,
-  faCheck,
-  faArrowLeft,
-  faUndo,
-);
+// Import the icon registration function
+import { registerIcons } from "./utils/icons";
 
 // Set up axios interceptors to add the auth token to all requests
 axios.interceptors.request.use(
@@ -179,8 +58,8 @@ const app = createApp(App);
 // Set up event bus compatibility for $root.$emit pattern
 setupRootCompatibility(app);
 
-// Register the FontAwesome component
-app.component("font-awesome-icon", FontAwesomeIcon);
+// Register Font Awesome icons
+registerIcons(app);
 
 // Initialize the store from localStorage before mounting the app
 store.dispatch("initializeStore");
