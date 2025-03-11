@@ -38,18 +38,18 @@ export default createStore({
       localStorage.removeItem("rememberMe");
     },
     initializeStore(state) {
-      // Helper function to clear authentication state
-      const clearAuth = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("rememberMe");
+      // Helper function to clear auth state in one place
+      const clearAuthState = () => {
         state.user = null;
         state.token = null;
         state.rememberMe = false;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("rememberMe");
       };
 
       try {
-        // Read from localStorage only once
+        // Get all required data from localStorage at once
         const storedToken = localStorage.getItem("token");
 
         // Early return if no token exists
@@ -60,13 +60,12 @@ export default createStore({
 
         // If remember me is false and this is a new browser session, don't restore
         if (!storedRememberMe && !sessionMarker) {
-          clearAuth();
+          clearAuthState();
           return;
         }
 
-        // Validate token before restoring other state
+        // Validate token
         try {
-          // Decode the JWT token
           const decoded = jwtDecode(storedToken);
 
           // Check if token has expired
@@ -74,29 +73,34 @@ export default createStore({
             console.log(
               "Stored token has expired, clearing authentication data",
             );
-            clearAuth();
+            clearAuthState();
             return;
           }
 
-          // Token is valid, mark this as an active session
+          // Token is valid, mark as active session
           sessionStorage.setItem("sessionMarker", "active");
 
-          // Restore state
+          // Restore state efficiently
           state.token = storedToken;
           state.rememberMe = storedRememberMe;
 
-          // Only parse user JSON if we need it
+          // Parse user data from localStorage only once
           const storedUserJSON = localStorage.getItem("user");
           if (storedUserJSON) {
-            state.user = JSON.parse(storedUserJSON);
+            try {
+              state.user = JSON.parse(storedUserJSON);
+            } catch (parseError) {
+              console.error("Invalid user data format:", parseError);
+              state.user = null;
+            }
           }
         } catch (tokenError) {
           console.error("Invalid token format:", tokenError);
-          clearAuth();
+          clearAuthState();
         }
       } catch (e) {
         console.error("Error initializing store from localStorage:", e);
-        clearAuth();
+        clearAuthState();
       }
     },
   },
