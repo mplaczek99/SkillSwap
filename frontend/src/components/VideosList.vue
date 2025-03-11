@@ -131,41 +131,117 @@ export default {
       });
     },
 
+    // Optimized playVideo method for VideosList.vue component
     playVideo(video) {
-      // Get the API base URL from the store
-      const baseUrl = axios.defaults.baseURL || "";
-      const videoUrl = `${baseUrl}/uploads/${video.name}`;
+      try {
+        // Get the API base URL from the store config
+        const baseUrl = axios.defaults.baseURL || "";
+        const videoUrl = `${baseUrl}/uploads/${encodeURIComponent(video.name)}`;
 
-      // Create a modal or overlay to play the video
-      const win = window.open("", "_blank");
-      win.document.write(`
-        <html>
-          <head>
-            <title>${this.formatFileName(video.name)}</title>
-            <style>
-              body {
-                margin: 0;
-                padding: 0;
-                background: #000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-              }
-              video {
-                max-width: 100%;
-                max-height: 100vh;
-              }
-            </style>
-          </head>
-          <body>
-            <video controls autoplay>
-              <source src="${videoUrl}" type="video/mp4">
-              Your browser does not support the video tag.
-            </video>
-          </body>
-        </html>
-      `);
+        // Create a modal in the current window instead of opening a new one
+        const modal = document.createElement("div");
+        modal.className = "video-modal";
+        modal.style = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    `;
+
+        // Add a safe title (prevent XSS)
+        const titleElement = document.createElement("h2");
+        titleElement.textContent = this.formatFileName(video.name);
+        titleElement.style = `
+      color: white;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    `;
+
+        // Create the video player element
+        const videoElement = document.createElement("video");
+        videoElement.controls = true;
+        videoElement.autoplay = true;
+        videoElement.style = `
+      max-width: 90%;
+      max-height: 70vh;
+    `;
+
+        // Add a close button
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "Close";
+        closeButton.className = "btn btn-primary";
+        closeButton.style = `
+      margin-top: 20px;
+      padding: 8px 16px;
+    `;
+        closeButton.onclick = () => document.body.removeChild(modal);
+
+        // Add error handling
+        videoElement.onerror = () => {
+          const errorMsg = document.createElement("p");
+          errorMsg.textContent = "Error loading video. Please try again later.";
+          errorMsg.style.color = "red";
+          modal.appendChild(errorMsg);
+        };
+
+        // Create the source with proper type detection
+        const source = document.createElement("source");
+        source.src = videoUrl;
+
+        // Set the type based on file extension
+        const fileExt = video.name.split(".").pop().toLowerCase();
+        const mimeTypes = {
+          mp4: "video/mp4",
+          webm: "video/webm",
+          ogg: "video/ogg",
+          mov: "video/quicktime",
+          avi: "video/x-msvideo",
+          wmv: "video/x-ms-wmv",
+          mkv: "video/x-matroska",
+        };
+
+        source.type = mimeTypes[fileExt] || "video/mp4";
+
+        // Create a fallback message
+        const fallbackMessage = document.createTextNode(
+          "Your browser does not support the video tag.",
+        );
+
+        // Assemble the elements
+        videoElement.appendChild(source);
+        videoElement.appendChild(fallbackMessage);
+
+        modal.appendChild(titleElement);
+        modal.appendChild(videoElement);
+        modal.appendChild(closeButton);
+
+        // Add to document
+        document.body.appendChild(modal);
+
+        // Event listener to close on ESC key
+        const escHandler = (event) => {
+          if (event.key === "Escape") {
+            document.body.removeChild(modal);
+            document.removeEventListener("keydown", escHandler);
+          }
+        };
+        document.addEventListener("keydown", escHandler);
+      } catch (error) {
+        console.error("Error playing video:", error);
+        this.$root.$emit("show-notification", {
+          type: "error",
+          title: "Video Playback Error",
+          message: "Failed to play the video. Please try again.",
+          duration: 5000,
+        });
+      }
     },
 
     downloadVideo(video) {
@@ -222,6 +298,7 @@ h2 {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
