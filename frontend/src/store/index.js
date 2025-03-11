@@ -6,6 +6,16 @@ import jwtDecode from "jwt-decode";
 const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
 axios.defaults.baseURL = apiUrl;
 
+// Helper function to clear authentication state
+const clearAuthState = (state) => {
+  state.user = null;
+  state.token = null;
+  state.rememberMe = false;
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("rememberMe");
+};
+
 export default createStore({
   state: {
     user: null,
@@ -30,77 +40,56 @@ export default createStore({
       localStorage.setItem("user", JSON.stringify(state.user));
     },
     logout(state) {
-      state.user = null;
-      state.token = null;
-      state.rememberMe = false;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("rememberMe");
+      clearAuthState(state);
     },
     initializeStore(state) {
-      // Helper function to clear auth state in one place
-      const clearAuthState = () => {
-        state.user = null;
-        state.token = null;
-        state.rememberMe = false;
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("rememberMe");
-      };
-
       try {
-        // Get all required data from localStorage at once
+        // Read all needed items from storage at once to minimize API calls
         const storedToken = localStorage.getItem("token");
 
-        // Early return if no token exists
+        // Early return if no token
         if (!storedToken) return;
 
         const storedRememberMe = localStorage.getItem("rememberMe") === "true";
         const sessionMarker = sessionStorage.getItem("sessionMarker");
+        const storedUserJSON = localStorage.getItem("user");
 
         // If remember me is false and this is a new browser session, don't restore
         if (!storedRememberMe && !sessionMarker) {
-          clearAuthState();
+          clearAuthState(state);
           return;
         }
 
-        // Validate token
-        try {
-          const decoded = jwtDecode(storedToken);
+        // Validate the token
+        const decoded = jwtDecode(storedToken);
 
-          // Check if token has expired
-          if (decoded.exp && decoded.exp < Date.now() / 1000) {
-            console.log(
-              "Stored token has expired, clearing authentication data",
-            );
-            clearAuthState();
-            return;
-          }
-
-          // Token is valid, mark as active session
-          sessionStorage.setItem("sessionMarker", "active");
-
-          // Restore state efficiently
-          state.token = storedToken;
-          state.rememberMe = storedRememberMe;
-
-          // Parse user data from localStorage only once
-          const storedUserJSON = localStorage.getItem("user");
-          if (storedUserJSON) {
-            try {
-              state.user = JSON.parse(storedUserJSON);
-            } catch (parseError) {
-              console.error("Invalid user data format:", parseError);
-              state.user = null;
-            }
-          }
-        } catch (tokenError) {
-          console.error("Invalid token format:", tokenError);
-          clearAuthState();
+        // Check token expiration
+        if (decoded.exp && decoded.exp < Date.now() / 1000) {
+          console.log("Stored token has expired, clearing authentication data");
+          clearAuthState(state);
+          return;
         }
-      } catch (e) {
-        console.error("Error initializing store from localStorage:", e);
-        clearAuthState();
+
+        // Token is valid - set session marker
+        sessionStorage.setItem("sessionMarker", "active");
+
+        // Restore state
+        state.token = storedToken;
+        state.rememberMe = storedRememberMe;
+
+        // Parse and restore user data
+        if (storedUserJSON) {
+          try {
+            state.user = JSON.parse(storedUserJSON);
+          } catch (error) {
+            console.error("Invalid user data format:", error);
+            state.user = null;
+          }
+        }
+      } catch (error) {
+        // Handle all errors in one place
+        console.error("Authentication state restoration failed:", error);
+        clearAuthState(state);
       }
     },
   },
