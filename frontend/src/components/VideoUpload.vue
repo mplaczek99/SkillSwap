@@ -11,6 +11,7 @@
           accept="video/*"
           id="video-file"
           class="file-input"
+          ref="fileInput"
         />
         <label for="video-file" class="file-label">
           <font-awesome-icon icon="upload" class="icon" />
