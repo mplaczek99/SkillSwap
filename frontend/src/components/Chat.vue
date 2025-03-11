@@ -764,10 +764,19 @@ export default {
       if (this.loadingMoreMessages || !this.hasMoreMessages) return;
 
       this.loadingMoreMessages = true;
+      const messagesContainer = this.$refs.messagesContainer;
+
+      // Skip if messages container isn't available
+      if (!messagesContainer) {
+        this.loadingMoreMessages = false;
+        return;
+      }
+
+      // Store initial scroll position and heights
+      const oldScrollTop = messagesContainer.scrollTop;
+      const oldScrollHeight = messagesContainer.scrollHeight;
 
       try {
-        const scrollPosition = this.$refs.messagesContainer.scrollHeight;
-
         // Load the next page of messages
         this.messagePage++;
 
@@ -777,9 +786,8 @@ export default {
           this.messagesPerPage,
         );
 
-        if (olderMessages.length < this.messagesPerPage) {
-          this.hasMoreMessages = false;
-        }
+        // Update whether we have more messages to load
+        this.hasMoreMessages = olderMessages.length >= this.messagesPerPage;
 
         if (olderMessages.length > 0) {
           // Prepend older messages to the conversation
@@ -788,16 +796,27 @@ export default {
             ...this.activeConversation.messages,
           ];
 
-          // Maintain scroll position
+          // Maintain scroll position correctly by adjusting for the new content height
           this.$nextTick(() => {
-            const newScrollHeight = this.$refs.messagesContainer.scrollHeight;
-            this.$refs.messagesContainer.scrollTop =
-              newScrollHeight - scrollPosition;
+            if (messagesContainer) {
+              const newScrollHeight = messagesContainer.scrollHeight;
+              const heightDifference = newScrollHeight - oldScrollHeight;
+              messagesContainer.scrollTop = oldScrollTop + heightDifference;
+            }
           });
+        } else {
+          // No more messages
+          this.hasMoreMessages = false;
         }
       } catch (error) {
         console.error("Failed to load more messages:", error);
-        // Show error to user
+        // Show error to user with notification - FIXED: using eventBus instead of $root.$emit
+        eventBus.emit("show-notification", {
+          type: "error",
+          title: "Error",
+          message: "Failed to load older messages. Please try again.",
+          duration: 3000,
+        });
       } finally {
         this.loadingMoreMessages = false;
       }
