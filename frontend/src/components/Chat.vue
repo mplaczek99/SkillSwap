@@ -278,6 +278,7 @@
 </template>
 
 <script>
+import { nextTick } from "vue";
 import ChatService from "@/services/ChatService";
 import { debounce } from "lodash";
 import eventBus from "@/utils/eventBus";
@@ -393,7 +394,7 @@ export default {
         }
 
         // Scroll to bottom of messages
-        this.$nextTick(this.scrollToBottom);
+        nextTick(this.scrollToBottom);
       } catch (error) {
         console.error("Failed to load conversation:", error);
         this.conversationError = "Failed to load messages. Please try again.";
@@ -429,7 +430,7 @@ export default {
         // Clear input
         this.newMessage = "";
         this.$refs.messageInput.style.height = "auto";
-        this.$nextTick(this.scrollToBottom);
+        nextTick(this.scrollToBottom);
 
         // After successful send, simulate the recipient typing
         // This would use WebSockets in a real application
@@ -603,7 +604,7 @@ export default {
         await this.loadConversation(conversationId);
 
         // Focus message input
-        this.$nextTick(() => {
+        nextTick(() => {
           this.$refs.messageInput?.focus();
         });
       } catch (error) {
@@ -680,7 +681,7 @@ export default {
 
         // Mark as read immediately and notify other components
         eventBus.emit("chat:read-messages");
-        this.$nextTick(this.scrollToBottom);
+        nextTick(this.scrollToBottom);
       } else {
         // Update conversation in list
         const convoIndex = this.conversations.findIndex(
@@ -797,7 +798,7 @@ export default {
           ];
 
           // Maintain scroll position correctly by adjusting for the new content height
-          this.$nextTick(() => {
+          nextTick(() => {
             if (messagesContainer) {
               const newScrollHeight = messagesContainer.scrollHeight;
               const heightDifference = newScrollHeight - oldScrollHeight;
