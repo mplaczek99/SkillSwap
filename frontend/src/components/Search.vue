@@ -13,14 +13,14 @@
           <div class="search-input-group">
             <font-awesome-icon icon="search" class="search-icon" />
             <input
-              v-model="query"
+              v-model="searchQuery"
               type="text"
               placeholder="Search for skills, topics, or users..."
               class="search-input"
               required
             />
             <button
-              v-if="query"
+              v-if="searchQuery"
               type="button"
               class="clear-search"
               @click="clearSearch"
@@ -185,7 +185,7 @@
             class="no-results-image"
           />
           <h3>No Results Found</h3>
-          <p>We couldn't find any matches for "{{ query }}"</p>
+          <p>We couldn't find any matches for "{{ searchQuery }}"</p>
           <p class="search-suggestions">Try:</p>
           <ul>
             <li>Checking your spelling</li>
@@ -212,7 +212,7 @@ export default {
   },
   data() {
     return {
-      query: "",
+      searchQuery: "",
       results: [],
       searched: false,
       loading: false,
@@ -258,13 +258,13 @@ export default {
     // Check for query parameter in URL and set as initial value
     const queryParam = this.$route.query.q;
     if (queryParam) {
-      this.query = queryParam;
+      this.searchQuery = queryParam;
       this.search(); // Auto-search when query is in URL
     }
   },
   methods: {
     async performSearch() {
-      if (!this.query.trim()) {
+      if (!this.searchQuery.trim()) {
         this.results = [];
         this.error = null;
         this.loading = false;
@@ -282,7 +282,7 @@ export default {
         );
 
         const fetchPromise = axios.get("/api/search", {
-          params: { q: this.query },
+          params: { q: this.searchQuery }, // Fixed: Changed from this.query to this.searchQuery
           timeout: 10000, // Add timeout to prevent hanging requests
         });
 
@@ -294,7 +294,7 @@ export default {
 
         // Update URL with the search query for bookmarking/sharing
         this.$router.replace({
-          query: { ...this.$route.query, q: this.query },
+          query: { ...this.$route.query, q: this.searchQuery }, // Fixed: Changed from this.query to this.searchQuery
         });
       } catch (err) {
         console.error("Search API error:", err);
@@ -307,9 +307,14 @@ export default {
       }
     },
     clearSearch() {
-      this.query = "";
+      this.searchQuery = "";
       this.results = [];
       this.searched = false;
+
+      // Also clear the URL query parameter
+      this.$router.replace({
+        query: { ...this.$route.query, q: undefined },
+      });
     },
     search() {
       if (this.forceApiCall) {
@@ -323,11 +328,11 @@ export default {
         ];
         this.results = dummyData.filter(
           (item) =>
-            item.name.toLowerCase().includes(this.query.toLowerCase()) ||
+            item.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
             (item.description &&
               item.description
                 .toLowerCase()
-                .includes(this.query.toLowerCase())),
+                .includes(this.searchQuery.toLowerCase())),
         );
         this.searched = true;
       } else {
@@ -340,6 +345,7 @@ export default {
     resetFilters() {
       this.selectedCategories = [];
       this.searchType = "all";
+      this.filterJobs();
     },
     getSkillIcon(skillName) {
       if (!skillName) return "cog";
