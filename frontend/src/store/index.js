@@ -55,6 +55,10 @@ export default createStore({
           // This is a new session and rememberMe was false, clear stored data
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          // Also clear the state data to ensure user is properly logged out
+          state.user = null;
+          state.token = null;
+          state.rememberMe = false;
           return;
         }
 
