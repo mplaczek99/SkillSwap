@@ -132,7 +132,9 @@ export default {
 
         // Reset file selection after successful upload
         this.selectedFile = null;
-        document.getElementById("video-file").value = "";
+        if (this.$refs.fileInput) {
+          this.$refs.fileInput.value = "";
+        }
 
         // Reset progress after a delay
         setTimeout(() => {
