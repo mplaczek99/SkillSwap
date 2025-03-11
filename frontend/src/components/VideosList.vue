@@ -59,6 +59,37 @@
         </div>
       </div>
     </div>
+
+    <!-- Video Modal -->
+    <div v-if="showVideoModal" class="video-modal">
+      <div class="video-modal-content">
+        <h2 v-if="currentVideo">{{ formatFileName(currentVideo.name) }}</h2>
+
+        <div class="video-player-container">
+          <video
+            v-if="currentVideo && !videoError"
+            controls
+            autoplay
+            class="video-player"
+            @error="handleVideoError"
+          >
+            <source
+              :src="
+                baseUrl + '/uploads/' + encodeURIComponent(currentVideo.name)
+              "
+              :type="getVideoType(currentVideo.name)"
+            />
+            Your browser does not support the video tag.
+          </video>
+
+          <div v-if="videoError" class="video-error">
+            <p>Error loading video. Please try again later.</p>
+          </div>
+        </div>
+
+        <button class="close-modal-btn" @click="closeVideoModal">Close</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -72,7 +103,15 @@ export default {
       videos: [],
       loading: true,
       error: null,
+      showVideoModal: false,
+      currentVideo: null,
+      videoError: false,
     };
+  },
+  computed: {
+    baseUrl() {
+      return axios.defaults.baseURL || "";
+    },
   },
   created() {
     this.fetchVideos();
@@ -131,117 +170,34 @@ export default {
       });
     },
 
-    // Optimized playVideo method for VideosList.vue component
     playVideo(video) {
-      try {
-        // Get the API base URL from the store config
-        const baseUrl = axios.defaults.baseURL || "";
-        const videoUrl = `${baseUrl}/uploads/${encodeURIComponent(video.name)}`;
+      this.currentVideo = video;
+      this.showVideoModal = true;
+      this.videoError = false;
+    },
 
-        // Create a modal in the current window instead of opening a new one
-        const modal = document.createElement("div");
-        modal.className = "video-modal";
-        modal.style = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    `;
+    closeVideoModal() {
+      this.showVideoModal = false;
+      this.currentVideo = null;
+      this.videoError = false;
+    },
 
-        // Add a safe title (prevent XSS)
-        const titleElement = document.createElement("h2");
-        titleElement.textContent = this.formatFileName(video.name);
-        titleElement.style = `
-      color: white;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
-    `;
+    handleVideoError() {
+      this.videoError = true;
+    },
 
-        // Create the video player element
-        const videoElement = document.createElement("video");
-        videoElement.controls = true;
-        videoElement.autoplay = true;
-        videoElement.style = `
-      max-width: 90%;
-      max-height: 70vh;
-    `;
-
-        // Add a close button
-        const closeButton = document.createElement("button");
-        closeButton.textContent = "Close";
-        closeButton.className = "btn btn-primary";
-        closeButton.style = `
-      margin-top: 20px;
-      padding: 8px 16px;
-    `;
-        closeButton.onclick = () => document.body.removeChild(modal);
-
-        // Add error handling
-        videoElement.onerror = () => {
-          const errorMsg = document.createElement("p");
-          errorMsg.textContent = "Error loading video. Please try again later.";
-          errorMsg.style.color = "red";
-          modal.appendChild(errorMsg);
-        };
-
-        // Create the source with proper type detection
-        const source = document.createElement("source");
-        source.src = videoUrl;
-
-        // Set the type based on file extension
-        const fileExt = video.name.split(".").pop().toLowerCase();
-        const mimeTypes = {
-          mp4: "video/mp4",
-          webm: "video/webm",
-          ogg: "video/ogg",
-          mov: "video/quicktime",
-          avi: "video/x-msvideo",
-          wmv: "video/x-ms-wmv",
-          mkv: "video/x-matroska",
-        };
-
-        source.type = mimeTypes[fileExt] || "video/mp4";
-
-        // Create a fallback message
-        const fallbackMessage = document.createTextNode(
-          "Your browser does not support the video tag.",
-        );
-
-        // Assemble the elements
-        videoElement.appendChild(source);
-        videoElement.appendChild(fallbackMessage);
-
-        modal.appendChild(titleElement);
-        modal.appendChild(videoElement);
-        modal.appendChild(closeButton);
-
-        // Add to document
-        document.body.appendChild(modal);
-
-        // Event listener to close on ESC key
-        const escHandler = (event) => {
-          if (event.key === "Escape") {
-            document.body.removeChild(modal);
-            document.removeEventListener("keydown", escHandler);
-          }
-        };
-        document.addEventListener("keydown", escHandler);
-      } catch (error) {
-        console.error("Error playing video:", error);
-        this.$root.$emit("show-notification", {
-          type: "error",
-          title: "Video Playback Error",
-          message: "Failed to play the video. Please try again.",
-          duration: 5000,
-        });
-      }
+    getVideoType(filename) {
+      const ext = filename.split(".").pop().toLowerCase();
+      const mimeTypes = {
+        mp4: "video/mp4",
+        webm: "video/webm",
+        ogg: "video/ogg",
+        mov: "video/quicktime",
+        avi: "video/x-msvideo",
+        wmv: "video/x-ms-wmv",
+        mkv: "video/x-matroska",
+      };
+      return mimeTypes[ext] || "video/mp4";
     },
 
     downloadVideo(video) {
@@ -423,6 +379,67 @@ h2 {
 .video-actions {
   display: flex;
   gap: var(--space-2);
+}
+
+.video-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.video-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90%;
+  max-height: 90vh;
+}
+
+.video-modal-content h2 {
+  color: white;
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-xl);
+  text-align: center;
+}
+
+.video-player-container {
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.video-player {
+  max-width: 100%;
+  max-height: 70vh;
+}
+
+.video-error {
+  background-color: rgba(220, 53, 69, 0.2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  color: white;
+  text-align: center;
+}
+
+.close-modal-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  transition: background-color var(--transition-fast) ease;
+}
+
+.close-modal-btn:hover {
+  background-color: var(--primary-dark);
 }
 
 @media (max-width: 768px) {
