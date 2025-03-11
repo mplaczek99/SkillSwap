@@ -148,6 +148,7 @@
 import { mapGetters } from "vuex";
 import SkillImage from "@/components/SkillImage.vue";
 import axios from "axios";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "Profile",
@@ -216,7 +217,8 @@ export default {
     startChat() {
       // Navigate to chat with this user
       const userId = this.$route.params.userId;
-      const userName = this.profileData ? this.profileData.name : "User";
+      // Use the profile user's name from route params or a default
+      const userName = this.user ? this.user.name : "User";
 
       this.$router.push({
         name: "Chat",
@@ -226,8 +228,8 @@ export default {
         },
       });
 
-      // Show notification
-      this.$root.$emit("show-notification", {
+      // Show notification using eventBus instead of $root.$emit
+      eventBus.emit("show-notification", {
         type: "info",
         title: "Starting Chat",
         message: `Starting a conversation with ${userName}`,
