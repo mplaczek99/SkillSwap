@@ -48,8 +48,11 @@ const router = createRouter({
 });
 
 const publicPages = ["/login", "/register"];
-router.beforeEach((to, from, next) => {
-  const authRequired = !publicPages.some((page) => to.path.startsWith(page));
+router.beforeEach((to, _, next) => {
+  // More precise check: either exact match or followed by a slash
+  const authRequired = !publicPages.some(
+    (page) => to.path === page || to.path.startsWith(page + "/"),
+  );
   const loggedIn = localStorage.getItem("token");
   if (authRequired && !loggedIn) {
     next("/login");
