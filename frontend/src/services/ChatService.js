@@ -163,22 +163,25 @@ class ChatService {
     // All messages
     const allMessages = conversation.messages;
 
-    // Sort messages in descending order (newest first)
+    // For pagination when retrieving older messages, we want:
+    // 1. Latest messages to be at the end (for normal display)
+    // 2. Calculate the correct page of older messages
+
+    // Sort all messages in ascending order (oldest first)
     const sortedMessages = [...allMessages].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
-    );
-
-    // Get paginated messages
-    const startIndex = (page - 1) * messagesPerPage;
-    const endIndex = startIndex + messagesPerPage;
-    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
-
-    // Sort back to ascending order for display
-    const displayMessages = paginatedMessages.sort(
       (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
     );
 
-    return displayMessages.map((msg) => ({
+    // Calculate indices for pagination
+    const totalMessages = sortedMessages.length;
+    const startIndex = Math.max(0, totalMessages - page * messagesPerPage);
+    const endIndex = Math.max(0, totalMessages - (page - 1) * messagesPerPage);
+
+    // Get the correct slice - when page=1, this gets the latest messages
+    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
+
+    // Return the messages with isOutgoing flag
+    return paginatedMessages.map((msg) => ({
       ...msg,
       isOutgoing: msg.senderId === currentUserId,
     }));
