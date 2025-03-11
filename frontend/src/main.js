@@ -3,6 +3,7 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 import axios from "axios";
+import eventBus from "./utils/eventBus"; // Import once here
 
 // Import event bus compatibility layer
 import { setupRootCompatibility } from "./utils/eventBus";
@@ -38,14 +39,12 @@ axios.interceptors.response.use(
       store.dispatch("logout"); // Use dispatch instead of commit for actions
       router.push("/login");
 
-      // Show notification to the user
-      import("./utils/eventBus").then(({ default: eventBus }) => {
-        eventBus.emit("show-notification", {
-          type: "warning",
-          title: "Session Expired",
-          message: "Your session has expired. Please log in again.",
-          duration: 5000,
-        });
+      // Show notification to the user - no dynamic import needed
+      eventBus.emit("show-notification", {
+        type: "warning",
+        title: "Session Expired",
+        message: "Your session has expired. Please log in again.",
+        duration: 5000,
       });
     }
     return Promise.reject(error);
