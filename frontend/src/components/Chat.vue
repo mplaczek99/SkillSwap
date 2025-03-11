@@ -756,7 +756,7 @@ export default {
 
       // Simulate typing for 3 seconds
       setTimeout(() => {
-        this.$set(this.typingUsers, conversationId, false);
+        this.typingUsers[conversationId] = false;
       }, 3000);
     },
 
