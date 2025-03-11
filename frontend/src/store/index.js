@@ -65,19 +65,55 @@ export default createStore({
         // Mark this as an active session
         sessionStorage.setItem("sessionMarker", "active");
 
-        if (storedUserJSON) {
-          state.user = JSON.parse(storedUserJSON);
-        }
-
+        // Validate token expiration before restoring state
         if (storedToken) {
-          state.token = storedToken;
-        }
+          try {
+            // Decode the JWT token
+            const decoded = jwtDecode(storedToken);
 
-        if (storedRememberMe) {
-          state.rememberMe = isRemembered;
+            // Check if token has expired
+            const currentTime = Date.now() / 1000; // Convert to seconds
+            if (decoded.exp && decoded.exp < currentTime) {
+              // Token has expired, clear everything
+              console.log(
+                "Stored token has expired, clearing authentication data",
+              );
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              localStorage.removeItem("rememberMe");
+              state.user = null;
+              state.token = null;
+              state.rememberMe = false;
+              return;
+            }
+
+            // Token is valid, restore state
+            state.token = storedToken;
+
+            if (storedUserJSON) {
+              state.user = JSON.parse(storedUserJSON);
+            }
+
+            if (storedRememberMe) {
+              state.rememberMe = isRemembered;
+            }
+          } catch (tokenError) {
+            console.error("Invalid token format:", tokenError);
+            // Invalid token format, clear everything
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("rememberMe");
+            state.user = null;
+            state.token = null;
+            state.rememberMe = false;
+          }
         }
       } catch (e) {
         console.error("Error initializing store from localStorage:", e);
+        // In case of any errors, ensure authentication state is cleared
+        state.user = null;
+        state.token = null;
+        state.rememberMe = false;
       }
     },
   },
