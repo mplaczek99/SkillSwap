@@ -6,14 +6,54 @@ import jwtDecode from "jwt-decode";
 const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
 axios.defaults.baseURL = apiUrl;
 
+// Token cache with size limit to avoid memory leaks
+const tokenCache = new Map();
+const TOKEN_CACHE_MAX_SIZE = 10;
+
 // Helper function to clear authentication state
 const clearAuthState = (state) => {
   state.user = null;
   state.token = null;
   state.rememberMe = false;
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("rememberMe");
+
+  // Batch localStorage operations for better performance
+  const keysToRemove = ["token", "user", "rememberMe"];
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key);
+  }
+};
+
+// Efficient token decoder with caching
+const decodeToken = (token) => {
+  if (!token) return null;
+
+  // Return cached result if available
+  if (tokenCache.has(token)) {
+    return tokenCache.get(token);
+  }
+
+  try {
+    const decoded = jwtDecode(token);
+
+    // Manage cache size - remove oldest entry if needed
+    if (tokenCache.size >= TOKEN_CACHE_MAX_SIZE) {
+      const oldestKey = tokenCache.keys().next().value;
+      tokenCache.delete(oldestKey);
+    }
+
+    // Add to cache
+    tokenCache.set(token, decoded);
+    return decoded;
+  } catch (error) {
+    console.error("Token decoding error:", error);
+    return null;
+  }
+};
+
+// Check token validity efficiently
+const isTokenValid = (token) => {
+  const decoded = decodeToken(token);
+  return decoded && decoded.exp && decoded.exp > Date.now() / 1000;
 };
 
 export default createStore({
@@ -52,7 +92,6 @@ export default createStore({
 
         const storedRememberMe = localStorage.getItem("rememberMe") === "true";
         const sessionMarker = sessionStorage.getItem("sessionMarker");
-        const storedUserJSON = localStorage.getItem("user");
 
         // If remember me is false and this is a new browser session, don't restore
         if (!storedRememberMe && !sessionMarker) {
@@ -60,11 +99,8 @@ export default createStore({
           return;
         }
 
-        // Validate the token
-        const decoded = jwtDecode(storedToken);
-
-        // Check token expiration
-        if (decoded.exp && decoded.exp < Date.now() / 1000) {
+        // Validate the token efficiently with cache
+        if (!isTokenValid(storedToken)) {
           console.log("Stored token has expired, clearing authentication data");
           clearAuthState(state);
           return;
@@ -78,6 +114,7 @@ export default createStore({
         state.rememberMe = storedRememberMe;
 
         // Parse and restore user data
+        const storedUserJSON = localStorage.getItem("user");
         if (storedUserJSON) {
           try {
             state.user = JSON.parse(storedUserJSON);
@@ -97,22 +134,23 @@ export default createStore({
     async login({ commit }, credentials) {
       try {
         const response = await axios.post("/api/auth/login", credentials);
-        commit("setToken", response.data.token);
+        const token = response.data.token;
+        commit("setToken", token);
         commit("setRememberMe", !!credentials.rememberMe);
 
-        try {
-          const decoded = jwtDecode(response.data.token);
-          commit("setUser", {
-            id: decoded.user_id || 0,
-            email: decoded.email || "",
-            role: decoded.role || "User",
-            name: decoded.name || "Test User",
-            bio: decoded.bio || "",
-          });
-        } catch (decodeError) {
-          console.error("Error decoding JWT token:", decodeError);
+        // Use cached token decoder
+        const decoded = decodeToken(token);
+        if (!decoded) {
           throw new Error("Invalid authentication token received");
         }
+
+        commit("setUser", {
+          id: decoded.user_id || 0,
+          email: decoded.email || "",
+          role: decoded.role || "User",
+          name: decoded.name || "Test User",
+          bio: decoded.bio || "",
+        });
       } catch (error) {
         throw error;
       }
@@ -120,22 +158,23 @@ export default createStore({
     async register({ commit }, credentials) {
       try {
         const response = await axios.post("/api/auth/register", credentials);
-        commit("setToken", response.data.token);
+        const token = response.data.token;
+        commit("setToken", token);
         commit("setRememberMe", true); // Default to remember for new registrations
 
-        try {
-          const decoded = jwtDecode(response.data.token);
-          commit("setUser", {
-            id: decoded.user_id || 0,
-            email: decoded.email || "",
-            role: decoded.role || "User",
-            name: credentials.name || "New User",
-            bio: "",
-          });
-        } catch (decodeError) {
-          console.error("Error decoding JWT token:", decodeError);
+        // Use cached token decoder
+        const decoded = decodeToken(token);
+        if (!decoded) {
           throw new Error("Invalid authentication token received");
         }
+
+        commit("setUser", {
+          id: decoded.user_id || 0,
+          email: decoded.email || "",
+          role: decoded.role || "User",
+          name: credentials.name || "New User",
+          bio: "",
+        });
       } catch (error) {
         throw error;
       }
@@ -153,5 +192,6 @@ export default createStore({
   getters: {
     isAuthenticated: (state) => !!state.token,
     user: (state) => state.user,
+    hasRole: (state) => (role) => state.user?.role === role, // Utility getter for role checks
   },
 });
