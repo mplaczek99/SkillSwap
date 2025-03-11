@@ -93,7 +93,6 @@ export default defineComponent({
 
       // Show next message after a short delay if queue isn't empty
       if (this.messageQueue.length > 0) {
-        // OPTIMIZATION: Store the timeout in messageTimeout for proper cleanup
         this.messageTimeout = setTimeout(() => {
           this.showNextMessage();
         }, 300);
