@@ -111,12 +111,12 @@
 
       <!-- Search Results -->
       <section class="search-results">
-        <div v-if="loading" class="search-loading">
+        <div v-if="loading" class="loading-state">
           <div class="spinner"></div>
           <p>Searching...</p>
         </div>
 
-        <div v-else-if="error" class="search-error">
+        <div v-else-if="error" class="error-message">
           <font-awesome-icon icon="exclamation-circle" class="error-icon" />
           <p>{{ error }}</p>
           <button @click="search" class="btn btn-outline btn-sm">
@@ -203,6 +203,26 @@ import axios from "axios";
 import eventBus from "@/utils/eventBus";
 import { debounce } from "lodash";
 
+// Cache for skill icons to improve rendering performance
+const skillIconCache = new Map();
+
+// Default icons by category for better performance
+const ICON_MAPPING = {
+  programming: "code",
+  language: "language",
+  music: "music",
+  cooking: "utensils",
+  art: "palette",
+  design: "pen-fancy",
+  go: "code",
+  vue: "code",
+  guitar: "guitar",
+  spanish: "language",
+  python: "code",
+  singing: "music",
+  default: "cog",
+};
+
 export default {
   name: "Search",
   props: {
@@ -232,8 +252,6 @@ export default {
       ],
       selectedCategories: [],
       searchType: "all",
-      // Cache for skill icons to prevent recalculation
-      skillIconCache: new Map(),
       // Abort controller for cancelling in-flight requests
       abortController: null,
       // Debounced search function (defined in created)
@@ -331,33 +349,44 @@ export default {
         return;
       }
 
-      let filtered = this.results;
+      // Use optimized filtering with early returns and minimized iterations
+      const hasTypeFilter = this.searchType !== "all";
+      const hasCategoryFilter = this.selectedCategories.length > 0;
 
-      // Apply type filter
-      if (this.searchType === "skills") {
-        filtered = filtered.filter((item) => !item.email);
-      } else if (this.searchType === "users") {
-        filtered = filtered.filter((item) => item.email);
+      // Optimize for the common case where no filters are applied
+      if (!hasTypeFilter && !hasCategoryFilter) {
+        this.filteredResults = this.results.slice();
+        return;
       }
 
-      // Apply category filter
-      if (this.selectedCategories.length > 0) {
-        const lowerCaseCategories = this.selectedCategories.map((c) =>
-          c.toLowerCase(),
-        );
-        filtered = filtered.filter((item) => {
-          if (item.email) return true; // Keep all users
+      // Prepare category filter for case-insensitive comparison
+      const categories = hasCategoryFilter
+        ? this.selectedCategories.map((c) => c.toLowerCase())
+        : [];
 
+      // Filter in one pass with optimized conditions
+      this.filteredResults = this.results.filter((item) => {
+        // Type filtering (users vs skills)
+        if (hasTypeFilter) {
+          const isUser = !!item.email;
+          if (
+            (this.searchType === "skills" && isUser) ||
+            (this.searchType === "users" && !isUser)
+          ) {
+            return false;
+          }
+        }
+
+        // Category filtering (only apply to skills, not users)
+        if (hasCategoryFilter && !item.email) {
           if (!item.description) return false;
 
           const description = item.description.toLowerCase();
-          return lowerCaseCategories.some((category) =>
-            description.includes(category),
-          );
-        });
-      }
+          return categories.some((category) => description.includes(category));
+        }
 
-      this.filteredResults = filtered;
+        return true;
+      });
     },
 
     clearSearch() {
@@ -412,36 +441,29 @@ export default {
 
       // Use cached icon if available
       const key = skillName.toLowerCase();
-      if (this.skillIconCache.has(key)) {
-        return this.skillIconCache.get(key);
+      if (skillIconCache.has(key)) {
+        return skillIconCache.get(key);
       }
 
-      const skillIcons = {
-        programming: "code",
-        language: "language",
-        music: "music",
-        cooking: "utensils",
-        art: "palette",
-        design: "pen-fancy",
-        go: "code",
-        vue: "code",
-        guitar: "guitar",
-        spanish: "language",
-        python: "code",
-        singing: "music",
-      };
+      // Determine icon based on predefined mappings or skill name
+      let icon = ICON_MAPPING.default;
 
-      for (const [key, icon] of Object.entries(skillIcons)) {
-        if (skillName.toLowerCase().includes(key.toLowerCase())) {
-          // Cache the result
-          this.skillIconCache.set(skillName.toLowerCase(), icon);
-          return icon;
+      // Check direct matches in our mapping
+      if (ICON_MAPPING[key]) {
+        icon = ICON_MAPPING[key];
+      } else {
+        // Check for partial matches in skill name
+        for (const [mapKey, mapIcon] of Object.entries(ICON_MAPPING)) {
+          if (key.includes(mapKey) && mapKey !== "default") {
+            icon = mapIcon;
+            break;
+          }
         }
       }
 
-      // Cache the default icon
-      this.skillIconCache.set(skillName.toLowerCase(), "cog");
-      return "cog";
+      // Cache the result
+      skillIconCache.set(key, icon);
+      return icon;
     },
 
     viewProfile(user) {
