@@ -38,82 +38,65 @@ export default createStore({
       localStorage.removeItem("rememberMe");
     },
     initializeStore(state) {
-      // Initialize store from localStorage if available
-      try {
-        const storedUserJSON = localStorage.getItem("user");
-        const storedToken = localStorage.getItem("token");
-        const storedRememberMe = localStorage.getItem("rememberMe");
-
-        // Check for remember me flag
-        const isRemembered = storedRememberMe === "true";
-
-        // If remember me is false and this is a new browser session, don't restore
-        // We can detect a new session by checking a session variable
-        const sessionMarker = sessionStorage.getItem("sessionMarker");
-
-        if (!isRemembered && !sessionMarker && storedToken) {
-          // This is a new session and rememberMe was false, clear stored data
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          // Also clear the state data to ensure user is properly logged out
-          state.user = null;
-          state.token = null;
-          state.rememberMe = false;
-          return;
-        }
-
-        // Mark this as an active session
-        sessionStorage.setItem("sessionMarker", "active");
-
-        // Validate token expiration before restoring state
-        if (storedToken) {
-          try {
-            // Decode the JWT token
-            const decoded = jwtDecode(storedToken);
-
-            // Check if token has expired
-            const currentTime = Date.now() / 1000; // Convert to seconds
-            if (decoded.exp && decoded.exp < currentTime) {
-              // Token has expired, clear everything
-              console.log(
-                "Stored token has expired, clearing authentication data",
-              );
-              localStorage.removeItem("token");
-              localStorage.removeItem("user");
-              localStorage.removeItem("rememberMe");
-              state.user = null;
-              state.token = null;
-              state.rememberMe = false;
-              return;
-            }
-
-            // Token is valid, restore state
-            state.token = storedToken;
-
-            if (storedUserJSON) {
-              state.user = JSON.parse(storedUserJSON);
-            }
-
-            if (storedRememberMe) {
-              state.rememberMe = isRemembered;
-            }
-          } catch (tokenError) {
-            console.error("Invalid token format:", tokenError);
-            // Invalid token format, clear everything
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            localStorage.removeItem("rememberMe");
-            state.user = null;
-            state.token = null;
-            state.rememberMe = false;
-          }
-        }
-      } catch (e) {
-        console.error("Error initializing store from localStorage:", e);
-        // In case of any errors, ensure authentication state is cleared
+      // Helper function to clear authentication state
+      const clearAuth = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("rememberMe");
         state.user = null;
         state.token = null;
         state.rememberMe = false;
+      };
+
+      try {
+        // Read from localStorage only once
+        const storedToken = localStorage.getItem("token");
+
+        // Early return if no token exists
+        if (!storedToken) return;
+
+        const storedRememberMe = localStorage.getItem("rememberMe") === "true";
+        const sessionMarker = sessionStorage.getItem("sessionMarker");
+
+        // If remember me is false and this is a new browser session, don't restore
+        if (!storedRememberMe && !sessionMarker) {
+          clearAuth();
+          return;
+        }
+
+        // Validate token before restoring other state
+        try {
+          // Decode the JWT token
+          const decoded = jwtDecode(storedToken);
+
+          // Check if token has expired
+          if (decoded.exp && decoded.exp < Date.now() / 1000) {
+            console.log(
+              "Stored token has expired, clearing authentication data",
+            );
+            clearAuth();
+            return;
+          }
+
+          // Token is valid, mark this as an active session
+          sessionStorage.setItem("sessionMarker", "active");
+
+          // Restore state
+          state.token = storedToken;
+          state.rememberMe = storedRememberMe;
+
+          // Only parse user JSON if we need it
+          const storedUserJSON = localStorage.getItem("user");
+          if (storedUserJSON) {
+            state.user = JSON.parse(storedUserJSON);
+          }
+        } catch (tokenError) {
+          console.error("Invalid token format:", tokenError);
+          clearAuth();
+        }
+      } catch (e) {
+        console.error("Error initializing store from localStorage:", e);
+        clearAuth();
       }
     },
   },
