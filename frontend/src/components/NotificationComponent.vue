@@ -5,9 +5,12 @@
       class="message-preview-container"
       @click="viewConversation"
     >
-      <div class="message-preview">
+      <div class="message-preview" :class="getNotificationClass">
         <div class="message-avatar">
-          <font-awesome-icon v-if="!activeMessage.senderAvatar" icon="user" />
+          <font-awesome-icon
+            v-if="!activeMessage.senderAvatar"
+            :icon="getNotificationIcon"
+          />
           <img
             v-else
             :src="activeMessage.senderAvatar"
@@ -38,6 +41,7 @@ import {
   onBeforeUnmount,
 } from "vue";
 import eventBus from "@/utils/eventBus";
+import { useRouter } from "vue-router";
 
 // Precompute formatter function outside component
 const createTimeFormatter = () => {
@@ -53,8 +57,10 @@ const createTimeFormatter = () => {
 };
 
 export default defineComponent({
-  name: "ChatNotificationPreview",
+  name: "NotificationComponent",
   setup() {
+    const router = useRouter();
+
     // State with refs for better performance
     const activeMessage = ref(null);
     const messageQueue = ref([]);
@@ -63,6 +69,34 @@ export default defineComponent({
     const formattedTime = computed(() => {
       if (!activeMessage.value || !activeMessage.value.timestamp) return "";
       return formatTime(activeMessage.value.timestamp);
+    });
+
+    // Compute properties for notification styling and icons
+    const getNotificationClass = computed(() => {
+      if (!activeMessage.value) return "";
+
+      // If it's a chat notification, use default styling
+      if (activeMessage.value.conversationId) return "";
+
+      // For other notification types, add a specific class
+      return `notification-${activeMessage.value.type || "info"}`;
+    });
+
+    const getNotificationIcon = computed(() => {
+      if (!activeMessage.value) return "user";
+
+      // For chat notifications, use user icon
+      if (activeMessage.value.conversationId) return "user";
+
+      // For other notification types, use appropriate icons
+      const iconMap = {
+        success: "check-circle",
+        error: "exclamation-circle",
+        warning: "exclamation-triangle",
+        info: "info-circle",
+      };
+
+      return iconMap[activeMessage.value.type] || "bell";
     });
 
     // Precomputed time formatter
@@ -119,7 +153,25 @@ export default defineComponent({
       },
     };
 
-    // Event handlers
+    // Handle general notifications
+    const handleNotification = (notification) => {
+      // Transform general notification to the message format
+      const message = {
+        senderName: notification.title || "Notification",
+        text: notification.message,
+        timestamp: new Date(),
+        type: notification.type || "info",
+        duration: notification.duration || 5000,
+      };
+
+      // Add to queue and show if no active message
+      messageQueue.value.push(message);
+      if (!activeMessage.value) {
+        showNextMessage();
+      }
+    };
+
+    // Event handlers for chat notifications
     const handleIncomingMessage = (message) => {
       // Skip if user is already viewing this conversation
       if (
@@ -153,9 +205,10 @@ export default defineComponent({
       // Shift is faster than splice(0, 1) and maintains reference
       activeMessage.value = messageQueue.value.shift();
 
-      // Auto-dismiss after 5 seconds
+      // Auto-dismiss after specified duration (default 5 seconds)
       scheduler.clear("dismissMessage");
-      scheduler.schedule("dismissMessage", closeMessage, 5000);
+      const duration = activeMessage.value.duration || 5000;
+      scheduler.schedule("dismissMessage", closeMessage, duration);
     };
 
     const closeMessage = () => {
@@ -171,21 +224,28 @@ export default defineComponent({
     const viewConversation = () => {
       if (!activeMessage.value) return;
 
-      // Use native navigation for better performance
-      window.location.href = `#/chat?conversation=${activeMessage.value.conversationId}`;
+      // Only navigate for chat notifications
+      if (activeMessage.value.conversationId) {
+        router.push({
+          name: "Chat",
+          query: { conversation: activeMessage.value.conversationId },
+        });
+      }
 
       closeMessage();
     };
 
     // Lifecycle hooks
     onMounted(() => {
-      // Efficient event handling - direct method reference
+      // Set up all event listeners
+      eventBus.on("show-notification", handleNotification);
       eventBus.on("chat:incoming-message", handleIncomingMessage);
       eventBus.on("chat:read-messages", handleReadMessages);
     });
 
     onBeforeUnmount(() => {
-      // Proper cleanup
+      // Proper cleanup of all event listeners
+      eventBus.off("show-notification", handleNotification);
       eventBus.off("chat:incoming-message", handleIncomingMessage);
       eventBus.off("chat:read-messages", handleReadMessages);
       scheduler.clearAll();
@@ -196,6 +256,8 @@ export default defineComponent({
       activeMessage,
       messageQueue,
       formattedTime,
+      getNotificationClass,
+      getNotificationIcon,
       closeMessage,
       viewConversation,
       formatTime,
@@ -240,6 +302,23 @@ export default defineComponent({
   /* Forces GPU acceleration */
 }
 
+/* Notification type styling */
+.message-preview.notification-success {
+  border-left-color: var(--success-color);
+}
+
+.message-preview.notification-error {
+  border-left-color: var(--error-color);
+}
+
+.message-preview.notification-warning {
+  border-left-color: var(--warning-color);
+}
+
+.message-preview.notification-info {
+  border-left-color: var(--info-color);
+}
+
 .message-preview:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
@@ -257,6 +336,27 @@ export default defineComponent({
   font-size: 1.25rem;
   /* Fixed value for better rendering */
   flex-shrink: 0;
+}
+
+/* Avatar colors for notification types */
+.notification-success .message-avatar {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.notification-error .message-avatar {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.notification-warning .message-avatar {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.notification-info .message-avatar {
+  background-color: var(--info-color);
+  color: white;
 }
 
 .message-avatar img {

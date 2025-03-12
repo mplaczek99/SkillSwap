@@ -14,23 +14,20 @@
       </div>
     </footer>
 
-    <!-- Notification Components -->
+    <!-- Single Notification Component -->
     <NotificationComponent />
-    <ChatNotificationPreview />
   </div>
 </template>
 
 <script>
 import Navbar from "./components/Navbar.vue";
 import NotificationComponent from "./components/NotificationComponent.vue";
-import ChatNotificationPreview from "./components/ChatNotificationPreview.vue";
 
 export default {
   name: "App",
   components: {
     Navbar,
     NotificationComponent,
-    ChatNotificationPreview,
   },
   computed: {
     currentYear() {
