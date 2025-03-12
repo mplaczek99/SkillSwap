@@ -328,6 +328,7 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  overflow: hidden;
   background-color: var(--primary-light);
   color: var(--primary-color);
   display: flex;

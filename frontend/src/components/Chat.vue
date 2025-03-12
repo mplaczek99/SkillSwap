@@ -336,6 +336,10 @@ export default {
     document.addEventListener("click", this.handleOutsideClick);
     this.setupMockMessageReceiver();
 
+    // Add eventBus listeners
+    eventBus.on("chat:new-message", this.handleNewMessage);
+    eventBus.on("chat:incoming-message", this.handleIncomingMessage);
+
     // Check for route params
     if (this.$route.query.conversation) {
       this.loadConversation(this.$route.query.conversation);
@@ -349,6 +353,10 @@ export default {
   beforeUnmount() {
     document.removeEventListener("click", this.handleOutsideClick);
     this.clearMockMessageInterval();
+
+    // Remove eventBus listeners
+    eventBus.off("chat:new-message", this.handleNewMessage);
+    eventBus.off("chat:incoming-message", this.handleIncomingMessage);
   },
   methods: {
     async loadConversations() {
@@ -666,6 +674,13 @@ export default {
         },
         30000, // Fixed interval of 30 seconds
       );
+    },
+
+    handleNewMessage(message) {
+      // Handle new message event from eventBus
+      if (message && message.conversationId) {
+        this.handleIncomingMessage(message);
+      }
     },
 
     handleIncomingMessage(message) {
