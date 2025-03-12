@@ -268,22 +268,8 @@ export default {
       this.search(); // Auto-search when query is in URL
     }
   },
-  mounted() {
-    // Add optimized event listeners
-    window.addEventListener("resize", this.onResize, { passive: true });
-  },
-  beforeUnmount() {
-    // Remove event listeners
-    window.removeEventListener("resize", this.onResize);
-    // Clear any pending debounce
-    if (this.debounceTimeout) {
-      clearTimeout(this.debounceTimeout);
-    }
-    // Cancel any in-flight request
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-  },
+  // We've removed the mounted and beforeUnmount lifecycle hooks that were adding resize listeners
+  // since they weren't actually doing anything in the component
   computed: {
     // Add computed properties for derived state
     hasActiveFilters() {
@@ -604,12 +590,6 @@ export default {
         message: `Starting a conversation with ${user.name}`,
         duration: 3000,
       });
-    },
-
-    // Performance optimization for resize events
-    onResize: function () {
-      // Only perform layout adjustments if needed
-      // This uses passive event listeners with limited work
     },
   },
 };
