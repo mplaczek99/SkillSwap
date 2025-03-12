@@ -2,12 +2,10 @@ package middleware
 
 import (
 	"net/http"
-	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
-	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mplaczek99/SkillSwap/utils"
@@ -347,20 +345,13 @@ func extractTokenFromHeader(authHeader string) string {
 		return ""
 	}
 
-	// Fast path: most tokens will have the Bearer prefix
+	// Check if the authorization header has the Bearer prefix
 	if len(authHeader) > bearerPrefixLen && authHeader[:bearerPrefixLen] == bearerPrefix {
-		// Use unsafe pointer conversion to avoid allocating a new string when slicing
-		// This is safe because we're not modifying the string, just returning a substring
-		// IMPORTANT: This optimization needs careful testing in production
-		strHeaderPtr := (*reflect.StringHeader)(unsafe.Pointer(&authHeader))
-		result := reflect.StringHeader{
-			Data: strHeaderPtr.Data + uintptr(bearerPrefixLen),
-			Len:  strHeaderPtr.Len - bearerPrefixLen,
-		}
-		return *(*string)(unsafe.Pointer(&result))
+		// Use safe string slicing instead of reflect.StringHeader manipulation
+		return authHeader[bearerPrefixLen:]
 	}
 
-	// Fallback: token without Bearer prefix
+	// Return the header as-is if it doesn't have the Bearer prefix
 	return authHeader
 }
 
