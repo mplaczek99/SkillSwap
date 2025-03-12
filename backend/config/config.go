@@ -30,6 +30,7 @@ func Migrate(db *gorm.DB) {
 		&models.Skill{},
 		&models.Transaction{},
 		&models.Schedule{},
+		&models.Job{}, // Add Job model to migrations
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

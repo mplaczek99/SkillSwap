@@ -43,6 +43,13 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 
 			// Transactions endpoint
 			protected.GET("/transactions", controllers.GetTransactions)
+
+			// Job endpoints
+			protected.GET("/jobs", controllers.GetJobs)
+			protected.GET("/jobs/:id", controllers.GetJob)
+			protected.POST("/jobs", controllers.CreateJob)
+			protected.PUT("/jobs/:id", controllers.UpdateJob)
+			protected.DELETE("/jobs/:id", controllers.DeleteJob)
 		}
 
 		// Admin endpoints.
