@@ -51,8 +51,8 @@ SkillSwap is a modern web platform where users can exchange skills and knowledge
 
 1. Clone the repository
    ```
-   git clone https://github.com/your-username/skillswap.git
-   cd skillswap
+   git clone https://github.com/mplaczek99/SkillSwap.git
+   cd SkillSwap
    ```
 
 2. Start the application
