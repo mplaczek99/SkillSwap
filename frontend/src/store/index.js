@@ -2,10 +2,6 @@ import { createStore } from "vuex";
 import axios from "axios";
 import jwtDecode from "jwt-decode";
 
-// Set up axios with the API URL from environment variables
-const apiUrl = process.env.VUE_APP_API_URL || "http://localhost:8080";
-axios.defaults.baseURL = apiUrl;
-
 // Improved LRU Token Cache with O(1) operations
 class LRUCache {
   constructor(capacity) {
