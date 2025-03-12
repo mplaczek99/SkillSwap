@@ -3,10 +3,7 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 import axios from "axios";
-import eventBus from "./utils/eventBus"; // Import once here
-
-// Import event bus compatibility layer
-import { setupRootCompatibility } from "./utils/eventBus";
+import eventBus from "./utils/eventBus"; // Import the eventBus
 
 // Import the icon registration function
 import { registerIcons } from "./utils/icons";
@@ -39,7 +36,7 @@ axios.interceptors.response.use(
       store.dispatch("logout"); // Use dispatch instead of commit for actions
       router.push("/login");
 
-      // Show notification to the user - no dynamic import needed
+      // Show notification to the user using eventBus
       eventBus.emit("show-notification", {
         type: "warning",
         title: "Session Expired",
@@ -53,9 +50,6 @@ axios.interceptors.response.use(
 
 // Create the app
 const app = createApp(App);
-
-// Set up event bus compatibility for $root.$emit pattern
-setupRootCompatibility(app);
 
 // Register Font Awesome icons
 registerIcons(app);
