@@ -2,32 +2,67 @@ import { createStore } from "vuex";
 import axios from "axios";
 import jwtDecode from "jwt-decode";
 
-// Improved LRU Token Cache with O(1) operations
+// Enhanced LRU Token Cache with O(1) operations and TTL-based eviction
 class LRUCache {
   constructor(capacity) {
-    this.capacity = capacity;
+    // Use dynamic capacity based on environment
+    this.capacity =
+      typeof capacity === "number"
+        ? capacity
+        : process.env.NODE_ENV === "production"
+          ? 50
+          : 20;
     this.cache = new Map(); // Map maintains insertion order
     this.hits = 0;
     this.misses = 0;
+    this.evictions = { lru: 0, expired: 0 };
+
+    // Default TTL for cache items (30 minutes)
+    this.defaultTTL = 30 * 60 * 1000;
+
+    // Set up automatic cleaning every 5 minutes to prevent memory leaks
+    if (typeof window !== "undefined") {
+      // Only in browser environment
+      this.cleanInterval = setInterval(
+        () => this.cleanExpired(),
+        5 * 60 * 1000,
+      );
+    }
   }
 
-  // Get with stats tracking
+  // Get with stats tracking and expiry validation
   get(key) {
     if (!this.cache.has(key)) {
       this.misses++;
       return null;
     }
 
+    const item = this.cache.get(key);
+
+    // Check if the item has expired
+    if (Date.now() > item.expiresAt) {
+      this.cache.delete(key);
+      this.evictions.expired++;
+      this.misses++;
+      return null;
+    }
+
     // Move the accessed item to the end (most recently used)
-    const value = this.cache.get(key);
     this.cache.delete(key);
-    this.cache.set(key, value);
+    this.cache.set(key, item);
     this.hits++;
-    return value;
+    return item.value;
   }
 
   // Set with automatic eviction
-  set(key, value) {
+  set(key, value, ttl) {
+    // Create metadata wrapper for the value
+    const item = {
+      value,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (ttl || this.defaultTTL),
+    };
+
     // If key exists, delete it first to update access order
     if (this.cache.has(key)) {
       this.cache.delete(key);
@@ -36,32 +71,75 @@ class LRUCache {
     else if (this.cache.size >= this.capacity) {
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
+      this.evictions.lru++;
     }
 
     // Add the new item (will be last in Map)
-    this.cache.set(key, value);
+    this.cache.set(key, item);
+  }
+
+  // Clean expired entries to prevent memory leaks
+  cleanExpired() {
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const [key, item] of this.cache.entries()) {
+      if (now > item.expiresAt) {
+        this.cache.delete(key);
+        this.evictions.expired++;
+        cleaned++;
+      }
+    }
+
+    return cleaned;
   }
 
   // Check if key exists without updating access order
   has(key) {
-    return this.cache.has(key);
+    if (!this.cache.has(key)) {
+      return false;
+    }
+
+    // Check if expired
+    const item = this.cache.get(key);
+    if (Date.now() > item.expiresAt) {
+      this.cache.delete(key);
+      this.evictions.expired++;
+      return false;
+    }
+
+    return true;
   }
 
   // Get cache performance statistics
   getStats() {
     const total = this.hits + this.misses;
     const hitRate = total > 0 ? ((this.hits / total) * 100).toFixed(2) : 0;
-    return { hits: this.hits, misses: this.misses, hitRate: `${hitRate}%` };
+    return {
+      size: this.cache.size,
+      capacity: this.capacity,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: `${hitRate}%`,
+      evictions: this.evictions,
+    };
   }
 
   // Clear the cache
   clear() {
     this.cache.clear();
+
+    // Clear automatic cleaning interval when cache is cleared
+    if (this.cleanInterval) {
+      clearInterval(this.cleanInterval);
+    }
   }
 }
 
-// Initialize token cache with size limit
-const tokenCache = new LRUCache(20); // Increased from 10 for better hit rate
+// Initialize token cache with dynamic capacity
+const tokenCache = new LRUCache(
+  process.env.NODE_ENV === "production" ? 50 : 20,
+);
 
 // Storage access optimization with memoization
 const storage = {
@@ -113,18 +191,28 @@ const storage = {
   },
 };
 
-// Optimized token decoder with efficient error handling
+// Optimized token decoder with efficient error handling and proper TTL
 const decodeToken = (token) => {
   if (!token) return null;
 
-  // Return cached result if available - O(1) operation
+  // Return cached result if available - O(1) operation with expiry check
   const cached = tokenCache.get(token);
   if (cached) return cached;
 
   try {
-    // Decode and add to cache with timestamp
+    // Decode the token
     const decoded = jwtDecode(token);
-    tokenCache.set(token, decoded);
+
+    // Calculate TTL based on token expiration
+    let ttl;
+    if (decoded.exp) {
+      // If token has expiration, cache until 5 minutes before it expires
+      const expiresInMs = decoded.exp * 1000 - Date.now();
+      ttl = Math.max(0, expiresInMs - 5 * 60 * 1000); // 5 min safety buffer
+    }
+
+    // Add to cache with calculated TTL or default
+    tokenCache.set(token, decoded, ttl);
     return decoded;
   } catch (error) {
     // Only log detailed errors in development
@@ -339,7 +427,7 @@ export default createStore({
         return roleCache.get(role);
       };
     },
-    // New getter to expose token cache stats in development
+    // Getter to expose token cache stats in development
     tokenCacheStats: () => {
       return process.env.NODE_ENV !== "production"
         ? tokenCache.getStats()
