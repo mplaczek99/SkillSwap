@@ -67,6 +67,7 @@
 
 <script>
 import axios from "axios";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "VideoUpload",
@@ -126,10 +127,20 @@ export default {
               (progressEvent.loaded * 100) / progressEvent.total,
             );
           },
+          // Add timeout to prevent indefinite hanging uploads
+          timeout: 60000, // 1 minute timeout
         });
 
         this.successMessage =
           response.data.message || "Video uploaded successfully!";
+
+        // Use eventBus to show a success notification
+        eventBus.emit("show-notification", {
+          type: "success",
+          title: "Upload Complete",
+          message: this.successMessage,
+          duration: 5000,
+        });
 
         // Reset file selection after successful upload
         this.selectedFile = null;
@@ -142,16 +153,52 @@ export default {
           this.uploadProgress = 0;
         }, 3000);
       } catch (error) {
-        console.error("Upload error:", error);
-
-        // Handle authentication errors
-        if (error.response && error.response.status === 401) {
-          this.errorMessage = "Your session has expired. Please login again.";
-        } else {
-          this.errorMessage =
-            error.response?.data?.error ||
-            "Failed to upload video. Please try again.";
+        if (process.env.NODE_ENV !== "test") {
+          console.error("Upload error:", error);
         }
+
+        // Handle different types of errors
+        if (error.response) {
+          // The server responded with an error status
+          const status = error.response.status;
+          if (status === 401) {
+            this.errorMessage = "Your session has expired. Please login again.";
+            // Redirect to login page
+            this.$router.push("/login");
+          } else if (status === 413) {
+            this.errorMessage =
+              "The video file is too large for the server to accept.";
+          } else if (status === 415) {
+            this.errorMessage = "The video format is not supported.";
+          } else if (status === 400) {
+            this.errorMessage =
+              error.response.data?.error || "Invalid upload request.";
+          } else {
+            this.errorMessage =
+              error.response.data?.error ||
+              "Server error. Please try again later.";
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          if (error.code === "ECONNABORTED") {
+            this.errorMessage =
+              "Upload timed out. Please try again with a smaller file or check your connection.";
+          } else {
+            this.errorMessage =
+              "Network error. Please check your connection and try again.";
+          }
+        } else {
+          // Something happened in setting up the request
+          this.errorMessage = "Failed to upload video. Please try again.";
+        }
+
+        // Use eventBus to show an error notification
+        eventBus.emit("show-notification", {
+          type: "error",
+          title: "Upload Failed",
+          message: this.errorMessage,
+          duration: 5000,
+        });
 
         // Reset progress on error
         this.uploadProgress = 0;

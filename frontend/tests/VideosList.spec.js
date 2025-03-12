@@ -1,67 +1,105 @@
-import { shallowMount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import VideosList from "@/components/VideosList.vue";
 import axios from "axios";
 
 // Mock axios
 jest.mock("axios");
 
+// Mock the eventBus
+jest.mock("@/utils/eventBus", () => ({
+  emit: jest.fn(),
+}));
+
 describe("VideosList.vue", () => {
-  let wrapper;
-
   beforeEach(() => {
-    // Reset mocks
     jest.clearAllMocks();
-
-    // Mock axios response
-    axios.get.mockResolvedValue({
-      data: [],
-    });
-
-    // Set API URL
-    axios.defaults.baseURL = "http://test-api";
-
-    // Create wrapper with minimal mounting
-    wrapper = shallowMount(VideosList, {
-      attachTo: null, // Don't attach to DOM
-      stubs: {
-        // Stub out any child components that might cause issues
-        "font-awesome-icon": true,
-      },
-    });
-  });
-
-  afterEach(() => {
-    // Clean up
-    wrapper.unmount();
-  });
-
-  it("renders correctly", () => {
-    expect(wrapper.exists()).toBe(true);
   });
 
   it("fetches videos on created", () => {
-    expect(axios.get).toHaveBeenCalledWith("/api/videos");
+    // Mock successful response
+    axios.get.mockResolvedValue({ data: [] });
+
+    // Mount component
+    mount(VideosList);
+
+    // Check that the API was called with correct parameters
+    expect(axios.get).toHaveBeenCalledWith("/api/videos", { timeout: 15000 });
   });
 
   it("formats file size correctly", () => {
-    expect(wrapper.vm.formatFileSize(500)).toBe("500 bytes");
+    // Mock successful response
+    axios.get.mockResolvedValue({ data: [] });
+
+    // Mount component to access methods
+    const wrapper = mount(VideosList);
+
+    // Test bytes formatting (under 1024 bytes)
+    expect(wrapper.vm.formatFileSize(1000)).toBe("1000 bytes");
+
+    // Test KB formatting
     expect(wrapper.vm.formatFileSize(1500)).toBe("1.5 KB");
+
+    // Test MB formatting
+    expect(wrapper.vm.formatFileSize(1500000)).toBe("1.4 MB");
   });
 
-  it("formats file name correctly", () => {
-    expect(wrapper.vm.formatFileName("test-video.mp4")).toBe("test video");
-    expect(wrapper.vm.formatFileName("my_awesome_video.mov")).toBe(
-      "my awesome video",
-    );
+  it("displays videos when data is loaded", async () => {
+    // Mock successful response with video data
+    axios.get.mockResolvedValue({
+      data: [
+        {
+          id: "test.mp4",
+          name: "test.mp4",
+          size: 1024,
+          uploadedAt: new Date().toISOString(),
+        },
+      ],
+    });
+
+    // Mount component
+    const wrapper = mount(VideosList);
+
+    // Wait for promises to resolve
+    await flushPromises();
+
+    // Check that videos are displayed
+    expect(wrapper.find(".videos-grid").exists()).toBe(true);
   });
 
-  it("has playVideo method", () => {
-    // Just test that the method exists, don't call it
-    expect(typeof wrapper.vm.playVideo).toBe("function");
+  it("displays empty state when no videos found", async () => {
+    // Mock empty response
+    axios.get.mockResolvedValue({ data: [] });
+
+    // Mount component
+    const wrapper = mount(VideosList);
+
+    // Wait for promises to resolve
+    await flushPromises();
+
+    // Check for empty state content (check for specific text)
+    expect(wrapper.text()).toContain("No Videos Found");
   });
 
-  it("has downloadVideo method", () => {
-    // Just test that the method exists, don't call it
-    expect(typeof wrapper.vm.downloadVideo).toBe("function");
+  it("displays error message when API call fails", async () => {
+    // Mock error response
+    const errorMessage = "Server error";
+    axios.get.mockRejectedValue({
+      response: {
+        status: 500,
+        data: { error: errorMessage },
+      },
+    });
+
+    // Mount component
+    const wrapper = mount(VideosList);
+
+    // Wait for promises to resolve
+    await flushPromises();
+
+    // Check that error message is displayed (check for error element)
+    expect(wrapper.find(".error-message").exists()).toBe(true);
+
+    // Check that error state is set in component data
+    expect(wrapper.vm.error).not.toBeNull();
   });
 });

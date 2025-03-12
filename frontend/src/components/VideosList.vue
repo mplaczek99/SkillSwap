@@ -95,6 +95,7 @@
 
 <script>
 import axios from "axios";
+import eventBus from "@/utils/eventBus";
 
 export default {
   name: "VideosList",
@@ -122,17 +123,59 @@ export default {
       this.error = null;
 
       try {
-        const response = await axios.get("/api/videos");
+        const response = await axios.get("/api/videos", {
+          // Add timeout to prevent indefinite loading
+          timeout: 15000,
+        });
         this.videos = response.data || [];
       } catch (error) {
-        console.error("Error fetching videos:", error);
+        // Only log in non-test environments
+        if (process.env.NODE_ENV !== "test") {
+          console.error("Error fetching videos:", error);
+        }
+
         this.videos = [];
 
-        if (error.response && error.response.status === 401) {
-          this.error = "Your session has expired. Please login again.";
-        } else {
-          this.error = "Failed to load videos. Please try again later.";
+        let errorMessage = "Failed to load videos. Please try again later.";
+
+        if (error.response) {
+          // The server responded with an error
+          const status = error.response.status;
+
+          if (status === 401) {
+            errorMessage = "Your session has expired. Please login again.";
+            // Redirect to login page
+            this.$router.push("/login");
+          } else if (status === 403) {
+            errorMessage = "You don't have permission to access these videos.";
+          } else if (status >= 500) {
+            errorMessage =
+              "The video service is currently unavailable. Please try again later.";
+          }
+
+          // Use server-provided error if available
+          if (error.response.data && error.response.data.error) {
+            errorMessage = error.response.data.error;
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          if (error.code === "ECONNABORTED") {
+            errorMessage = "Request timed out. Please try again later.";
+          } else {
+            errorMessage =
+              "Network error. Please check your connection and try again.";
+          }
         }
+
+        this.error = errorMessage;
+
+        // Show notification for fetch errors
+        eventBus.emit("show-notification", {
+          type: "error",
+          title: "Failed to Load Videos",
+          message: errorMessage,
+          duration: 5000,
+        });
       } finally {
         this.loading = false;
       }

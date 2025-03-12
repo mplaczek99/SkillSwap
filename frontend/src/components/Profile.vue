@@ -265,12 +265,49 @@ export default {
       try {
         const response = await axios.post("/api/schedule", this.newSchedule);
         this.schedules.push(response.data);
+
+        // Show success notification
+        eventBus.emit("show-notification", {
+          type: "success",
+          title: "Schedule Created",
+          message: "Your session has been scheduled successfully.",
+          duration: 3000,
+        });
       } catch (error) {
+        // Only log errors in non-test environments
         if (process.env.NODE_ENV !== "test") {
           console.error("Error creating schedule:", error);
         }
-        this.scheduleError =
-          "Failed to create schedule. Ensure the session is in the future and try again.";
+
+        // Handle different error types
+        let errorMessage = "Failed to create schedule. Please try again.";
+
+        if (error.response) {
+          // Server responded with an error
+          if (error.response.status === 400) {
+            errorMessage =
+              "Invalid schedule data. Please check your input and try again.";
+          } else if (error.response.status === 401) {
+            errorMessage = "Your session has expired. Please log in again.";
+            this.$router.push("/login");
+          } else if (error.response.data && error.response.data.error) {
+            errorMessage = error.response.data.error;
+          }
+        } else if (error.request) {
+          // No response received
+          errorMessage =
+            "No response from server. Please check your connection and try again.";
+        }
+
+        this.scheduleError = errorMessage;
+
+        // Show error notification
+        eventBus.emit("show-notification", {
+          type: "error",
+          title: "Schedule Error",
+          message: errorMessage,
+          duration: 5000,
+        });
       } finally {
         this.scheduleLoading = false;
       }

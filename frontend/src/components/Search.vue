@@ -380,10 +380,52 @@ export default {
           return;
         }
 
-        console.error("Search API error:", err);
-        this.error =
+        // Only log in non-test environments
+        if (process.env.NODE_ENV !== "test") {
+          console.error("Search API error:", err);
+        }
+
+        let errorMessage =
           "An error occurred while searching. Please try again later.";
+
+        if (err.response) {
+          // The server responded with an error status
+          const status = err.response.status;
+
+          if (status === 400) {
+            errorMessage =
+              err.response.data?.error ||
+              "Invalid search query. Please try different keywords.";
+          } else if (status === 401) {
+            errorMessage = "Your session has expired. Please log in again.";
+            this.$router.push("/login");
+          } else if (status === 429) {
+            errorMessage =
+              "Too many search requests. Please try again in a moment.";
+          } else if (status >= 500) {
+            errorMessage =
+              "The search service is currently unavailable. Please try again later.";
+          }
+        } else if (err.request) {
+          // The request was made but no response was received
+          if (err.code === "ECONNABORTED") {
+            errorMessage = "Search request timed out. Please try again.";
+          } else {
+            errorMessage =
+              "Network error. Please check your connection and try again.";
+          }
+        }
+
+        this.error = errorMessage;
         this.filteredResults = [];
+
+        // Show notification for search errors
+        eventBus.emit("show-notification", {
+          type: "error",
+          title: "Search Error",
+          message: errorMessage,
+          duration: 5000,
+        });
       } finally {
         // Guard against race conditions
         if (currentSearchId === this.searchCounter) {
