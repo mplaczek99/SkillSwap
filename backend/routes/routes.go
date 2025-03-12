@@ -41,8 +41,9 @@ func SetupRoutes(router *gin.Engine, authController *controllers.AuthController)
 			protected.POST("/schedule", controllers.CreateSchedule)
 			protected.GET("/schedule", controllers.GetSchedules)
 
-			// Transactions endpoint
+			// Transactions endpoints
 			protected.GET("/transactions", controllers.GetTransactions)
+			protected.POST("/transactions", controllers.CreateTransaction) // New endpoint for creating transactions
 
 			// Job endpoints
 			protected.GET("/jobs", controllers.GetJobs)

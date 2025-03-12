@@ -9,13 +9,14 @@ import (
 
 // User represents a registered user in the SkillSwap platform.
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `gorm:"unique" json:"email"`
-	Password  string    `json:"-"` // omit from JSON responses
-	Bio       string    `json:"bio"`
-	Role      string    `json:"role"` // "User" or "Admin"
-	CreatedAt time.Time `json:"created_at"`
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `json:"name"`
+	Email       string    `gorm:"unique" json:"email"`
+	Password    string    `json:"-"` // omit from JSON responses
+	Bio         string    `json:"bio"`
+	Role        string    `json:"role"`                           // "User" or "Admin"
+	SkillPoints int       `json:"skillPoints" gorm:"default:100"` // Default starting balance
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // BeforeSave hashes the password and sets default role if empty.
