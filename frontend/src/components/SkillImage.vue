@@ -1,6 +1,23 @@
 <template>
   <div class="skill-image-container">
-    <img :src="iconUrl" :alt="skill.name + ' Icon'" class="skill-image" />
+    <!-- Loading state -->
+    <div v-if="isLoading" class="skill-image loading-icon">
+      <font-awesome-icon icon="spinner" spin />
+    </div>
+
+    <!-- Error state with fallback icon -->
+    <div v-else-if="hasError || imgLoadError" class="skill-image fallback-icon">
+      <font-awesome-icon icon="cog" />
+    </div>
+
+    <!-- Successful image load -->
+    <img
+      v-else
+      :src="iconUrl"
+      :alt="skill.name + ' Icon'"
+      class="skill-image"
+      @error="handleImageError"
+    />
   </div>
 </template>
 
@@ -20,6 +37,7 @@ export default {
       dynamicIcon: null,
       isLoading: true,
       hasError: false,
+      imgLoadError: false,
     };
   },
   computed: {
@@ -46,6 +64,12 @@ export default {
       this.isLoading = false;
     }
   },
+  methods: {
+    handleImageError() {
+      console.warn(`Failed to load image for skill: ${this.skill.name}`);
+      this.imgLoadError = true;
+    },
+  },
 };
 </script>
 
@@ -71,8 +95,23 @@ export default {
   transform: scale(1.05);
 }
 
+.loading-icon,
+.fallback-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--light);
+  color: var(--medium);
+  font-size: 1.5rem;
+}
+
 @media (max-width: 576px) {
-  .skill-image {
+  .skill-image,
+  .loading-icon,
+  .fallback-icon {
     width: 48px;
     height: 48px;
   }
