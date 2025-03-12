@@ -143,8 +143,13 @@ func (c *ShardedCache) Put(key string, claims *utils.Claims, expiresAt time.Time
 func (c *ShardedCache) CleanAllExpired() int {
 	total := 0
 	now := time.Now()
+
+	// Fix: Use a local variable for the now time to ensure consistency
+	nowUnix := now.Unix()
+
 	for i := 0; i < shardCount; i++ {
-		total += c.shards[i].CleanExpired(now)
+		// Fix: Pass Unix time instead of time.Time to avoid potential race during time conversion
+		total += c.shards[i].CleanExpired(nowUnix)
 	}
 	return total
 }
@@ -178,21 +183,21 @@ func (c *ShardedCache) Stats() map[string]interface{} {
 
 // Get retrieves an item from the cache by key
 func (c *LRUCache) Get(key string) (*utils.Claims, time.Time, bool) {
-	// Fast path - try read lock first
 	c.mu.RLock()
 	item, found := c.items[key]
-	c.mu.RUnlock()
-
 	if !found {
+		c.mu.RUnlock()
 		return nil, time.Time{}, false
 	}
 
 	// Check if item has expired - using int64 comparison is faster than time.Time
 	now := time.Now().Unix()
 	if now > item.expiresAt {
-		// Item is expired - remove it under write lock
+		c.mu.RUnlock() // Release read lock before acquiring write lock to prevent deadlock
+
+		// Get write lock to remove expired item
 		c.mu.Lock()
-		// Need to check again after acquiring write lock
+		// Need to check again after acquiring write lock as another goroutine might have removed it
 		if item, stillExists := c.items[key]; stillExists {
 			if now > item.expiresAt {
 				c.removeItem(key, item.node)
@@ -202,14 +207,31 @@ func (c *LRUCache) Get(key string) (*utils.Claims, time.Time, bool) {
 		return nil, time.Time{}, false
 	}
 
-	// Update item position in the cache (move to front) - requires write lock
+	// Create a copy of the claims to avoid returning direct reference to cached item
+	// This prevents race condition if the item is later modified or removed
+	claimsCopy := &utils.Claims{}
+	if item.claims != nil {
+		*claimsCopy = *item.claims
+	}
+
+	// Convert expiry time once while we have the lock
+	expiry := time.Unix(item.expiresAt, 0)
+
+	// Update item position in LRU list
+	// We need to release and reacquire lock to avoid holding read lock while waiting for write lock
+	c.mu.RUnlock()
+
 	c.mu.Lock()
-	c.moveToFront(item.node)
+	// Check if item still exists after lock switch
+	if currentItem, stillExists := c.items[key]; stillExists {
+		// Only move to front if it's the same item (not expired and replaced)
+		if currentItem == item {
+			c.moveToFront(currentItem.node)
+		}
+	}
 	c.mu.Unlock()
 
-	// Convert int64 back to time.Time
-	expiry := time.Unix(item.expiresAt, 0)
-	return item.claims, expiry, true
+	return claimsCopy, expiry, true
 }
 
 // Put adds an item to the cache, returns true if an item was evicted
@@ -222,7 +244,11 @@ func (c *LRUCache) Put(key string, claims *utils.Claims, expiresAt time.Time) bo
 
 	// If key already exists, update it and move to front
 	if item, found := c.items[key]; found {
-		item.claims = claims
+		// Create a copy of claims to avoid sharing reference with caller
+		newClaims := &utils.Claims{}
+		*newClaims = *claims
+
+		item.claims = newClaims
 		item.expiresAt = expiryUnix
 		c.moveToFront(item.node)
 		return evicted
@@ -238,8 +264,12 @@ func (c *LRUCache) Put(key string, claims *utils.Claims, expiresAt time.Time) bo
 	newNode := c.nodePool.Get().(*lruNode)
 	newNode.key = key
 
+	// Copy claims to avoid sharing reference with caller
+	claimsCopy := &utils.Claims{}
+	*claimsCopy = *claims
+
 	newItem := &lruItem{
-		claims:    claims,
+		claims:    claimsCopy,
 		expiresAt: expiryUnix,
 		node:      newNode,
 	}
@@ -250,8 +280,8 @@ func (c *LRUCache) Put(key string, claims *utils.Claims, expiresAt time.Time) bo
 }
 
 // CleanExpired removes all expired items from the cache
-func (c *LRUCache) CleanExpired(now time.Time) int {
-	nowUnix := now.Unix()
+// Fix: Changed parameter type from time.Time to int64 to avoid potential race during time conversion
+func (c *LRUCache) CleanExpired(nowUnix int64) int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -259,17 +289,25 @@ func (c *LRUCache) CleanExpired(now time.Time) int {
 	// We'll check from LRU end (tail) first as they're more likely to be expired
 	node := c.tail.prev
 
-	// Limit how many items we check in one pass to avoid long lock times
+	// Fix: Store a safe list of nodes to process to avoid race conditions
+	var nodesToProcess []*lruNode
 	checked := 0
+
+	// First, collect nodes that need processing (up to limit)
 	for node != c.head && checked < maxCleanBatchSize {
-		prevNode := node.prev // Save before potential removal
+		nodesToProcess = append(nodesToProcess, node)
+		node = node.prev
+		checked++
+	}
+
+	// Now process the collected nodes safely
+	for _, node := range nodesToProcess {
 		if item, found := c.items[node.key]; found && nowUnix > item.expiresAt {
 			c.removeItem(node.key, node)
 			removed++
 		}
-		node = prevNode
-		checked++
 	}
+
 	return removed
 }
 
@@ -457,5 +495,3 @@ func AuthMiddleware() gin.HandlerFunc {
 func GetCacheStats() map[string]interface{} {
 	return tokenCache.Stats()
 }
-
-// End of file
