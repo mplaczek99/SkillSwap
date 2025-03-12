@@ -150,6 +150,26 @@ SERVER_PORT=8080
 VUE_APP_API_URL=http://backend:8080
 ```
 
+## Security Considerations
+
+### CORS Configuration
+
+The application uses CORS (Cross-Origin Resource Sharing) to control which domains can access the API. For security:
+
+- In production environments (`APP_ENV=production`), `CORS_ALLOW_ALL` is always set to `false` regardless of configuration.
+- When deploying to production, configure `CORS_ALLOWED_ORIGINS` with a comma-separated list of specific allowed domains.
+- Example secure configuration:
+  ```
+  APP_ENV=production
+  CORS_ALLOWED_ORIGINS=https://your-production-domain.com,https://admin.your-production-domain.com
+  CORS_ALLOW_ALL=false
+  ```
+
+### JWT Security
+
+- Always use a strong, randomly generated `JWT_SECRET` in production.
+- JWT tokens have a 24-hour expiration time.
+
 ## Code Quality
 
 ### Formatting

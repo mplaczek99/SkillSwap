@@ -51,14 +51,23 @@ func main() {
 	// 8) Enable CORS middleware with configuration from appConfig
 	corsConfig := cors.DefaultConfig()
 
-	if appConfig.CORSAllowAll {
-		log.Println("CORS: Allowing all origins")
-		corsConfig.AllowAllOrigins = true
-	} else {
+	if appConfig.Environment == "production" {
+		// Production settings: stricter CORS for security
+		log.Println("CORS: Running in production mode with restricted origins")
+		corsConfig.AllowAllOrigins = false
 		corsConfig.AllowOrigins = appConfig.CORSAllowedOrigins
 		log.Printf("CORS: Allowing specific origins: %v", corsConfig.AllowOrigins)
+	} else if appConfig.CORSAllowAll {
+		// Development settings: allow all origins if configured
+		log.Println("CORS: Development mode with AllowAllOrigins=true")
+		corsConfig.AllowAllOrigins = true
+	} else {
+		// Development with specific origins
+		corsConfig.AllowOrigins = appConfig.CORSAllowedOrigins
+		log.Printf("CORS: Development mode with specific origins: %v", corsConfig.AllowOrigins)
 	}
 
+	// Common CORS settings
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Authorization", "Content-Type", "Origin", "Accept", "X-Requested-With"}
 	corsConfig.AllowCredentials = true

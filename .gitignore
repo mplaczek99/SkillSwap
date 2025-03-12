@@ -18,3 +18,4 @@
 /backend/tmp/
 /backend/uploads/
 /backend/vendor/
+/backend/controllers/uploads/

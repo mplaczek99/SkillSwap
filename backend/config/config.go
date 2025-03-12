@@ -28,6 +28,9 @@ type AppConfig struct {
 	CORSAllowedOrigins []string
 	CORSAllowAll       bool
 	CORSMaxAge         time.Duration
+
+	// Environment setting
+	Environment string
 }
 
 // LoadConfig loads configuration from environment variables with defaults
@@ -40,6 +43,12 @@ func LoadConfig() *AppConfig {
 		CORSAllowedOrigins: []string{"http://localhost:8081", "http://frontend:80"},
 		CORSAllowAll:       false,
 		CORSMaxAge:         12 * time.Hour,
+		Environment:        "development", // Default to development
+	}
+
+	// Read environment from env var
+	if env := os.Getenv("APP_ENV"); env != "" {
+		config.Environment = env
 	}
 
 	// Override with environment variables if they exist
@@ -68,12 +77,27 @@ func LoadConfig() *AppConfig {
 	}
 
 	if allowAll := os.Getenv("CORS_ALLOW_ALL"); allowAll != "" {
-		config.CORSAllowAll, _ = strconv.ParseBool(allowAll)
+		// Parse the allow all setting
+		parsedValue, _ := strconv.ParseBool(allowAll)
+
+		// SECURITY FIX: In production, override CORS_ALLOW_ALL to false
+		if config.Environment == "production" && parsedValue {
+			log.Println("WARNING: CORS_ALLOW_ALL=true is not secure in production. Setting to false.")
+			config.CORSAllowAll = false
+		} else {
+			config.CORSAllowAll = parsedValue
+		}
 	}
 
 	// Validate critical configuration
 	if config.JWTSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is required")
+	}
+
+	// SECURITY FIX: Ensure there are allowed origins in production when CORS_ALLOW_ALL is false
+	if config.Environment == "production" && !config.CORSAllowAll && len(config.CORSAllowedOrigins) == 0 {
+		log.Println("WARNING: No CORS_ALLOWED_ORIGINS specified in production with CORS_ALLOW_ALL=false")
+		log.Println("You should specify at least one allowed origin for your production frontend")
 	}
 
 	return config
