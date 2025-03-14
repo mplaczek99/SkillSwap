@@ -37,6 +37,7 @@ services:
       db:
         condition: service_healthy
     volumes:
+      - ./backend:/app
       - ./backend/uploads:/root/uploads
 
   frontend:
@@ -50,6 +51,8 @@ services:
       - "8081:80"
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
 
 volumes:
   postgres_data:

@@ -1,0 +1,18 @@
+# Config file for Air live reload tool
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./SkillSwap ./cmd/main.go"
+bin = "./SkillSwap"
+delay = 1000 # milliseconds delay before restarting after changes detected
+
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["uploads", "docs", "vendor", "testdata"]
+
+[log]
+color = "green"
+time = true
+
+[misc]
+clean_on_exit = true 

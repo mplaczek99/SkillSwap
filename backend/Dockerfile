@@ -1,22 +1,19 @@
-# Build Stage
-FROM golang:1.22-bookworm AS builder
+FROM golang:1.23-bookworm
+
 WORKDIR /app
+
+# Install air for live reload
+RUN go install github.com/air-verse/air@latest
 
 # Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy code and build
+# Copy the rest of the source code
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o SkillSwap cmd/main.go
-
-# Final Stage
-FROM debian:bookworm-slim
-WORKDIR /root/
-COPY --from=builder /app/SkillSwap .
 
 # Create uploads directory with proper permissions
-RUN mkdir -p /root/uploads && chmod 777 /root/uploads
+RUN mkdir -p /app/uploads && chmod 777 /app/uploads
 
 # Install FFmpeg for video processing
 RUN apt-get update && \
@@ -24,8 +21,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Configure environment variables
-ENV CORS_ALLOW_ALL=false
-
+# Expose port
 EXPOSE 8080
-CMD ["./SkillSwap"]
+
+# Run air for live reload
+CMD ["air"]
