@@ -8,12 +8,22 @@ import eventBus from "./utils/eventBus"; // Import the eventBus
 // Import the icon registration function
 import { registerIcons } from "./utils/icons";
 
-// Set up axios interceptors to add the auth token to all requests
+// Add default timeout to all axios requests
+axios.defaults.timeout = 15000; // 15 seconds
+
+// Set up axios interceptors to add the auth token to all requests, with CSRF protection
 axios.interceptors.request.use(
   (config) => {
     const token = store.state.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // Add CSRF token if available
+      const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content");
+      if (csrfToken) {
+        config.headers["X-CSRF-Token"] = csrfToken;
+      }
     }
     return config;
   },
