@@ -566,6 +566,8 @@ export default {
       });
     },
 
+    // This would go in the Chat.vue component's methods section
+
     performSearch() {
       if (!this.searchQuery.trim()) {
         this.searchResults = [];
@@ -591,10 +593,19 @@ export default {
               user.name.toLowerCase().includes(query) ||
               user.email.toLowerCase().includes(query),
           );
-          // Make sure to set this to true
-          this.showSearchResults = this.searchResults.length > 0;
+
+          // Keep showing the search results box even if no results are found
+          // as long as there's a search query
+          this.showSearchResults = this.searchQuery.trim().length > 0;
         }
       }, 100);
+    },
+
+    // Also modify any click handlers to not close the search results when clicking inside the search area
+    handleOutsideClick(event) {
+      if (this.showSearchResults && !event.target.closest(".chat-search")) {
+        this.showSearchResults = false;
+      }
     },
 
     async startNewConversation(user) {
@@ -623,12 +634,6 @@ export default {
     openUserProfile() {
       if (!this.activeConversation) return;
       alert(`Viewing profile for ${this.activeConversation.recipient.name}`);
-    },
-
-    handleOutsideClick(event) {
-      if (this.showSearchResults && !event.target.closest(".chat-search")) {
-        this.showSearchResults = false;
-      }
     },
 
     clearMockMessageInterval() {

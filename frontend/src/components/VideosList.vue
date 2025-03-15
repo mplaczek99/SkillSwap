@@ -188,10 +188,11 @@ export default {
     },
 
     formatFileName(fileName) {
-      // Remove file extension and replace underscores/hyphens with spaces
-      return fileName
-        .replace(/\.[^/.]+$/, "") // Remove extension
-        .replace(/_|-/g, " "); // Replace underscores and hyphens with spaces
+      // If we don't have a filename, use a default
+      if (!fileName) return "Unnamed Video";
+
+      // Otherwise, just use a simple naming convention
+      return `Video ${this.videos.findIndex((v) => v.name === fileName) + 1}`;
     },
 
     formatFileSize(bytes) {

@@ -5,14 +5,8 @@
 
     <div class="upload-box">
       <div class="file-selection">
-        <input
-          type="file"
-          @change="onFileSelected"
-          accept="video/*"
-          id="video-file"
-          class="file-input"
-          ref="fileInput"
-        />
+        <input type="file" @change="onFileSelected" accept="video/*" id="video-file" class="file-input"
+          ref="fileInput" />
         <label for="video-file" class="file-label">
           <font-awesome-icon icon="upload" class="icon" />
           <span>Select video file</span>
@@ -30,25 +24,14 @@
 
     <div v-if="uploadProgress > 0" class="progress-area">
       <div class="progress-bar">
-        <div
-          class="progress-fill"
-          :style="{ width: `${uploadProgress}%` }"
-        ></div>
+        <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
       </div>
       <div class="progress-text">{{ uploadProgress }}%</div>
     </div>
 
     <div class="button-area">
-      <button
-        @click="uploadVideo"
-        :disabled="!selectedFile || uploadProgress > 0"
-        class="upload-button"
-      >
-        <font-awesome-icon
-          v-if="uploadProgress > 0 && uploadProgress < 100"
-          icon="spinner"
-          class="spin"
-        />
+      <button @click="uploadVideo" :disabled="!selectedFile || uploadProgress > 0" class="upload-button">
+        <font-awesome-icon v-if="uploadProgress > 0 && uploadProgress < 100" icon="spinner" class="spin" />
         <span v-else>Upload Video</span>
       </button>
     </div>
@@ -82,18 +65,18 @@ export default {
   methods: {
     onFileSelected(event) {
       const file = event.target.files[0];
-      if (file) {
-        if (file.size > 100 * 1024 * 1024) {
-          // 100MB limit
-          this.errorMessage = "File is too large. Maximum size is 100MB.";
-          return;
-        }
+      if (!file) return;
 
-        this.selectedFile = file;
-        this.errorMessage = "";
-        this.successMessage = "";
-        this.uploadProgress = 0;
+      if (file.size > 100 * 1024 * 1024) {
+        // 100MB limit
+        this.errorMessage = "File is too large. Maximum size is 100MB.";
+        return;
       }
+
+      this.selectedFile = file;
+      this.errorMessage = "";
+      this.successMessage = "";
+      this.uploadProgress = 0;
     },
 
     formatFileSize(bytes) {
@@ -120,21 +103,19 @@ export default {
         const response = await axios.post("/api/videos/upload", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
-            // Authorization header will be added by the interceptor
           },
           onUploadProgress: (progressEvent) => {
             this.uploadProgress = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total,
             );
           },
-          // Add timeout to prevent indefinite hanging uploads
           timeout: 60000, // 1 minute timeout
         });
 
         this.successMessage =
           response.data.message || "Video uploaded successfully!";
 
-        // Use eventBus to show a success notification
+        // Show success notification
         eventBus.emit("show-notification", {
           type: "success",
           title: "Upload Complete",
@@ -142,65 +123,51 @@ export default {
           duration: 5000,
         });
 
-        // Reset file selection after successful upload
+        // Reset file selection
         this.selectedFile = null;
         if (this.$refs.fileInput) {
           this.$refs.fileInput.value = "";
         }
 
-        // Reset progress after a delay
+        // Reset progress after delay
         setTimeout(() => {
           this.uploadProgress = 0;
         }, 3000);
       } catch (error) {
-        if (process.env.NODE_ENV !== "test") {
-          console.error("Upload error:", error);
-        }
+        // Handle error
+        let errorMessage = "Failed to upload video. Please try again.";
 
-        // Handle different types of errors
         if (error.response) {
-          // The server responded with an error status
           const status = error.response.status;
           if (status === 401) {
-            this.errorMessage = "Your session has expired. Please login again.";
-            // Redirect to login page
+            errorMessage = "Your session has expired. Please login again.";
             this.$router.push("/login");
           } else if (status === 413) {
-            this.errorMessage =
-              "The video file is too large for the server to accept.";
+            errorMessage = "The video file is too large.";
           } else if (status === 415) {
-            this.errorMessage = "The video format is not supported.";
-          } else if (status === 400) {
-            this.errorMessage =
-              error.response.data?.error || "Invalid upload request.";
-          } else {
-            this.errorMessage =
-              error.response.data?.error ||
-              "Server error. Please try again later.";
+            errorMessage = "The video format is not supported.";
+          } else if (error.response.data?.error) {
+            errorMessage = error.response.data.error;
           }
         } else if (error.request) {
-          // The request was made but no response was received
           if (error.code === "ECONNABORTED") {
-            this.errorMessage =
-              "Upload timed out. Please try again with a smaller file or check your connection.";
+            errorMessage = "Upload timed out. Please try with a smaller file.";
           } else {
-            this.errorMessage =
-              "Network error. Please check your connection and try again.";
+            errorMessage = "Network error. Please check your connection.";
           }
-        } else {
-          // Something happened in setting up the request
-          this.errorMessage = "Failed to upload video. Please try again.";
         }
 
-        // Use eventBus to show an error notification
+        this.errorMessage = errorMessage;
+
+        // Show error notification
         eventBus.emit("show-notification", {
           type: "error",
           title: "Upload Failed",
-          message: this.errorMessage,
+          message: errorMessage,
           duration: 5000,
         });
 
-        // Reset progress on error
+        // Reset progress
         this.uploadProgress = 0;
       }
     },

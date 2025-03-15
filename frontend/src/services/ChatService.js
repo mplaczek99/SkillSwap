@@ -57,20 +57,19 @@ let conversations = [
 ];
 
 class ChatService {
-  /**
-   * Get all conversations for the current user
-   */
+  // Simulate network delay
+  simulateNetworkDelay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Get all conversations
   async getConversations() {
-    // Simulate API call
     await this.simulateNetworkDelay(300);
 
-    // In a real app, we would fetch this from the server
-    // For now, filter conversations that include the current user
     const currentUserId = store.state.user ? store.state.user.id : 1;
 
     return conversations
       .map((convo) => {
-        // Find the other participant (not the current user)
         const otherParticipant = convo.participants.find(
           (p) => p.id !== currentUserId,
         ) || { id: 0, name: "Unknown User", avatar: null };
@@ -93,11 +92,8 @@ class ChatService {
       );
   }
 
-  /**
-   * Get a specific conversation by ID with pagination support
-   */
+  // Get a conversation by ID
   async getConversation(conversationId, page = 1, messagesPerPage = 20) {
-    // Simulate API call
     await this.simulateNetworkDelay(200);
 
     const currentUserId = store.state.user ? store.state.user.id : 1;
@@ -115,21 +111,13 @@ class ChatService {
       (p) => p.id !== currentUserId,
     ) || { id: 0, name: "Unknown User", avatar: null };
 
-    // Apply pagination to messages - more efficient approach
-    const allMessages = [...conversation.messages];
+    // Sort and paginate messages
+    const allMessages = [...conversation.messages].sort(
+      (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+    );
 
-    // Sort once in ascending order (oldest to newest)
-    allMessages.sort((a, b) => {
-      const dateA = new Date(a.timestamp);
-      const dateB = new Date(b.timestamp);
-      return dateA - dateB;
-    });
-
-    // Get the correct slice of messages based on page number
-    const totalMessages = allMessages.length;
-    // This maintains chronological order (oldest to newest)
     const startIndex = (page - 1) * messagesPerPage;
-    const endIndex = Math.min(startIndex + messagesPerPage, totalMessages);
+    const endIndex = Math.min(startIndex + messagesPerPage, allMessages.length);
     const paginatedMessages = allMessages.slice(startIndex, endIndex);
 
     return {
@@ -142,15 +130,12 @@ class ChatService {
     };
   }
 
-  /**
-   * Get conversation messages with pagination
-   */
+  // Get conversation messages with pagination
   async getConversationMessages(
     conversationId,
     page = 1,
     messagesPerPage = 20,
   ) {
-    // Simulate API call
     await this.simulateNetworkDelay(200);
 
     const currentUserId = store.state.user ? store.state.user.id : 1;
@@ -160,15 +145,8 @@ class ChatService {
       throw new Error("Conversation not found");
     }
 
-    // All messages
-    const allMessages = conversation.messages;
-
-    // For pagination when retrieving older messages, we want:
-    // 1. Latest messages to be at the end (for normal display)
-    // 2. Calculate the correct page of older messages
-
     // Sort all messages in ascending order (oldest first)
-    const sortedMessages = [...allMessages].sort(
+    const sortedMessages = [...conversation.messages].sort(
       (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
     );
 
@@ -177,7 +155,7 @@ class ChatService {
     const startIndex = Math.max(0, totalMessages - page * messagesPerPage);
     const endIndex = Math.max(0, totalMessages - (page - 1) * messagesPerPage);
 
-    // Get the correct slice - when page=1, this gets the latest messages
+    // Get the correct slice
     const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
 
     // Return the messages with isOutgoing flag
@@ -187,11 +165,8 @@ class ChatService {
     }));
   }
 
-  /**
-   * Send a message in a conversation
-   */
+  // Send a message
   async sendMessage(conversationId, text) {
-    // Simulate API call
     await this.simulateNetworkDelay(300);
 
     const currentUserId = store.state.user ? store.state.user.id : 1;
@@ -219,11 +194,8 @@ class ChatService {
     };
   }
 
-  /**
-   * Start a new conversation with a user
-   */
+  // Start a new conversation
   async startConversation(userId, userName, initialMessage) {
-    // Simulate API call
     await this.simulateNetworkDelay(500);
 
     if (!userId) {
@@ -271,7 +243,6 @@ class ChatService {
         timestamp: new Date(),
       };
       newConversation.messages.push(newMessage);
-      // Update the lastMessageTime with the new message timestamp
       newConversation.lastMessageTime = newMessage.timestamp;
     }
 
@@ -281,24 +252,13 @@ class ChatService {
     return newConversation.id;
   }
 
-  /**
-   * Get total unread messages count across all conversations
-   */
+  // Get total unread messages count
   async getUnreadCount() {
     const convos = await this.getConversations();
     return convos.reduce((total, convo) => total + (convo.unreadCount || 0), 0);
   }
 
-  /**
-   * Helper to simulate network delay
-   */
-  simulateNetworkDelay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Simulate receiving a new message (for demo purposes)
-   */
+  // Simulate receiving a new message
   async simulateIncomingMessage(conversationId, text) {
     const conversation = conversations.find((c) => c.id == conversationId);
     if (!conversation) return null;
@@ -321,7 +281,6 @@ class ChatService {
     conversation.lastMessageTime = newMessage.timestamp;
     conversation.unreadCount = (conversation.unreadCount || 0) + 1;
 
-    // Return the formatted message
     return {
       ...newMessage,
       isOutgoing: false,
