@@ -11,7 +11,7 @@ import { registerIcons } from "./utils/icons";
 // Set up axios interceptors to add the auth token to all requests
 axios.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = store.state.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
