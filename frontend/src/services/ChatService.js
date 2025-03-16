@@ -111,11 +111,12 @@ class ChatService {
       (p) => p.id !== currentUserId,
     ) || { id: 0, name: "Unknown User", avatar: null };
 
-    // Sort and paginate messages
+    // Sort messages in descending order (newest first)
     const allMessages = [...conversation.messages].sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
     );
 
+    // Calculate pagination for newest-first ordering
     const startIndex = (page - 1) * messagesPerPage;
     const endIndex = Math.min(startIndex + messagesPerPage, allMessages.length);
     const paginatedMessages = allMessages.slice(startIndex, endIndex);
@@ -131,7 +132,6 @@ class ChatService {
   }
 
   // Get conversation messages with pagination
-  // Get conversation messages with pagination
   async getConversationMessages(
     conversationId,
     page = 1,
@@ -146,14 +146,17 @@ class ChatService {
       throw new Error("Conversation not found");
     }
 
-    // Sort all messages in ascending order (oldest first)
+    // Sort messages in descending order (newest first)
     const sortedMessages = [...conversation.messages].sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
     );
 
-    // Calculate indices for pagination - FIXED to be consistent with getConversation method
+    // Calculate pagination consistently with getConversation
     const startIndex = (page - 1) * messagesPerPage;
-    const endIndex = Math.min(startIndex + messagesPerPage, sortedMessages.length);
+    const endIndex = Math.min(
+      startIndex + messagesPerPage,
+      sortedMessages.length,
+    );
 
     // Get the correct slice
     const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
@@ -164,6 +167,7 @@ class ChatService {
       isOutgoing: msg.senderId === currentUserId,
     }));
   }
+
   // Send a message
   async sendMessage(conversationId, text) {
     await this.simulateNetworkDelay(300);
