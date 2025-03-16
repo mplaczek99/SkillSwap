@@ -131,6 +131,7 @@ class ChatService {
   }
 
   // Get conversation messages with pagination
+  // Get conversation messages with pagination
   async getConversationMessages(
     conversationId,
     page = 1,
@@ -150,10 +151,9 @@ class ChatService {
       (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
     );
 
-    // Calculate indices for pagination
-    const totalMessages = sortedMessages.length;
-    const startIndex = Math.max(0, totalMessages - page * messagesPerPage);
-    const endIndex = Math.max(0, totalMessages - (page - 1) * messagesPerPage);
+    // Calculate indices for pagination - FIXED to be consistent with getConversation method
+    const startIndex = (page - 1) * messagesPerPage;
+    const endIndex = Math.min(startIndex + messagesPerPage, sortedMessages.length);
 
     // Get the correct slice
     const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
@@ -164,7 +164,6 @@ class ChatService {
       isOutgoing: msg.senderId === currentUserId,
     }));
   }
-
   // Send a message
   async sendMessage(conversationId, text) {
     await this.simulateNetworkDelay(300);
