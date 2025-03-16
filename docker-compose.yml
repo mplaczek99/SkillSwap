@@ -38,7 +38,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - ./backend/uploads:/root/uploads
+      - ./backend/uploads:/app/uploads
 
   frontend:
     build:
