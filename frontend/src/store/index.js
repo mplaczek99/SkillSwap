@@ -9,152 +9,196 @@ class TokenCache {
     this.maxSize = options.maxSize || 100; // Limit number of cached tokens
     this.lastCleanup = Date.now();
     this.cleanupInterval = options.cleanupInterval || 60000; // Minimum ms between full cleanups
-    this.accessQueue = []; // Queue to track LRU (least recently used) tokens
+    this.accessMap = new Map(); // Map to track access times for O(1) operations
+    this.disabled = false; // Safety switch in case of errors
   }
 
   // More efficient expired token cleanup
   cleanExpired() {
-    const now = Date.now();
+    try {
+      const now = Date.now();
 
-    // Only perform full cleanup if enough time has passed since last cleanup
-    // or if the cache is getting full
-    if (
-      now - this.lastCleanup > this.cleanupInterval ||
-      this.cache.size > this.maxSize * 0.8
-    ) {
-      this.lastCleanup = now;
+      // Only perform full cleanup if enough time has passed since last cleanup
+      // or if the cache is getting full
+      if (
+        now - this.lastCleanup > this.cleanupInterval ||
+        this.cache.size > this.maxSize * 0.8
+      ) {
+        this.lastCleanup = now;
 
-      // First pass: remove expired items
-      let expiredCount = 0;
-      for (const [token, item] of this.cache.entries()) {
-        if (now > item.expiresAt) {
-          this.cache.delete(token);
-          expiredCount++;
-        }
-      }
-
-      // If we're still over max size after removing expired items,
-      // use the access queue for efficient LRU removal
-      if (this.cache.size > this.maxSize) {
-        // Clean up the accessQueue to only include tokens still in the cache
-        this.accessQueue = this.accessQueue.filter(token => this.cache.has(token));
-
-        // Remove oldest accessed tokens until we're below max size
-        const tokensToRemove = this.accessQueue.slice(0, this.cache.size - this.maxSize);
-        for (const token of tokensToRemove) {
-          this.cache.delete(token);
+        // First pass: remove expired items
+        let expiredCount = 0;
+        for (const [token, item] of this.cache.entries()) {
+          if (now > item.expiresAt) {
+            this.cache.delete(token);
+            this.accessMap.delete(token);
+            expiredCount++;
+          }
         }
 
-        // Update accessQueue by removing the deleted tokens
-        this.accessQueue = this.accessQueue.slice(tokensToRemove.length);
+        // If we're still over max size after removing expired items,
+        // remove least recently used tokens
+        if (this.cache.size > this.maxSize) {
+          // If we somehow lost track of access times, reset them
+          if (this.accessMap.size < this.cache.size) {
+            this._resyncAccessMap();
+          }
+
+          // Get sorted tokens by access time (oldest first)
+          const sortedTokens = [...this.accessMap.entries()]
+            .sort((a, b) => a[1] - b[1])
+            .map((entry) => entry[0]);
+
+          // Calculate how many tokens to remove
+          const excessTokens = this.cache.size - this.maxSize;
+          const tokensToRemove = Math.min(excessTokens, sortedTokens.length);
+
+          // Remove the oldest tokens
+          for (let i = 0; i < tokensToRemove; i++) {
+            const token = sortedTokens[i];
+            this.cache.delete(token);
+            this.accessMap.delete(token);
+          }
+        }
+
+        return expiredCount; // Return number of expired items removed
       }
 
-      return expiredCount; // Return number of expired items removed
+      return 0; // No cleanup performed
+    } catch (error) {
+      console.error("Token cache cleanup error:", error);
+      this.disabled = true; // Disable cache on critical errors
+      return 0;
     }
+  }
 
-    return 0; // No cleanup performed
+  // Helper method to resync access map if it gets out of sync
+  _resyncAccessMap() {
+    try {
+      const now = Date.now();
+      this.accessMap.clear();
+
+      // Rebuild access map from cache
+      for (const [token, item] of this.cache.entries()) {
+        this.accessMap.set(token, item.lastAccessed || now);
+      }
+    } catch (error) {
+      console.error("Access map resync error:", error);
+    }
   }
 
   get(token) {
-    if (!token) return null;
+    if (!token || this.disabled) return null;
 
-    const item = this.cache.get(token);
-    if (!item) return null;
+    try {
+      const item = this.cache.get(token);
+      if (!item) return null;
 
-    const now = Date.now();
+      const now = Date.now();
 
-    // Check if this specific token is expired
-    if (now > item.expiresAt) {
-      this.cache.delete(token);
-      this._removeFromAccessQueue(token);
+      // Check if this specific token is expired
+      if (now > item.expiresAt) {
+        this.cache.delete(token);
+        this.accessMap.delete(token);
+        return null;
+      }
+
+      // Update last accessed time
+      item.lastAccessed = now;
+      this.accessMap.set(token, now);
+
+      // Run cleanup occasionally based on time and cache size
+      if (
+        this.cache.size > 10 &&
+        now - this.lastCleanup > this.cleanupInterval / 10
+      ) {
+        this.cleanExpired();
+      }
+
+      return item.value;
+    } catch (error) {
+      console.warn("Token cache get error:", error);
       return null;
     }
-
-    // Update last accessed time
-    item.lastAccessed = now;
-
-    // Update the access queue (move this token to the end = most recently used)
-    this._removeFromAccessQueue(token);
-    this.accessQueue.push(token);
-
-    // Run cleanup occasionally based on time and cache size
-    if (
-      this.cache.size > 10 &&
-      now - this.lastCleanup > this.cleanupInterval / 10
-    ) {
-      this.cleanExpired();
-    }
-
-    return item.value;
   }
 
   set(token, value, ttl) {
-    if (!token) return;
+    if (!token || this.disabled) return;
 
-    const now = Date.now();
-    const defaultTTL = 30 * 60 * 1000;
+    try {
+      const now = Date.now();
+      const defaultTTL = 30 * 60 * 1000;
 
-    this.cache.set(token, {
-      value,
-      expiresAt: now + (ttl || defaultTTL),
-      lastAccessed: now,
-      created: now,
-    });
+      this.cache.set(token, {
+        value,
+        expiresAt: now + (ttl || defaultTTL),
+        lastAccessed: now,
+        created: now,
+      });
 
-    // Update the access queue
-    this._removeFromAccessQueue(token);
-    this.accessQueue.push(token);
+      // Update the access map
+      this.accessMap.set(token, now);
 
-    // Run cleanup if we've exceeded max size
-    if (this.cache.size > this.maxSize) {
-      this.cleanExpired();
+      // Run cleanup if we've exceeded max size
+      if (this.cache.size > this.maxSize) {
+        this.cleanExpired();
+      }
+    } catch (error) {
+      console.warn("Token cache set error:", error);
     }
   }
 
   has(token) {
-    if (!token) return false;
+    if (!token || this.disabled) return false;
 
-    const item = this.cache.get(token);
-    if (!item) return false;
+    try {
+      const item = this.cache.get(token);
+      if (!item) return false;
 
-    if (Date.now() > item.expiresAt) {
-      this.cache.delete(token);
-      this._removeFromAccessQueue(token);
+      if (Date.now() > item.expiresAt) {
+        this.cache.delete(token);
+        this.accessMap.delete(token);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.warn("Token cache has error:", error);
       return false;
-    }
-
-    return true;
-  }
-
-  // Helper method to efficiently remove a token from the access queue
-  _removeFromAccessQueue(token) {
-    const index = this.accessQueue.indexOf(token);
-    if (index !== -1) {
-      this.accessQueue.splice(index, 1);
     }
   }
 
   // Returns cache stats - useful for debugging
   getStats() {
-    const now = Date.now();
-    let expired = 0;
+    try {
+      const now = Date.now();
+      let expired = 0;
 
-    for (const item of this.cache.values()) {
-      if (now > item.expiresAt) expired++;
+      for (const item of this.cache.values()) {
+        if (now > item.expiresAt) expired++;
+      }
+
+      return {
+        size: this.cache.size,
+        expired,
+        active: this.cache.size - expired,
+        accessMapSize: this.accessMap.size,
+        disabled: this.disabled,
+      };
+    } catch (error) {
+      return { error: "Failed to get stats" };
     }
-
-    return {
-      size: this.cache.size,
-      expired,
-      active: this.cache.size - expired,
-      queueSize: this.accessQueue.length,
-    };
   }
 
   clear() {
-    this.cache.clear();
-    this.accessQueue = [];
-    this.lastCleanup = Date.now();
+    try {
+      this.cache.clear();
+      this.accessMap.clear();
+      this.lastCleanup = Date.now();
+      this.disabled = false; // Reset disabled state on clear
+    } catch (error) {
+      console.warn("Token cache clear error:", error);
+    }
   }
 }
 
