@@ -68,28 +68,33 @@ class ChatService {
 
     const currentUserId = store.state.user ? store.state.user.id : 1;
 
-    return conversations
-      .map((convo) => {
-        const otherParticipant = convo.participants.find(
-          (p) => p.id !== currentUserId,
-        ) || { id: 0, name: "Unknown User", avatar: null };
+    // Map conversations to the desired format with pre-computed timestamps
+    const formattedConversations = conversations.map((convo) => {
+      const otherParticipant = convo.participants.find(
+        (p) => p.id !== currentUserId,
+      ) || { id: 0, name: "Unknown User", avatar: null };
 
-        const lastMessage =
-          convo.messages.length > 0
-            ? convo.messages[convo.messages.length - 1]
-            : { text: "", timestamp: new Date() };
+      const lastMessage =
+        convo.messages.length > 0
+          ? convo.messages[convo.messages.length - 1]
+          : { text: "", timestamp: new Date() };
 
-        return {
-          id: convo.id,
-          recipient: otherParticipant,
-          lastMessage: lastMessage,
-          unreadCount: convo.unreadCount || 0,
-        };
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.lastMessage.timestamp) - new Date(a.lastMessage.timestamp),
-      );
+      // Pre-compute the timestamp as a number for efficient sorting
+      const sortTimestamp = new Date(lastMessage.timestamp).getTime();
+
+      return {
+        id: convo.id,
+        recipient: otherParticipant,
+        lastMessage: lastMessage,
+        unreadCount: convo.unreadCount || 0,
+        sortTimestamp, // Store the pre-computed timestamp
+      };
+    });
+
+    // Sort using the pre-computed numeric timestamps
+    return formattedConversations.sort(
+      (a, b) => b.sortTimestamp - a.sortTimestamp,
+    );
   }
 
   // Get a conversation by ID
