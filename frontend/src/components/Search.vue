@@ -12,20 +12,9 @@
         <form @submit.prevent="search" class="search-form">
           <div class="search-input-group">
             <font-awesome-icon icon="search" class="search-icon" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search for skills, topics, or users..."
-              class="search-input"
-              required
-              @input="debouncedSearch"
-            />
-            <button
-              v-if="searchQuery"
-              type="button"
-              class="clear-search"
-              @click="clearSearch"
-            >
+            <input v-model="searchQuery" type="text" placeholder="Search for skills, topics, or users..."
+              class="search-input" required @input="searchUsers" />
+            <button v-if="searchQuery" type="button" class="clear-search" @click="clearSearch">
               <font-awesome-icon icon="times" />
             </button>
             <!-- Explicit search button -->
@@ -36,18 +25,10 @@
           </div>
 
           <div class="search-filters">
-            <button
-              type="button"
-              class="filter-toggle"
-              @click="toggleFilters"
-              :class="{ active: showFilters }"
-            >
+            <button type="button" class="filter-toggle" @click="toggleFilters" :class="{ active: showFilters }">
               <font-awesome-icon icon="filter" />
               <span>Filters</span>
-              <font-awesome-icon
-                :icon="showFilters ? 'chevron-up' : 'chevron-down'"
-                class="toggle-icon"
-              />
+              <font-awesome-icon :icon="showFilters ? 'chevron-up' : 'chevron-down'" class="toggle-icon" />
             </button>
           </div>
 
@@ -56,16 +37,8 @@
               <div class="filter-group">
                 <label class="filter-label">Categories</label>
                 <div class="filter-options">
-                  <label
-                    class="checkbox-container"
-                    v-for="category in categories"
-                    :key="category"
-                  >
-                    <input
-                      type="checkbox"
-                      v-model="selectedCategories"
-                      :value="category"
-                    />
+                  <label class="checkbox-container" v-for="category in categories" :key="category">
+                    <input type="checkbox" v-model="selectedCategories" :value="category" />
                     <span class="checkmark"></span>
                     {{ category }}
                   </label>
@@ -94,11 +67,7 @@
               </div>
 
               <div class="filter-actions">
-                <button
-                  type="button"
-                  class="btn btn-outline btn-sm"
-                  @click="resetFilters"
-                >
+                <button type="button" class="btn btn-outline btn-sm" @click="resetFilters">
                   Reset Filters
                 </button>
                 <button type="submit" class="btn btn-primary btn-sm">
@@ -127,12 +96,8 @@
 
         <div v-else-if="filteredResults.length" class="search-results-grid">
           <div class="results-container">
-            <div
-              v-for="(item, index) in filteredResults"
-              :key="index"
-              class="result-card"
-              :class="{ 'user-card': item.email, 'skill-card': !item.email }"
-            >
+            <div v-for="(item, index) in filteredResults" :key="index" class="result-card"
+              :class="{ 'user-card': item.email, 'skill-card': !item.email }">
               <div class="result-icon">
                 <template v-if="item.email">
                   <font-awesome-icon icon="user" />
@@ -152,25 +117,13 @@
                   {{ item.email }}
                 </p>
                 <div class="result-actions">
-                  <button
-                    v-if="item.email"
-                    class="btn btn-outline btn-sm"
-                    @click="viewProfile(item)"
-                  >
+                  <button v-if="item.email" class="btn btn-outline btn-sm" @click="viewProfile(item)">
                     View Profile
                   </button>
-                  <button
-                    v-else
-                    class="btn btn-primary btn-sm"
-                    @click="viewSkill(item)"
-                  >
+                  <button v-else class="btn btn-primary btn-sm" @click="viewSkill(item)">
                     Learn More
                   </button>
-                  <button
-                    v-if="item.email"
-                    class="btn btn-primary btn-sm"
-                    @click="startChat(item)"
-                  >
+                  <button v-if="item.email" class="btn btn-primary btn-sm" @click="startChat(item)">
                     Message
                   </button>
                 </div>
@@ -180,11 +133,7 @@
         </div>
 
         <div v-else-if="!loading && searched" class="no-results">
-          <img
-            src="/default-avatar.svg"
-            alt="No results"
-            class="no-results-image"
-          />
+          <img src="/default-avatar.svg" alt="No results" class="no-results-image" />
           <h3>No Results Found</h3>
           <p>We couldn't find any matches for "{{ searchQuery }}"</p>
           <p class="search-suggestions">Try:</p>
@@ -202,6 +151,7 @@
 <script>
 import axios from "axios";
 import eventBus from "@/utils/eventBus";
+import { debounce } from "lodash";
 
 // Immediate memoization for icon mapping to avoid recreating on each component instance
 const ICON_MAPPING = Object.freeze({
@@ -254,8 +204,6 @@ export default {
       searchType: "all",
       // Abort controller for cancelling in-flight requests
       abortController: null,
-      // Debounce timeout identifier
-      debounceTimeout: null,
       // Track search counter for race condition prevention
       searchCounter: 0,
     };
@@ -267,6 +215,9 @@ export default {
       this.searchQuery = queryParam;
       this.search(); // Auto-search when query is in URL
     }
+
+    // Create the debounced search function
+    this.searchUsers = debounce(this.handleSearchInput, 300);
   },
   // We've removed the mounted and beforeUnmount lifecycle hooks that were adding resize listeners
   // since they weren't actually doing anything in the component
@@ -291,19 +242,13 @@ export default {
   methods: {
     // Performance-optimized methods
 
-    // Debounced search with proper cleanup
-    debouncedSearch() {
-      if (this.debounceTimeout) {
-        clearTimeout(this.debounceTimeout);
+    // Handle input changes with debouncing from lodash
+    handleSearchInput() {
+      if (this.searchQuery.trim()) {
+        this.search();
+      } else {
+        this.clearSearch();
       }
-
-      this.debounceTimeout = setTimeout(() => {
-        if (this.searchQuery.trim()) {
-          this.search();
-        } else {
-          this.clearSearch();
-        }
-      }, 300);
     },
 
     async performSearch() {
@@ -787,13 +732,13 @@ export default {
   border-radius: 50%;
 }
 
-.checkbox-container:hover input ~ .checkmark,
-.radio-container:hover input ~ .radio-mark {
+.checkbox-container:hover input~.checkmark,
+.radio-container:hover input~.radio-mark {
   border-color: var(--primary-color);
 }
 
-.checkbox-container input:checked ~ .checkmark,
-.radio-container input:checked ~ .radio-mark {
+.checkbox-container input:checked~.checkmark,
+.radio-container input:checked~.radio-mark {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
@@ -805,8 +750,8 @@ export default {
   display: none;
 }
 
-.checkbox-container input:checked ~ .checkmark:after,
-.radio-container input:checked ~ .radio-mark:after {
+.checkbox-container input:checked~.checkmark:after,
+.radio-container input:checked~.radio-mark:after {
   display: block;
 }
 
