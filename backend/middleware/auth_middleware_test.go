@@ -141,8 +141,8 @@ func TestAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", token) // No "Bearer " prefix
 		router.ServeHTTP(w, req)
 
-		if w.Code != http.StatusOK {
-			t.Errorf("Expected status 200 for token without Bearer prefix, got %d", w.Code)
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status 401 for token without Bearer prefix, got %d", w.Code)
 		}
 	})
 }
