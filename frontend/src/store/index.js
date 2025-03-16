@@ -236,7 +236,7 @@ const storage = {
   },
 };
 
-// Token decoding function with better error handling
+// Token decoding function with better error handling and explicit TTL
 const decodeToken = (token) => {
   if (!token) return null;
 
@@ -252,17 +252,27 @@ const decodeToken = (token) => {
       return null;
     }
 
-    // Calculate TTL based on token expiration
-    let ttl;
+    // Set default TTL for cache - 30 minutes
+    const defaultTTL = 30 * 60 * 1000;
+    let ttl = defaultTTL;
+
+    // Calculate TTL based on token expiration if available
     if (decoded.exp) {
       // Convert exp to milliseconds and subtract current time
-      ttl = Math.max(0, decoded.exp * 1000 - Date.now() - 5 * 60 * 1000);
+      // Subtract 5 minutes as buffer before expiration
+      const calculatedTTL = Math.max(
+        0,
+        decoded.exp * 1000 - Date.now() - 5 * 60 * 1000,
+      );
 
-      // If token is already expired, don't cache it
-      if (ttl <= 0) return decoded;
+      // If token is already expired or will expire very soon, don't cache it
+      if (calculatedTTL <= 0) return decoded;
+
+      // Use the calculated TTL
+      ttl = calculatedTTL;
     }
 
-    // Cache the token
+    // Cache the token with explicit TTL
     tokenCache.set(token, decoded, ttl);
     return decoded;
   } catch (error) {
