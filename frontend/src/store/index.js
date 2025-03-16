@@ -2,16 +2,17 @@ import { createStore } from "vuex";
 import axios from "axios";
 import jwtDecode from "jwt-decode";
 
-// Perfect token cache with optimized cleanup and size limiting
+// Optimized token cache with more efficient cleanup and size limiting
 class TokenCache {
   constructor(options = {}) {
     this.cache = new Map();
     this.maxSize = options.maxSize || 100; // Limit number of cached tokens
     this.lastCleanup = Date.now();
     this.cleanupInterval = options.cleanupInterval || 60000; // Minimum ms between full cleanups
+    this.accessQueue = []; // Queue to track LRU (least recently used) tokens
   }
 
-  // Throttled expired token cleanup
+  // More efficient expired token cleanup
   cleanExpired() {
     const now = Date.now();
 
@@ -23,6 +24,7 @@ class TokenCache {
     ) {
       this.lastCleanup = now;
 
+      // First pass: remove expired items
       let expiredCount = 0;
       for (const [token, item] of this.cache.entries()) {
         if (now > item.expiresAt) {
@@ -32,16 +34,19 @@ class TokenCache {
       }
 
       // If we're still over max size after removing expired items,
-      // remove oldest items based on last accessed time
+      // use the access queue for efficient LRU removal
       if (this.cache.size > this.maxSize) {
-        const entries = Array.from(this.cache.entries()).sort(
-          (a, b) => a[1].lastAccessed - b[1].lastAccessed,
-        );
+        // Clean up the accessQueue to only include tokens still in the cache
+        this.accessQueue = this.accessQueue.filter(token => this.cache.has(token));
 
-        const toRemove = entries.slice(0, entries.length - this.maxSize);
-        for (const [token] of toRemove) {
+        // Remove oldest accessed tokens until we're below max size
+        const tokensToRemove = this.accessQueue.slice(0, this.cache.size - this.maxSize);
+        for (const token of tokensToRemove) {
           this.cache.delete(token);
         }
+
+        // Update accessQueue by removing the deleted tokens
+        this.accessQueue = this.accessQueue.slice(tokensToRemove.length);
       }
 
       return expiredCount; // Return number of expired items removed
@@ -61,14 +66,18 @@ class TokenCache {
     // Check if this specific token is expired
     if (now > item.expiresAt) {
       this.cache.delete(token);
+      this._removeFromAccessQueue(token);
       return null;
     }
 
     // Update last accessed time
     item.lastAccessed = now;
 
+    // Update the access queue (move this token to the end = most recently used)
+    this._removeFromAccessQueue(token);
+    this.accessQueue.push(token);
+
     // Run cleanup occasionally based on time and cache size
-    // Only run if cache has a reasonable number of items and enough time has passed since last cleanup
     if (
       this.cache.size > 10 &&
       now - this.lastCleanup > this.cleanupInterval / 10
@@ -92,6 +101,10 @@ class TokenCache {
       created: now,
     });
 
+    // Update the access queue
+    this._removeFromAccessQueue(token);
+    this.accessQueue.push(token);
+
     // Run cleanup if we've exceeded max size
     if (this.cache.size > this.maxSize) {
       this.cleanExpired();
@@ -106,10 +119,19 @@ class TokenCache {
 
     if (Date.now() > item.expiresAt) {
       this.cache.delete(token);
+      this._removeFromAccessQueue(token);
       return false;
     }
 
     return true;
+  }
+
+  // Helper method to efficiently remove a token from the access queue
+  _removeFromAccessQueue(token) {
+    const index = this.accessQueue.indexOf(token);
+    if (index !== -1) {
+      this.accessQueue.splice(index, 1);
+    }
   }
 
   // Returns cache stats - useful for debugging
@@ -125,11 +147,13 @@ class TokenCache {
       size: this.cache.size,
       expired,
       active: this.cache.size - expired,
+      queueSize: this.accessQueue.length,
     };
   }
 
   clear() {
     this.cache.clear();
+    this.accessQueue = [];
     this.lastCleanup = Date.now();
   }
 }
