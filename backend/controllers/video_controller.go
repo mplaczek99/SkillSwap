@@ -61,9 +61,8 @@ func VideoUpload(c *gin.Context) {
 	// Detect content type
 	contentType := http.DetectContentType(buffer)
 
-	// Skip deep validation in test mode, which can be detected from the context
-	// or based on file size (test files are often very small)
-	isTestMode := isTestEnvironment(c) || file.Size < 1024 // Files smaller than 1KB are likely test files
+	// Skip deep validation in test mode, which can be detected from the context only
+	isTestMode := isTestEnvironment(c)
 
 	// Only do MIME type validation in non-test mode
 	if !isTestMode {
