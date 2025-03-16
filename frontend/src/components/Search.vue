@@ -25,6 +25,7 @@
               type="button"
               class="clear-search"
               @click="clearSearch"
+              aria-label="Clear search"
             >
               <font-awesome-icon icon="times" />
             </button>
@@ -41,6 +42,8 @@
               class="filter-toggle"
               @click="toggleFilters"
               :class="{ active: showFilters }"
+              aria-expanded="showFilters"
+              aria-controls="advanced-filters"
             >
               <font-awesome-icon icon="filter" />
               <span>Filters</span>
@@ -52,7 +55,11 @@
           </div>
 
           <transition name="slide-down">
-            <div v-if="showFilters" class="advanced-filters">
+            <div
+              v-if="showFilters"
+              id="advanced-filters"
+              class="advanced-filters"
+            >
               <div class="filter-group">
                 <label class="filter-label">Categories</label>
                 <div class="filter-options">
@@ -281,16 +288,14 @@ export default {
       this.abortController.abort();
     }
   },
-  // We've removed the mounted and beforeUnmount lifecycle hooks that were adding resize listeners
-  // since they weren't actually doing anything in the component
   computed: {
-    // Add computed properties for derived state
+    // Computed property for active filters state
     hasActiveFilters() {
       return this.selectedCategories.length > 0 || this.searchType !== "all";
     },
   },
   watch: {
-    // More efficient watchers
+    // Watch for filter changes to automatically update results
     selectedCategories: {
       handler() {
         this.applyFilters();
@@ -302,9 +307,7 @@ export default {
     },
   },
   methods: {
-    // Performance-optimized methods
-
-    // Handle input changes with debouncing from lodash
+    // Handle input changes with debouncing
     handleSearchInput() {
       if (this.searchQuery.trim()) {
         this.search();
@@ -314,6 +317,7 @@ export default {
     },
 
     async performSearch() {
+      // Skip search if query is empty
       if (!this.searchQuery.trim()) {
         this.results = [];
         this.filteredResults = [];
@@ -378,36 +382,8 @@ export default {
           console.error("Search API error:", err);
         }
 
-        let errorMessage =
-          "An error occurred while searching. Please try again later.";
-
-        if (err.response) {
-          // The server responded with an error status
-          const status = err.response.status;
-
-          if (status === 400) {
-            errorMessage =
-              err.response.data?.error ||
-              "Invalid search query. Please try different keywords.";
-          } else if (status === 401) {
-            errorMessage = "Your session has expired. Please log in again.";
-            this.$router.push("/login");
-          } else if (status === 429) {
-            errorMessage =
-              "Too many search requests. Please try again in a moment.";
-          } else if (status >= 500) {
-            errorMessage =
-              "The search service is currently unavailable. Please try again later.";
-          }
-        } else if (err.request) {
-          // The request was made but no response was received
-          if (err.code === "ECONNABORTED") {
-            errorMessage = "Search request timed out. Please try again.";
-          } else {
-            errorMessage =
-              "Network error. Please check your connection and try again.";
-          }
-        }
+        // Provide helpful error messages based on error type
+        let errorMessage = this.getErrorMessage(err);
 
         this.error = errorMessage;
         this.filteredResults = [];
@@ -428,6 +404,50 @@ export default {
       }
     },
 
+    /**
+     * Get a user-friendly error message based on the error type
+     * @param {Error} err - The error object
+     * @return {string} A user-friendly error message
+     */
+    getErrorMessage(err) {
+      let errorMessage =
+        "An error occurred while searching. Please try again later.";
+
+      if (err.response) {
+        // The server responded with an error status
+        const status = err.response.status;
+
+        if (status === 400) {
+          errorMessage =
+            err.response.data?.error ||
+            "Invalid search query. Please try different keywords.";
+        } else if (status === 401) {
+          errorMessage = "Your session has expired. Please log in again.";
+          this.$router.push("/login");
+        } else if (status === 429) {
+          errorMessage =
+            "Too many search requests. Please try again in a moment.";
+        } else if (status >= 500) {
+          errorMessage =
+            "The search service is currently unavailable. Please try again later.";
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        if (err.code === "ECONNABORTED") {
+          errorMessage = "Search request timed out. Please try again.";
+        } else {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+        }
+      }
+
+      return errorMessage;
+    },
+
+    /**
+     * Apply filters to the search results
+     * This is the corrected implementation that fixes the category filtering logic
+     */
     applyFilters() {
       if (!this.results.length) {
         this.filteredResults = [];
@@ -463,12 +483,18 @@ export default {
         }
 
         // Category filtering (only apply to skills, not users)
-        if (hasCategoryFilter && !item.email && item.description) {
+        if (hasCategoryFilter && !item.email) {
+          // This is a skill and we have category filters active
+          if (!item.description) {
+            return false; // Skill has no description to match against
+          }
+
           const description = item.description.toLowerCase();
-          // Use some() for early termination once a match is found
+          // Must match at least one selected category
           return categories.some((category) => description.includes(category));
         }
 
+        // If we get here, the item passes all filters
         return true;
       });
     },
