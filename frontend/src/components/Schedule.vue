@@ -13,11 +13,21 @@
         <form @submit.prevent="createSchedule" class="schedule-form">
           <div class="form-group">
             <label for="startTime">Start Time</label>
-            <input id="startTime" type="datetime-local" v-model="newSchedule.startTime" required />
+            <input
+              id="startTime"
+              type="datetime-local"
+              v-model="newSchedule.startTime"
+              required
+            />
           </div>
           <div class="form-group">
             <label for="endTime">End Time</label>
-            <input id="endTime" type="datetime-local" v-model="newSchedule.endTime" required />
+            <input
+              id="endTime"
+              type="datetime-local"
+              v-model="newSchedule.endTime"
+              required
+            />
           </div>
           <button type="submit" class="schedule-btn">
             <span class="btn-icon">📅</span>
@@ -38,7 +48,11 @@
       <div class="card sessions-card" v-if="schedules.length">
         <h2>Upcoming Sessions</h2>
         <ul class="schedule-list">
-          <li v-for="(schedule, index) in schedules" :key="index" class="schedule-item">
+          <li
+            v-for="(schedule, index) in schedules"
+            :key="index"
+            class="schedule-item"
+          >
             <div class="session-icon">📚</div>
             <div class="session-details">
               <h3>Skill Exchange Session</h3>
@@ -62,7 +76,10 @@
         </ul>
       </div>
 
-      <div v-else-if="!scheduleLoading && schedulesFetched" class="card empty-card">
+      <div
+        v-else-if="!scheduleLoading && schedulesFetched"
+        class="card empty-card"
+      >
         <div class="empty-state">
           <div class="empty-icon">📅</div>
           <h3>No Sessions Scheduled</h3>
@@ -123,6 +140,13 @@ export default {
       try {
         const response = await axios.post("/api/schedule", this.newSchedule);
         this.schedules.push(response.data);
+
+        // Clear the form after successful submission
+        this.newSchedule = {
+          skill_id: 1,
+          startTime: "",
+          endTime: "",
+        };
       } catch (error) {
         console.error("Error creating schedule:", error);
         this.scheduleError =

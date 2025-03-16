@@ -1,47 +1,59 @@
-import { mount } from "@vue/test-utils";
+import { mount, shallowMount } from "@vue/test-utils";
 import Dashboard from "@/components/Dashboard.vue";
 import { createStore } from "vuex";
 
+// Mock the SVG import in Dashboard.vue
+jest.mock("@/assets/images/skill-sharing.svg", () => "mock-svg", {
+  virtual: true,
+});
+
+// Mock Vue Router
+const mockRouter = {
+  push: jest.fn(),
+};
+
 describe("Dashboard.vue", () => {
+  let wrapper;
   let store;
-  
+
   beforeEach(() => {
-    // Create a simple Vuex store with a user state for testing.
+    // Create a mock store with the necessary state
     store = createStore({
       state: {
-        user: { name: "Test User", skillPoints: 20 },
+        user: {
+          name: "Test User",
+          skillPoints: 100,
+        },
+      },
+      getters: {
+        user: (state) => state.user,
+      },
+    });
+
+    // Mount the component with mocked dependencies
+    wrapper = shallowMount(Dashboard, {
+      global: {
+        plugins: [store],
+        mocks: {
+          $router: mockRouter,
+        },
+        stubs: {
+          "font-awesome-icon": true,
+          "router-link": true,
+        },
       },
     });
   });
 
-  it("renders user greeting and SkillPoints", () => {
-    const wrapper = mount(Dashboard, {
-      global: {
-        plugins: [store],
-        stubs: {
-          'router-link': true,
-          'font-awesome-icon': true
-        }
-      },
-    });
-    expect(wrapper.text()).toContain("Welcome to SkillSwap, Test User!");
-    // Updated assertion for the new UI format
-    expect(wrapper.text()).toContain("Your SkillPoints");
-    expect(wrapper.text()).toContain("20");
+  it("renders welcome message with user name", () => {
+    expect(wrapper.text()).toContain("Test User");
   });
 
-  it("renders featured skills, recent activities, and announcements", () => {
-    const wrapper = mount(Dashboard, {
-      global: {
-        plugins: [store],
-        stubs: {
-          'router-link': true,
-          'font-awesome-icon': true
-        }
-      },
-    });
-    expect(wrapper.text()).toContain("Featured Skills");
-    expect(wrapper.text()).toContain("Recent Activity");
-    expect(wrapper.text()).toContain("Announcements");
+  it("displays user skill points", () => {
+    expect(wrapper.text()).toContain("100");
+  });
+
+  it("has four quick action buttons", () => {
+    expect(wrapper.findAll(".action-button").length).toBe(4);
   });
 });

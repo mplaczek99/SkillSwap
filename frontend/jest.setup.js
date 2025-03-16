@@ -3,6 +3,11 @@ global.fetch = require("node-fetch");
 import { config } from "@vue/test-utils";
 config.global.stubs["font-awesome-icon"] = true;
 
+// Mock SVG imports globally
+jest.mock("@/assets/images/skill-sharing.svg", () => "mock-svg", {
+  virtual: true,
+});
+
 // Suppress noisy console warnings/errors globally during tests
 // You can selectively restore them in specific test files if needed
 const originalConsoleError = console.error;
