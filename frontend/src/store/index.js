@@ -6,15 +6,30 @@ import jwtDecode from "jwt-decode";
 class TokenCache {
   constructor() {
     this.cache = new Map();
+
+    // Set up periodic cleanup every 5 minutes
+    this.cleanupInterval = setInterval(() => {
+      this.cleanExpired();
+    }, 5 * 60 * 1000);
+  }
+
+  // Added method to proactively clean expired tokens
+  cleanExpired() {
+    const now = Date.now();
+    for (const [token, item] of this.cache.entries()) {
+      if (now > item.expiresAt) {
+        this.cache.delete(token);
+      }
+    }
   }
 
   get(token) {
+    // Existing implementation
     if (!token) return null;
 
     const item = this.cache.get(token);
     if (!item) return null;
 
-    // Check if expired
     if (Date.now() > item.expiresAt) {
       this.cache.delete(token);
       return null;
@@ -24,11 +39,9 @@ class TokenCache {
   }
 
   set(token, value, ttl) {
+    // Existing implementation
     if (!token) return;
-
-    // Default TTL: 30 minutes
     const defaultTTL = 30 * 60 * 1000;
-
     this.cache.set(token, {
       value,
       expiresAt: Date.now() + (ttl || defaultTTL),
@@ -36,6 +49,20 @@ class TokenCache {
   }
 
   clear() {
+    // Stop the interval when clearing the cache
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    this.cache.clear();
+  }
+
+  // For proper resource cleanup
+  destroy() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
     this.cache.clear();
   }
 }
