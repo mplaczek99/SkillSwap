@@ -13,21 +13,11 @@
         <form @submit.prevent="createSchedule" class="schedule-form">
           <div class="form-group">
             <label for="startTime">Start Time</label>
-            <input
-              id="startTime"
-              type="datetime-local"
-              v-model="newSchedule.startTime"
-              required
-            />
+            <input id="startTime" type="datetime-local" v-model="newSchedule.startTime" required />
           </div>
           <div class="form-group">
             <label for="endTime">End Time</label>
-            <input
-              id="endTime"
-              type="datetime-local"
-              v-model="newSchedule.endTime"
-              required
-            />
+            <input id="endTime" type="datetime-local" v-model="newSchedule.endTime" required />
           </div>
           <button type="submit" class="schedule-btn">
             <span class="btn-icon">📅</span>
@@ -48,11 +38,7 @@
       <div class="card sessions-card" v-if="schedules.length">
         <h2>Upcoming Sessions</h2>
         <ul class="schedule-list">
-          <li
-            v-for="(schedule, index) in schedules"
-            :key="index"
-            class="schedule-item"
-          >
+          <li v-for="(schedule, index) in schedules" :key="index" class="schedule-item">
             <div class="session-icon">📚</div>
             <div class="session-details">
               <h3>Skill Exchange Session</h3>
@@ -76,10 +62,7 @@
         </ul>
       </div>
 
-      <div
-        v-else-if="!scheduleLoading && schedulesFetched"
-        class="card empty-card"
-      >
+      <div v-else-if="!scheduleLoading && schedulesFetched" class="card empty-card">
         <div class="empty-state">
           <div class="empty-icon">📅</div>
           <h3>No Sessions Scheduled</h3>
@@ -114,6 +97,27 @@ export default {
   },
   methods: {
     async createSchedule() {
+      // Validate date inputs before submission
+      if (!this.newSchedule.startTime || !this.newSchedule.endTime) {
+        this.scheduleError = "Please set both start and end times.";
+        return;
+      }
+
+      const startTime = new Date(this.newSchedule.startTime);
+      const endTime = new Date(this.newSchedule.endTime);
+      const now = new Date();
+
+      if (startTime <= now) {
+        this.scheduleError = "Start time must be in the future.";
+        return;
+      }
+
+      if (endTime <= startTime) {
+        this.scheduleError = "End time must be after start time.";
+        return;
+      }
+
+      // Clear previous errors before submission
       this.scheduleError = null;
       this.scheduleLoading = true;
       try {
@@ -127,6 +131,7 @@ export default {
         this.scheduleLoading = false;
       }
     },
+
     async fetchSchedules() {
       this.scheduleLoading = true;
       this.scheduleError = null;
