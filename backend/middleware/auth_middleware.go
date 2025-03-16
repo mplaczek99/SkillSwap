@@ -56,16 +56,32 @@ func (c *TokenCache) Set(token string, claims *utils.Claims, expiry time.Time) {
 	c.mu.Unlock()
 }
 
-// CleanExpired removes expired tokens
+// CleanExpired removes expired tokens more efficiently
 func (c *TokenCache) CleanExpired() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	// First phase: identify expired tokens with read lock
+	var expiredTokens []string
 
+	c.mu.RLock()
 	now := time.Now()
 	for token, item := range c.cache {
 		if now.After(item.expiresAt) {
-			delete(c.cache, token)
+			expiredTokens = append(expiredTokens, token)
 		}
+	}
+	c.mu.RUnlock()
+
+	// Second phase: remove expired tokens with write lock
+	// Only if there are tokens to remove
+	if len(expiredTokens) > 0 {
+		c.mu.Lock()
+		for _, token := range expiredTokens {
+			// Double-check expiration again under write lock
+			// in case another goroutine updated the token
+			if item, found := c.cache[token]; found && now.After(item.expiresAt) {
+				delete(c.cache, token)
+			}
+		}
+		c.mu.Unlock()
 	}
 }
 
