@@ -14,11 +14,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Build the application
-RUN go build -o SkillSwap ./cmd/main.go
-
 # Expose port
 EXPOSE 8080
 
-# Run the application directly
-CMD ["./SkillSwap"]
+# Run the application without building a binary
+CMD ["go", "run", "./cmd/main.go"]
