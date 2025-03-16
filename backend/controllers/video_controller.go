@@ -216,7 +216,37 @@ func GetVideosList(c *gin.Context) {
 		return
 	}
 
-	// Collect video information
+	// Create maps to track thumbnails and metadata files
+	thumbnails := make(map[string]bool)
+	metadataFiles := make(map[string][]byte)
+
+	// First pass: collect thumbnail and metadata information
+	for _, file := range files {
+		if file.IsDir() {
+			continue // Skip directories
+		}
+
+		filename := file.Name()
+
+		// Identify thumbnails - they would be named videofilename.jpg (e.g., somevideo.mp4.jpg)
+		if strings.HasSuffix(filename, ".jpg") {
+			// Extract the video filename (e.g., somevideo.mp4 from somevideo.mp4.jpg)
+			videoFilename := strings.TrimSuffix(filename, ".jpg")
+			thumbnails[videoFilename] = true
+		}
+
+		// Identify and read metadata files - they would be named videofilename.meta
+		if strings.HasSuffix(filename, ".meta") {
+			// Extract the video filename
+			videoFilename := strings.TrimSuffix(filename, ".meta")
+			metadataPath := filepath.Join(uploadDir, filename)
+			if metadataContent, err := os.ReadFile(metadataPath); err == nil {
+				metadataFiles[videoFilename] = metadataContent
+			}
+		}
+	}
+
+	// Second pass: process video files
 	for _, file := range files {
 		if file.IsDir() {
 			continue // Skip directories
@@ -229,35 +259,28 @@ func GetVideosList(c *gin.Context) {
 			continue
 		}
 
-		// Check if a thumbnail exists for this video
-		thumbnailPath := filename + ".jpg"
-		thumbnailFullPath := filepath.Join(uploadDir, thumbnailPath)
-		hasThumbnail := false
-		if _, err := os.Stat(thumbnailFullPath); err == nil {
-			hasThumbnail = true
-		}
-
-		// Try to read original filename from metadata
-		originalFilename := filename // Default to stored filename
-		metadataPath := filepath.Join(uploadDir, filename+".meta")
-		if metadataContent, err := os.ReadFile(metadataPath); err == nil {
-			// Use the content of the metadata file as the original filename
-			originalFilename = string(metadataContent)
-		}
-
-		// Get file info for additional metadata
+		// Get file info
 		fileInfo, err := file.Info()
 		if err != nil {
 			// Skip this file if we can't get info
 			continue
 		}
 
+		// Check if a thumbnail exists for this video using our map
+		hasThumbnail := thumbnails[filename]
+
+		// Get original filename from metadata using our map
+		originalFilename := filename // Default to stored filename
+		if metadata, exists := metadataFiles[filename]; exists {
+			originalFilename = string(metadata)
+		}
+
 		// Add to our results
 		videos = append(videos, gin.H{
-			"id":               filename,         // Using stored filename as ID
-			"name":             filename,         // Stored filename
-			"originalFilename": originalFilename, // Original filename
-			"thumbnail":        thumbnailPath,
+			"id":               filename,
+			"name":             filename,
+			"originalFilename": originalFilename,
+			"thumbnail":        filename + ".jpg",
 			"hasThumbnail":     hasThumbnail,
 			"size":             fileInfo.Size(),
 			"uploadedAt":       fileInfo.ModTime(),
