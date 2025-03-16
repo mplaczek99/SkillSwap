@@ -1,15 +1,8 @@
-FROM golang:1.23-bookworm
+FROM golang:1.22-bookworm
 
 WORKDIR /app
 
-# Install air for live reload
-RUN go install github.com/air-verse/air@latest
-
-# Cache dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the rest of the source code
+# Copy the source code
 COPY . .
 
 # Create uploads directory with proper permissions
@@ -21,8 +14,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Build the application
+RUN go build -o SkillSwap ./cmd/main.go
+
 # Expose port
 EXPOSE 8080
 
-# Run air for live reload
-CMD ["air"]
+# Run the application directly
+CMD ["./SkillSwap"]
