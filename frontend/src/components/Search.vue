@@ -18,7 +18,7 @@
               placeholder="Search for skills, topics, or users..."
               class="search-input"
               required
-              @input="searchUsers"
+              @input="handleInputChange"
             />
             <button
               v-if="searchQuery"
@@ -274,13 +274,13 @@ export default {
       this.search(); // Auto-search when query is in URL
     }
 
-    // Create the debounced search function
-    this.searchUsers = debounce(this.handleSearchInput, 300);
+    // Create a properly named debounced search function
+    this.debouncedSearch = debounce(this.handleSearchInput, 300);
   },
   beforeUnmount() {
     // Cancel the debounced function to prevent memory leaks
-    if (this.searchUsers && this.searchUsers.cancel) {
-      this.searchUsers.cancel();
+    if (this.debouncedSearch && this.debouncedSearch.cancel) {
+      this.debouncedSearch.cancel();
     }
 
     // If there's an active abort controller, abort pending requests
@@ -308,6 +308,11 @@ export default {
   },
   methods: {
     // Handle input changes with debouncing
+    handleInputChange() {
+      this.debouncedSearch();
+    },
+
+    // Actual handler that will be debounced
     handleSearchInput() {
       if (this.searchQuery.trim()) {
         this.search();
@@ -629,7 +634,6 @@ export default {
 </script>
 
 <style scoped>
-/* CSS styles unchanged - would be here in real component */
 .search-page {
   padding-bottom: var(--space-12);
 }
