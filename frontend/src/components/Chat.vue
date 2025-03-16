@@ -282,6 +282,9 @@ import { nextTick } from "vue";
 import ChatService from "@/services/ChatService";
 import { debounce } from "lodash";
 import eventBus from "@/utils/eventBus";
+import DOMPurify from "dompurify";
+
+// No router import needed as this component uses this.$router instead
 
 export default {
   name: "Chat",
@@ -566,7 +569,47 @@ export default {
       });
     },
 
-    // This would go in the Chat.vue component's methods section
+    formatMessageText(text) {
+      if (!text) return "";
+
+      // First sanitize text completely to remove all HTML
+      let sanitizedContent = DOMPurify.sanitize(text, {
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: [],
+      });
+
+      // Convert URLs to clickable links in the sanitized text
+      const urlRegex =
+        /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&//=]*)/gi;
+
+      sanitizedContent = sanitizedContent.replace(urlRegex, (url) => {
+        try {
+          // Parse and validate URL
+          const parsedUrl = new URL(url);
+
+          // Only allow http/https URLs
+          if (
+            parsedUrl.protocol !== "http:" &&
+            parsedUrl.protocol !== "https:"
+          ) {
+            return url;
+          }
+
+          return `<a href="${parsedUrl.toString()}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        } catch (e) {
+          return url;
+        }
+      });
+
+      // Handle newlines
+      sanitizedContent = sanitizedContent.replace(/\n/g, "<br>");
+
+      // Final sanitization with only allowed tags
+      return DOMPurify.sanitize(sanitizedContent, {
+        ALLOWED_TAGS: ["a", "br"],
+        ALLOWED_ATTR: ["href", "target", "rel"],
+      });
+    },
 
     performSearch() {
       if (!this.searchQuery.trim()) {
@@ -729,30 +772,6 @@ export default {
           });
         }
       }
-    },
-
-    formatMessageText(text) {
-      if (!text) return "";
-
-      // Convert URLs to clickable links
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      let formattedText = text.replace(
-        urlRegex,
-        (url) =>
-          `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`,
-      );
-
-      // Sanitize text to prevent XSS (in a real app, use a library like DOMPurify)
-      // This is a simplified example
-      formattedText = formattedText
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/<a /g, "<a "); // Preserve our links
-
-      // Handle newlines
-      formattedText = formattedText.replace(/\n/g, "<br>");
-
-      return formattedText;
     },
 
     isLastMessage(index) {
