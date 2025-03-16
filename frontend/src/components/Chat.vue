@@ -353,6 +353,7 @@ export default {
       });
     }
   },
+
   beforeUnmount() {
     document.removeEventListener("click", this.handleOutsideClick);
     this.clearMockMessageInterval();
@@ -360,7 +361,13 @@ export default {
     // Remove eventBus listeners
     eventBus.off("chat:new-message", this.handleNewMessage);
     eventBus.off("chat:incoming-message", this.handleIncomingMessage);
+
+    // Cancel the debounced function to prevent memory leaks
+    if (this.searchUsers && this.searchUsers.cancel) {
+      this.searchUsers.cancel();
+    }
   },
+
   methods: {
     async loadConversations() {
       this.loadingConversations = true;
