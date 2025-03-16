@@ -395,6 +395,14 @@ export default createStore({
         commit("setToken", token);
         commit("setRememberMe", !!credentials.rememberMe);
 
+        // Set session marker immediately after successful login
+        try {
+          sessionStorage.setItem("sessionMarker", "active");
+        } catch {
+          // Fallback if sessionStorage is unavailable
+          console.warn("Session storage unavailable");
+        }
+
         const decoded = decodeToken(token);
         if (!decoded) {
           throw new Error("Invalid authentication token received");
@@ -421,6 +429,14 @@ export default createStore({
 
         commit("setToken", token);
         commit("setRememberMe", true);
+
+        // Set session marker for register too
+        try {
+          sessionStorage.setItem("sessionMarker", "active");
+        } catch {
+          // Fallback if sessionStorage is unavailable
+          console.warn("Session storage unavailable");
+        }
 
         const decoded = decodeToken(token);
         if (!decoded) {
