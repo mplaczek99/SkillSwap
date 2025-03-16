@@ -93,7 +93,8 @@ func extractToken(authHeader string) string {
 		return authHeader[len(bearerPrefix):]
 	}
 
-	return authHeader
+	// Only accept properly formatted Bearer tokens
+	return ""
 }
 
 // AuthMiddleware validates JWT tokens and sets user context
