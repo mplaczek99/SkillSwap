@@ -27,6 +27,7 @@ var tokenCache = &TokenCache{
 }
 
 // Get retrieves a token from the cache
+// Get retrieves a token from the cache
 func (c *TokenCache) Get(token string) (*utils.Claims, bool) {
 	c.mu.RLock()
 	item, found := c.cache[token]
@@ -36,11 +37,9 @@ func (c *TokenCache) Get(token string) (*utils.Claims, bool) {
 		return nil, false
 	}
 
-	// Check if expired
+	// Check if expired, but don't delete here
 	if time.Now().After(item.expiresAt) {
-		c.mu.Lock()
-		delete(c.cache, token) // Remove expired token
-		c.mu.Unlock()
+		// Let the periodic cleanup handle deletion
 		return nil, false
 	}
 
