@@ -120,15 +120,24 @@ func VideoUpload(c *gin.Context) {
 		}
 	}
 
+	// Save original filename to metadata file
+	metadataPath := filePath + ".meta"
+	metadataContent := originalFilename
+	if err := os.WriteFile(metadataPath, []byte(metadataContent), 0644); err != nil {
+		log.Printf("Warning: Failed to save metadata for %s: %v", safeFilename, err)
+		// Continue anyway, this is non-critical
+	}
+
 	// Start processing asynchronously (e.g., generate a thumbnail).
 	go processVideo(filePath)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Video uploaded successfully",
 		"file": gin.H{
-			"name": originalFilename,
-			"size": file.Size,
-			"path": "/uploads/" + safeFilename,
+			"name":       originalFilename,
+			"size":       file.Size,
+			"path":       "/uploads/" + safeFilename,
+			"storedName": safeFilename, // Include the stored filename
 		},
 	})
 }
@@ -220,8 +229,8 @@ func GetVideosList(c *gin.Context) {
 
 		filename := file.Name()
 
-		// Skip thumbnails (files ending with .jpg)
-		if strings.HasSuffix(filename, ".jpg") {
+		// Skip metadata files and thumbnails
+		if strings.HasSuffix(filename, ".meta") || strings.HasSuffix(filename, ".jpg") {
 			continue
 		}
 
@@ -233,6 +242,14 @@ func GetVideosList(c *gin.Context) {
 			hasThumbnail = true
 		}
 
+		// Try to read original filename from metadata
+		originalFilename := filename // Default to stored filename
+		metadataPath := filepath.Join(uploadDir, filename+".meta")
+		if metadataContent, err := os.ReadFile(metadataPath); err == nil {
+			// Use the content of the metadata file as the original filename
+			originalFilename = string(metadataContent)
+		}
+
 		// Get file info for additional metadata
 		fileInfo, err := file.Info()
 		if err != nil {
@@ -242,12 +259,13 @@ func GetVideosList(c *gin.Context) {
 
 		// Add to our results
 		videos = append(videos, gin.H{
-			"id":           filename, // Using filename as ID
-			"name":         filename,
-			"thumbnail":    thumbnailPath,
-			"hasThumbnail": hasThumbnail,
-			"size":         fileInfo.Size(),
-			"uploadedAt":   fileInfo.ModTime(),
+			"id":               filename,         // Using stored filename as ID
+			"name":             filename,         // Stored filename
+			"originalFilename": originalFilename, // Original filename
+			"thumbnail":        thumbnailPath,
+			"hasThumbnail":     hasThumbnail,
+			"size":             fileInfo.Size(),
+			"uploadedAt":       fileInfo.ModTime(),
 		})
 	}
 

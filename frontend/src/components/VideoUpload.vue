@@ -5,33 +5,56 @@
 
     <div class="upload-box">
       <div class="file-selection">
-        <input type="file" @change="onFileSelected" accept="video/*" id="video-file" class="file-input"
-          ref="fileInput" />
+        <input
+          type="file"
+          @change="onFileSelected"
+          accept="video/*"
+          id="video-file"
+          class="file-input"
+          ref="fileInput"
+        />
         <label for="video-file" class="file-label">
           <font-awesome-icon icon="upload" class="icon" />
           <span>Select video file</span>
         </label>
         <p class="file-info">Maximum size: 100MB</p>
+        <p class="supported-formats">
+          Supported formats: MP4, WebM, MOV, AVI (MP4 recommended)
+        </p>
       </div>
 
       <div v-if="selectedFile" class="selected-file-details">
         <h3>Selected File</h3>
         <p><strong>Name:</strong> {{ selectedFile.name }}</p>
         <p><strong>Size:</strong> {{ formatFileSize(selectedFile.size) }}</p>
-        <p><strong>Type:</strong> {{ selectedFile.type }}</p>
+        <p>
+          <strong>Type:</strong>
+          {{ selectedFile.type || "Unknown (determined by file extension)" }}
+        </p>
       </div>
     </div>
 
     <div v-if="uploadProgress > 0" class="progress-area">
       <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
+        <div
+          class="progress-fill"
+          :style="{ width: `${uploadProgress}%` }"
+        ></div>
       </div>
       <div class="progress-text">{{ uploadProgress }}%</div>
     </div>
 
     <div class="button-area">
-      <button @click="uploadVideo" :disabled="!selectedFile || uploadProgress > 0" class="upload-button">
-        <font-awesome-icon v-if="uploadProgress > 0 && uploadProgress < 100" icon="spinner" class="spin" />
+      <button
+        @click="uploadVideo"
+        :disabled="!selectedFile || uploadProgress > 0"
+        class="upload-button"
+      >
+        <font-awesome-icon
+          v-if="uploadProgress > 0 && uploadProgress < 100"
+          icon="spinner"
+          class="spin"
+        />
         <span v-else>Upload Video</span>
       </button>
     </div>
@@ -44,6 +67,21 @@
     <div v-if="successMessage" class="success-message">
       <font-awesome-icon icon="check-circle" />
       {{ successMessage }}
+      <div class="success-actions">
+        <router-link to="/videos" class="btn btn-primary btn-sm">
+          View My Videos
+        </router-link>
+      </div>
+    </div>
+
+    <div class="upload-tips">
+      <h3>Tips for successful uploads:</h3>
+      <ul>
+        <li>Use MP4 format for best compatibility across browsers</li>
+        <li>Keep videos under 10 minutes for optimal streaming</li>
+        <li>Consider using a descriptive filename before uploading</li>
+        <li>If upload fails, try a smaller file or different format</li>
+      </ul>
     </div>
   </div>
 </template>
@@ -97,6 +135,9 @@ export default {
       this.uploadProgress = 0;
 
       const formData = new FormData();
+
+      // Make sure the file name is properly preserved in the video file object
+      // The backend extracts the filename directly from the FormFile object
       formData.append("video", this.selectedFile);
 
       try {
@@ -111,6 +152,11 @@ export default {
           },
           timeout: 60000, // 1 minute timeout
         });
+
+        // Log the response in development mode
+        if (process.env.NODE_ENV !== "production") {
+          console.log("Upload response:", response.data);
+        }
 
         this.successMessage =
           response.data.message || "Video uploaded successfully!";
@@ -240,10 +286,16 @@ h2 {
   font-size: 1.25rem;
 }
 
-.file-info {
+.file-info,
+.supported-formats {
   margin-top: 1rem;
   font-size: var(--font-size-sm);
   color: var(--medium);
+}
+
+.supported-formats {
+  margin-top: 0.25rem;
+  font-style: italic;
 }
 
 .selected-file-details {
@@ -346,5 +398,36 @@ h2 {
 .success-message {
   background-color: var(--success-color);
   color: white;
+  flex-direction: column;
+}
+
+.success-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.upload-tips {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: var(--light);
+  border-radius: var(--radius-md);
+}
+
+.upload-tips h3 {
+  font-size: var(--font-size-md);
+  margin-bottom: 1rem;
+  color: var(--dark);
+  text-align: left;
+}
+
+.upload-tips ul {
+  padding-left: 1.5rem;
+  color: var(--medium);
+}
+
+.upload-tips li {
+  margin-bottom: 0.5rem;
 }
 </style>
