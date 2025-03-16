@@ -47,6 +47,8 @@ services:
       args:
         - VUE_APP_API_URL=${VUE_APP_API_URL:-http://localhost:8080}
     container_name: skillswap_frontend
+    environment:
+      - RUNTIME_API_URL=${RUNTIME_API_URL:-http://localhost:8080}
     ports:
       - "8081:80"
     depends_on:
