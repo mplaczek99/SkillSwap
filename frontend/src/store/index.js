@@ -17,7 +17,10 @@ class TokenCache {
 
     // Only perform full cleanup if enough time has passed since last cleanup
     // or if the cache is getting full
-    if (now - this.lastCleanup > this.cleanupInterval || this.cache.size > this.maxSize * 0.8) {
+    if (
+      now - this.lastCleanup > this.cleanupInterval ||
+      this.cache.size > this.maxSize * 0.8
+    ) {
       this.lastCleanup = now;
 
       let expiredCount = 0;
@@ -31,8 +34,9 @@ class TokenCache {
       // If we're still over max size after removing expired items,
       // remove oldest items based on last accessed time
       if (this.cache.size > this.maxSize) {
-        const entries = Array.from(this.cache.entries())
-          .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+        const entries = Array.from(this.cache.entries()).sort(
+          (a, b) => a[1].lastAccessed - b[1].lastAccessed,
+        );
 
         const toRemove = entries.slice(0, entries.length - this.maxSize);
         for (const [token] of toRemove) {
@@ -63,8 +67,12 @@ class TokenCache {
     // Update last accessed time
     item.lastAccessed = now;
 
-    // Run cleanup occasionally, but not on every access
-    if (this.cache.size > 10 && Math.random() < 0.1) {
+    // Run cleanup occasionally based on time and cache size
+    // Only run if cache has a reasonable number of items and enough time has passed since last cleanup
+    if (
+      this.cache.size > 10 &&
+      now - this.lastCleanup > this.cleanupInterval / 10
+    ) {
       this.cleanExpired();
     }
 
@@ -81,7 +89,7 @@ class TokenCache {
       value,
       expiresAt: now + (ttl || defaultTTL),
       lastAccessed: now,
-      created: now
+      created: now,
     });
 
     // Run cleanup if we've exceeded max size
@@ -116,7 +124,7 @@ class TokenCache {
     return {
       size: this.cache.size,
       expired,
-      active: this.cache.size - expired
+      active: this.cache.size - expired,
     };
   }
 
@@ -128,8 +136,8 @@ class TokenCache {
 
 // Initialize token cache with options
 const tokenCache = new TokenCache({
-  maxSize: 50,              // Maximum number of tokens to store
-  cleanupInterval: 30000    // Minimum 30 seconds between full cleanups
+  maxSize: 50, // Maximum number of tokens to store
+  cleanupInterval: 30000, // Minimum 30 seconds between full cleanups
 });
 
 // Simple storage wrapper for localStorage
@@ -172,7 +180,7 @@ const decodeToken = (token) => {
     const decoded = jwtDecode(token);
 
     // Validate required fields are present
-    if (!decoded || typeof decoded !== 'object') {
+    if (!decoded || typeof decoded !== "object") {
       return null;
     }
 
