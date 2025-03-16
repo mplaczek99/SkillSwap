@@ -143,12 +143,8 @@ func VideoUpload(c *gin.Context) {
 }
 
 // isTestEnvironment determines if the current request is running in a test environment
+// isTestEnvironment determines if the current request is running in a test environment
 func isTestEnvironment(c *gin.Context) bool {
-	// Check for test header
-	if c.GetHeader("X-Test-Mode") == "true" {
-		return true
-	}
-
 	// Check gin mode (test mode often uses TestMode)
 	if gin.Mode() == gin.TestMode {
 		return true
