@@ -57,10 +57,16 @@ func ValidateToken(tokenString string) (*Claims, error) {
 
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		// Validate the signing method
+		// Validate the signing algorithm is specifically HS256
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrInvalidToken
+			return nil, errors.New("unexpected signing method")
 		}
+
+		// Verify the specific algorithm is HS256 (not HS384 or HS512)
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("unexpected signing method: " + token.Method.Alg())
+		}
+
 		return getJWTSecret(), nil
 	})
 
