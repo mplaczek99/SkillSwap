@@ -74,6 +74,8 @@ func (c *TokenCache) CleanExpired() {
 	// Only if there are tokens to remove
 	if len(expiredTokens) > 0 {
 		c.mu.Lock()
+		// Get fresh timestamp for accurate expiration check
+		now = time.Now()
 		for _, token := range expiredTokens {
 			// Double-check expiration again under write lock
 			// in case another goroutine updated the token
