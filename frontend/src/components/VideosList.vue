@@ -55,21 +55,34 @@
               {{ getDisplayName(video) }}
             </h3>
             <p class="video-meta">
-              <span class="video-size"><font-awesome-icon icon="file" />
-                {{ formatFileSize(video.size) }}</span>
-              <span class="video-date"><font-awesome-icon icon="calendar-alt" />
-                {{ formatDate(video.uploadedAt) }}</span>
+              <span class="video-size"
+                ><font-awesome-icon icon="file" />
+                {{ formatFileSize(video.size) }}</span
+              >
+              <span class="video-date"
+                ><font-awesome-icon icon="calendar-alt" />
+                {{ formatDate(video.uploadedAt) }}</span
+              >
             </p>
             <div class="video-actions">
-              <button class="btn btn-primary btn-sm action-btn" @click="playVideo(video)">
+              <button
+                class="btn btn-primary btn-sm action-btn"
+                @click="playVideo(video)"
+              >
                 <font-awesome-icon icon="play" />
                 Play
               </button>
-              <button class="btn btn-outline btn-sm action-btn" @click="downloadVideo(video)">
+              <button
+                class="btn btn-outline btn-sm action-btn"
+                @click="downloadVideo(video)"
+              >
                 <font-awesome-icon icon="download" />
                 Download
               </button>
-              <button class="btn btn-outline btn-sm action-btn share-btn" @click="shareVideo(video)">
+              <button
+                class="btn btn-outline btn-sm action-btn share-btn"
+                @click="shareVideo(video)"
+              >
                 <font-awesome-icon icon="share-alt" />
                 Share
               </button>
@@ -90,9 +103,18 @@
           </div>
 
           <div class="video-player-container">
-            <video v-if="currentVideo && !videoError" controls autoplay class="video-player" @error="handleVideoError"
-              ref="videoPlayer">
-              <source :src="getVideoUrl(currentVideo)" :type="getVideoType(currentVideo.name)" />
+            <video
+              v-if="currentVideo && !videoError"
+              controls
+              autoplay
+              class="video-player"
+              @error="handleVideoError"
+              ref="videoPlayer"
+            >
+              <source
+                :src="getVideoUrl(currentVideo)"
+                :type="getVideoType(currentVideo.name)"
+              />
               Your browser does not support the video tag.
             </video>
 
@@ -111,7 +133,10 @@
                   <font-awesome-icon icon="redo" />
                   Try Again
                 </button>
-                <button @click="downloadVideo(currentVideo)" class="btn btn-outline">
+                <button
+                  @click="downloadVideo(currentVideo)"
+                  class="btn btn-outline"
+                >
                   <font-awesome-icon icon="download" />
                   Download
                 </button>
@@ -137,7 +162,13 @@
           <div class="share-options">
             <p>Share "{{ shareVideoName }}" with others:</p>
             <div class="share-link-container">
-              <input type="text" readonly :value="shareVideoUrl" ref="shareUrlInput" class="share-url-input" />
+              <input
+                type="text"
+                readonly
+                :value="shareVideoUrl"
+                ref="shareUrlInput"
+                class="share-url-input"
+              />
               <button class="btn btn-primary copy-btn" @click="copyShareLink">
                 <font-awesome-icon :icon="copiedIcon" />
                 {{ copiedText }}
@@ -383,7 +414,8 @@ export default {
       // Use modern Clipboard API with fallback to older method
       if (navigator.clipboard && navigator.clipboard.writeText) {
         // Modern approach using Clipboard API
-        navigator.clipboard.writeText(textToCopy)
+        navigator.clipboard
+          .writeText(textToCopy)
           .then(() => {
             this.handleCopySuccess();
           })

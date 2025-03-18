@@ -32,28 +32,106 @@ axios.interceptors.request.use(
   },
 );
 
-// Handle 401 responses globally
+// Handle API errors globally with enhanced error handling
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      router.currentRoute.value.path !== "/login"
-    ) {
-      console.log("Session expired, redirecting to login");
-      // Token is expired or invalid
-      store.dispatch("logout"); // Use dispatch instead of commit for actions
-      router.push("/login");
+    // Default error message
+    let title = "Error";
+    let message = "An unexpected error occurred. Please try again.";
+    let notify = true;
+    let duration = 5000;
 
-      // Show notification to the user using eventBus
+    // Handle different error scenarios
+    if (error.response) {
+      // The server responded with an error status code
+      const status = error.response.status;
+
+      switch (status) {
+        case 401:
+          // Unauthorized - Handle token expiration
+          if (router.currentRoute.value.path !== "/login") {
+            console.log("Session expired, redirecting to login");
+            store.dispatch("logout");
+            router.push("/login");
+
+            title = "Session Expired";
+            message = "Your session has expired. Please log in again.";
+          } else {
+            // Don't show notification if already on login page
+            notify = false;
+          }
+          break;
+
+        case 403:
+          // Forbidden
+          title = "Access Denied";
+          message = "You don't have permission to access this resource.";
+          break;
+
+        case 404:
+          // Not Found
+          title = "Not Found";
+          message = "The requested resource was not found.";
+          break;
+
+        case 422:
+          // Validation Error
+          title = "Validation Error";
+          // Use server-provided message if available
+          message =
+            error.response.data?.error ||
+            "Please check your input and try again.";
+          break;
+
+        case 429:
+          // Too Many Requests
+          title = "Rate Limited";
+          message = "Too many requests. Please try again later.";
+          break;
+
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          // Server Errors
+          title = "Server Error";
+          message =
+            "We're experiencing technical difficulties. Please try again later.";
+          break;
+
+        default:
+          // Use server-provided error message if available
+          if (error.response.data?.error) {
+            message = error.response.data.error;
+          }
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      if (error.code === "ECONNABORTED") {
+        title = "Request Timeout";
+        message = "The request timed out. Please try again.";
+      } else {
+        title = "Network Error";
+        message =
+          "Unable to connect to the server. Please check your internet connection.";
+      }
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Error during request setup:", error.message);
+    }
+
+    // Show notification to the user using eventBus if needed
+    if (notify) {
       eventBus.emit("show-notification", {
-        type: "warning",
-        title: "Session Expired",
-        message: "Your session has expired. Please log in again.",
-        duration: 5000,
+        type: "error",
+        title,
+        message,
+        duration,
       });
     }
+
+    // Pass the error along to the component that made the request
     return Promise.reject(error);
   },
 );
