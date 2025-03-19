@@ -12,7 +12,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetJobs handles retrieving all job postings
+// GetJobs godoc
+// @Summary Get all job postings
+// @Description Retrieve a list of all job postings
+// @Tags Jobs
+// @Produce json
+// @Success 200 {array} models.Job
+// @Failure 500 {object} map[string]string
+// @Router /jobs [get]
 func GetJobs(c *gin.Context) {
 	db, exists := c.Get("db")
 	if !exists {
@@ -31,7 +38,17 @@ func GetJobs(c *gin.Context) {
 	c.JSON(http.StatusOK, jobs)
 }
 
-// GetJob handles retrieving a specific job posting by ID
+// GetJob godoc
+// @Summary Get a job posting by ID
+// @Description Retrieve a specific job posting by its ID
+// @Tags Jobs
+// @Produce json
+// @Param id path int true "Job ID"
+// @Success 200 {object} models.Job
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /jobs/{id} [get]
 func GetJob(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -60,7 +77,19 @@ func GetJob(c *gin.Context) {
 	c.JSON(http.StatusOK, job)
 }
 
-// CreateJob handles creating a new job posting
+// CreateJob godoc
+// @Summary Create a new job posting
+// @Description Create a new job posting. Requires authentication.
+// @Tags Jobs
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param job body models.Job true "Job data"
+// @Success 201 {object} models.Job
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /jobs [post]
 func CreateJob(c *gin.Context) {
 	var job models.Job
 	if err := c.ShouldBindJSON(&job); err != nil {
@@ -111,7 +140,22 @@ func CreateJob(c *gin.Context) {
 	c.JSON(http.StatusCreated, job)
 }
 
-// UpdateJob handles updating an existing job posting
+// UpdateJob godoc
+// @Summary Update an existing job posting
+// @Description Update an existing job posting. Requires authentication and ownership.
+// @Tags Jobs
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Job ID"
+// @Param job body models.Job true "Updated job data"
+// @Success 200 {object} models.Job
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /jobs/{id} [put]
 func UpdateJob(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -174,7 +218,20 @@ func UpdateJob(c *gin.Context) {
 	c.JSON(http.StatusOK, jobUpdates)
 }
 
-// DeleteJob handles deleting a job posting
+// DeleteJob godoc
+// @Summary Delete a job posting
+// @Description Delete a job posting. Requires authentication and ownership.
+// @Tags Jobs
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Job ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /jobs/{id} [delete]
 func DeleteJob(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
