@@ -3,6 +3,8 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 import axios from "axios";
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons'
 import eventBus from "./utils/eventBus"; // Import the eventBus
 
 // Import the icon registration function
@@ -136,6 +138,7 @@ axios.interceptors.response.use(
   },
 );
 
+library.add(faSun, faMoon)
 // Create the app
 const app = createApp(App);
 
